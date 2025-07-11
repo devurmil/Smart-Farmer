@@ -21,7 +21,7 @@ const FeatureGrid = () => {
       color: "bg-red-50 text-red-600",
       action: "Scan Crop",
       status: "New",
-      href: "#disease"
+      href: "/disease"
     },
     {
       title: "Cost Estimation",

@@ -19,7 +19,7 @@ const navigationItems = [
   {
     name: "Disease Detection",
     icon: Camera,
-    href: "#disease",
+    href: "/disease",
     current: false
   },
   {
