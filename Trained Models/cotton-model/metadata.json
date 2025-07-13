@@ -1,0 +1,1 @@
+{"tfjsVersion":"1.7.4","tmVersion":"2.4.10","packageVersion":"0.8.4-alpha2","packageName":"@teachablemachine/image","timeStamp":"2025-07-12T11:12:20.166Z","userMetadata":{},"modelName":"tm-my-image-model","labels":["Bacterial_blight-Cotton","Curl_virus-Cotton","Fussarium_wilt-Cotton","Healthy-Cotton"],"imageSize":224}
