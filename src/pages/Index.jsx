@@ -9,18 +9,18 @@ import RecentActivity from "@/components/RecentActivity";
 const Index = () => {
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
+      {/* <Header /> */}
       
       <div className="flex">
-        <div className="hidden md:block">
-          <Navigation />
-        </div>
+        {/* <div className="hidden md:block"> */}
+        {/*   <Navigation /> */}
+        {/* </div> */}
         
         <main className="flex-1 p-6">
           <div className="max-w-7xl mx-auto">
             <div className="mb-8">
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                Welcome back, Rajesh! 🌾
+                Welcome Back, dear Farmer! 🌱
               </h1>
               <p className="text-gray-600">
                 Here's what's happening with your farm today. Your wheat crop is looking healthy and you have 2 equipment bookings this week.

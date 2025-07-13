@@ -5,8 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import * as tf from '@tensorflow/tfjs';
 import { Loader2, Lightbulb, AlertTriangle } from 'lucide-react';
-import Header from "@/components/Header";
-import Navigation from "@/components/Navigation";
 
 const cropOptions = [
   { label: "Apple", value: "apple" },
@@ -517,11 +515,7 @@ const DiseaseDetection = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
       <div className="flex">
-        <div className="hidden md:block">
-          <Navigation />
-        </div>
         <main className="flex-1 p-6">
           <div className="max-w-4xl mx-auto">
             <Card className="shadow-lg border-green-200 border-2">

@@ -6,12 +6,12 @@ import FarmCalculator from "@/components/FarmCalculator";
 const Calculator = () => {
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
+      {/* <Header /> */}
       
       <div className="flex">
-        <div className="hidden md:block">
-          <Navigation />
-        </div>
+        {/* <div className="hidden md:block"> */}
+        {/*   <Navigation /> */}
+        {/* </div> */}
         
         <main className="flex-1 p-6">
           <div className="max-w-6xl mx-auto">

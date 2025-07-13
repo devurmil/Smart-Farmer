@@ -1,10 +1,9 @@
-
 import { Search, Bell, User, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
 
-const Header = () => {
+const Header = ({ onMenuClick }) => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [showResults, setShowResults] = useState(false);
@@ -14,7 +13,6 @@ const Header = () => {
     navigate('/');
   };
 
-  // Search data - all available tools and features
   const searchData = [
     { name: "Dashboard", href: "/", description: "Main dashboard with overview", category: "Main" },
     { name: "Farm Area Calculator", href: "/calculator", description: "Calculate farm area using GPS and maps", category: "Tools" },
@@ -29,7 +27,6 @@ const Header = () => {
     { name: "Recent Activity", href: "#activity", description: "View recent farm activities", category: "Activity" }
   ];
 
-  // Filter search results
   const filteredResults = searchData.filter(item =>
     item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -40,14 +37,12 @@ const Header = () => {
     if (href.startsWith('/')) {
       navigate(href);
     } else {
-      // For hash links, scroll to section or show message
       window.location.hash = href.substring(1);
     }
     setSearchQuery("");
     setShowResults(false);
   };
 
-  // Close search results when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (searchRef.current && !searchRef.current.contains(event.target)) {
@@ -63,9 +58,7 @@ const Header = () => {
     <header className="bg-white border-b border-gray-200 px-4 py-3 shadow-sm">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <Button variant="ghost" size="sm" className="md:hidden">
-            <Menu className="h-5 w-5" />
-          </Button>
+          {/* Sidebar Toggle Button removed */}
           <div className="flex items-center space-x-2 cursor-pointer" onClick={handleLogoClick}>
             <div className="w-12 h-12 rounded-lg flex items-center justify-center overflow-hidden">
               <img 
@@ -106,8 +99,7 @@ const Header = () => {
                 <X className="h-4 w-4" />
               </button>
             )}
-            
-            {/* Search Results Dropdown */}
+
             {showResults && (
               <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
                 {filteredResults.length > 0 ? (
@@ -136,11 +128,11 @@ const Header = () => {
               </div>
             )}
           </div>
-          
+
           <Button variant="ghost" size="sm">
             <Bell className="h-5 w-5" />
           </Button>
-          
+
           <Button variant="ghost" size="sm">
             <User className="h-5 w-5" />
           </Button>
