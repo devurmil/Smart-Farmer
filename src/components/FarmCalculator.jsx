@@ -17,12 +17,15 @@ const FarmCalculator = () => {
   const [map, setMap] = useState(null);
   const [polygon, setPolygon] = useState(null);
   const [coordinates, setCoordinates] = useState([]);
+  const coordinatesRef = useRef([]);
   const [area, setArea] = useState(0);
   const [unit, setUnit] = useState('acres');
   const [farmName, setFarmName] = useState('');
+  const [farmNameMarker, setFarmNameMarker] = useState(null);
   const [farmDescription, setFarmDescription] = useState('');
   const [savedFarms, setSavedFarms] = useState([]);
   const [isDrawing, setIsDrawing] = useState(false);
+  const [drawingListener, setDrawingListener] = useState(null);
   
   // AI Features
   const [cropType, setCropType] = useState('');
@@ -154,17 +157,30 @@ const FarmCalculator = () => {
     }
   };
 
+  // Helper to compute centroid
+  const getCentroid = (coords) => {
+    if (!coords.length) return null;
+    let x = 0, y = 0;
+    coords.forEach(coord => {
+      x += coord.lat;
+      y += coord.lng;
+    });
+    return { lat: x / coords.length, lng: y / coords.length };
+  };
+
   // Start drawing mode
   const startDrawing = () => {
     if (!map) return;
-    
     setIsDrawing(true);
     setCoordinates([]);
-    
+    coordinatesRef.current = [];
     if (polygon) {
       polygon.setMap(null);
     }
-
+    if (farmNameMarker) {
+      farmNameMarker.setMap(null);
+      setFarmNameMarker(null);
+    }
     const newPolygon = new window.google.maps.Polygon({
       paths: [],
       strokeColor: '#22c55e',
@@ -175,33 +191,66 @@ const FarmCalculator = () => {
       editable: true,
       draggable: false
     });
-
     newPolygon.setMap(map);
     setPolygon(newPolygon);
-
+    // Remove any previous listener
+    if (drawingListener) {
+      window.google.maps.event.removeListener(drawingListener);
+      setDrawingListener(null);
+    }
     // Add click listener to map
     const clickListener = map.addListener('click', (event) => {
-      const newCoords = [...coordinates, {
+      const newCoords = [...coordinatesRef.current, {
         lat: event.latLng.lat(),
         lng: event.latLng.lng()
       }];
-      
       setCoordinates(newCoords);
+      coordinatesRef.current = newCoords;
       newPolygon.setPath(newCoords);
-      
       const areaInSqMeters = calculatePolygonArea(newCoords);
       setArea(convertArea(areaInSqMeters, unit));
     });
+    setDrawingListener(clickListener);
+  };
 
-    // Clean up listener when done
-    newPolygon.addListener('rightclick', () => {
-      window.google.maps.event.removeListener(clickListener);
-      setIsDrawing(false);
-      
-      toast({
-        title: "Area calculated!",
-        description: `Farm area: ${area.toFixed(2)} ${unit}`,
-      });
+  // When coordinates state changes, update the ref
+  React.useEffect(() => {
+    coordinatesRef.current = coordinates;
+  }, [coordinates]);
+
+  // Finish drawing mode
+  const finishDrawing = () => {
+    if (drawingListener) {
+      window.google.maps.event.removeListener(drawingListener);
+      setDrawingListener(null);
+    }
+    setIsDrawing(false);
+    // Add marker for farm name at centroid
+    if (map && coordinates.length > 0 && farmName) {
+      const centroid = getCentroid(coordinates);
+      if (centroid) {
+        const marker = new window.google.maps.Marker({
+          position: centroid,
+          map: map,
+          label: {
+            text: farmName,
+            fontWeight: 'bold',
+            fontSize: '14px',
+            color: '#22c55e',
+          },
+          icon: {
+            path: window.google.maps.SymbolPath.CIRCLE,
+            scale: 0.1,
+            fillOpacity: 0,
+            strokeOpacity: 0,
+          },
+        });
+        setFarmNameMarker(marker);
+      }
+    }
+    toast({
+      title: "Area calculated!",
+      description: `Farm area: ${area.toFixed(2)} ${unit}`,
     });
   };
 
@@ -211,10 +260,18 @@ const FarmCalculator = () => {
       polygon.setMap(null);
       setPolygon(null);
     }
+    if (farmNameMarker) {
+      farmNameMarker.setMap(null);
+      setFarmNameMarker(null);
+    }
     setCoordinates([]);
     setArea(0);
     setIsDrawing(false);
     setAiAnalysis(null);
+    if (drawingListener) {
+      window.google.maps.event.removeListener(drawingListener);
+      setDrawingListener(null);
+    }
   };
 
   // Save farm profile
@@ -341,11 +398,15 @@ const FarmCalculator = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div 
-                  ref={mapRef} 
-                  className="w-full h-96 rounded-lg border"
-                  style={{ minHeight: '400px' }}
-                />
+                <div className="w-full h-96 rounded-lg border relative" style={{ minHeight: '400px' }}>
+                  {/* Floating Area Name Overlay */}
+                  {coordinates.length >= 3 && farmName && !isDrawing && (
+                    <div style={{ position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)', zIndex: 10 }} className="bg-white bg-opacity-80 px-4 py-1 rounded shadow text-green-700 font-bold text-lg pointer-events-none">
+                      {farmName}
+                    </div>
+                  )}
+                  <div ref={mapRef} className="absolute inset-0 w-full h-full rounded-lg" />
+                </div>
                 <div className="flex flex-wrap gap-2 mt-4">
                   <Button onClick={startDrawing} disabled={isDrawing}>
                     {isDrawing ? 'Drawing...' : 'Start Drawing'}
@@ -353,6 +414,12 @@ const FarmCalculator = () => {
                   <Button variant="outline" onClick={clearDrawing}>
                     Clear
                   </Button>
+                  {/* Finish Drawing Button */}
+                  {isDrawing && coordinates.length >= 3 && (
+                    <Button variant="success" onClick={finishDrawing}>
+                      Finish Drawing
+                    </Button>
+                  )}
                   <Button variant="outline" onClick={exportData} disabled={!area}>
                     <Download className="h-4 w-4 mr-2" />
                     Export
@@ -360,7 +427,7 @@ const FarmCalculator = () => {
                 </div>
                 {isDrawing && (
                   <p className="text-sm text-gray-600 mt-2">
-                    Click on the map to mark corners. Right-click to finish drawing.
+                    Click on the map to mark corners. Click 'Finish Drawing' when done.
                   </p>
                 )}
               </CardContent>
