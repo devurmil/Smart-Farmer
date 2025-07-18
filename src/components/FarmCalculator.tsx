@@ -41,14 +41,14 @@ const FarmCalculator = () => {
   const mapRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
     const loadGoogleMaps = () => {
       if (window.google && window.google.maps && window.google.maps.drawing) {
         initializeMap();
         return;
       }
-
       const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyCgsbunkDdwkLdv67vy9GdTg2C3RAMtEr0&libraries=geometry,drawing`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry,drawing`;
       script.async = true;
       script.defer = true;
       script.onload = initializeMap;

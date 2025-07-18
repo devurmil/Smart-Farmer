@@ -124,6 +124,6 @@ class ReplicateClient {
 }
 
 // Initialize with API key
-const replicateClient = new ReplicateClient('r8_LPhlvc1UXv0yruj3q4djPYAjKSSD2NY3JFMZd');
+const replicateClient = new ReplicateClient(import.meta.env.VITE_REPLICATE_API_KEY);
 
 export default replicateClient;

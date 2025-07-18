@@ -37,26 +37,24 @@ const FarmCalculator = () => {
 
   // Initialize Google Maps
   useEffect(() => {
+    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
     const initMap = () => {
       if (!window.google) {
         console.error('Google Maps not loaded');
         return;
       }
-
       const mapInstance = new window.google.maps.Map(mapRef.current, {
         center: { lat: 28.6139, lng: 77.2090 }, // Delhi, India
         zoom: 15,
         mapTypeId: 'satellite'
       });
-
       setMap(mapInstance);
     };
-
     if (window.google) {
       initMap();
     } else {
       const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyCgsbunkDdwkLdv67vy9GdTg2C3RAMtEr0&libraries=geometry,drawing`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry,drawing`;
       script.async = true;
       script.defer = true;
       script.onload = initMap;
