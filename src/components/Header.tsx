@@ -81,76 +81,71 @@ const Header = ({ onMenuClick }: HeaderProps) => {
               <h1 className="text-xl font-bold text-gray-900">Smart Farmer</h1>
               <p className="text-xs text-gray-500">Assistant Platform</p>
             </div>
-            {/* Search Icon (mobile and desktop) */}
-            {isMobile ? (
-              <Button variant="ghost" size="sm" onClick={() => setMobileSearchOpen(true)}>
-                <Search className="h-5 w-5" />
-              </Button>
-            ) : (
-              <div className="relative ml-2" ref={searchRef}>
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <input
-                  type="text"
-                  placeholder="Search tools, features, or services..."
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value);
-                    setShowResults(e.target.value.length > 0);
-                  }}
-                  onFocus={() => setShowResults(searchQuery.length > 0)}
-                  className="pl-10 pr-10 py-2 w-80 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  style={{ minWidth: 0, width: 220 }}
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => {
-                      setSearchQuery("");
-                      setShowResults(false);
-                    }}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                )}
-                {showResults && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
-                    {filteredResults.length > 0 ? (
-                      filteredResults.map((item, index) => (
-                        <button
-                          key={index}
-                          onClick={() => handleSearchClick(item.href)}
-                          className="w-full text-left px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 transition-colors"
-                        >
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <div className="font-medium text-gray-900">{item.name}</div>
-                              <div className="text-sm text-gray-500">{item.description}</div>
-                            </div>
-                            <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
-                              {item.category}
-                            </span>
-                          </div>
-                        </button>
-                      ))
-                    ) : (
-                      <div className="px-4 py-3 text-gray-500 text-sm">
-                        No results found for "{searchQuery}"
+          </div>
+        </div>
+        {/* Desktop Search Bar (centered) */}
+        {!isMobile && (
+          <div className="relative mx-8 flex-1 max-w-xl" ref={searchRef}>
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <input
+              type="text"
+              placeholder="Search tools, features, or services..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setShowResults(e.target.value.length > 0);
+              }}
+              onFocus={() => setShowResults(searchQuery.length > 0)}
+              className="pl-10 pr-10 py-2 w-full bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              style={{ minWidth: 0 }}
+            />
+            {searchQuery && (
+              <button
+                onClick={() => {
+                  setSearchQuery("");
+                  setShowResults(false);
+                }}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+            {showResults && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
+                {filteredResults.length > 0 ? (
+                  filteredResults.map((item, index) => (
+                    <button
+                      key={index}
+                      onClick={() => handleSearchClick(item.href)}
+                      className="w-full text-left px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 transition-colors"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="font-medium text-gray-900">{item.name}</div>
+                          <div className="text-sm text-gray-500">{item.description}</div>
+                        </div>
+                        <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                          {item.category}
+                        </span>
                       </div>
-                    )}
+                    </button>
+                  ))
+                ) : (
+                  <div className="px-4 py-3 text-gray-500 text-sm">
+                    No results found for "{searchQuery}"
                   </div>
                 )}
               </div>
             )}
-            {/* User/Login Icon */}
-            <Button variant="ghost" size="sm">
-              <User className="h-5 w-5" />
-            </Button>
           </div>
-        </div>
-        {/* Notification Icon (always right) */}
+        )}
+        {/* Notification and User Icons (right) */}
         <div className="flex items-center space-x-2">
           <Button variant="ghost" size="sm">
             <Bell className="h-5 w-5" />
+          </Button>
+          <Button variant="ghost" size="sm">
+            <User className="h-5 w-5" />
           </Button>
         </div>
         {/* Mobile Search Overlay */}

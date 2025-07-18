@@ -13,7 +13,6 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header onMenuClick={() => setSidebarOpen((open) => !open)} />
       {/* Sidebar for all devices */}
       {sidebarOpen && (
         <>

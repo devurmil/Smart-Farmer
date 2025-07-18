@@ -201,7 +201,7 @@ const CostPlanning = () => {
             {filteredAndSortedCrops.map((crop) => {
               const cropImages = getCropImages(crop.name);
               return (
-                <Link key={crop.name} to={`/cost-planning/${getCropSlug(crop.name)}`} className="block group">
+                <Link key={crop.name} to={`/cost-planning/${getCropSlug(crop.name)}?unit=${selectedUnit}`} className="block group">
                   <Card className="h-full hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-white border-0 shadow-md overflow-hidden relative">
                     {/* Background Image - only show if cropImages exists */}
                     {cropImages && (
