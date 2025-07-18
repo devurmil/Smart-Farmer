@@ -2,8 +2,10 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calculator, Camera, DollarSign, Tractor, Newspaper, Store, Smartphone, BarChart3 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const FeatureGrid = () => {
+  const navigate = useNavigate();
   const features = [
     {
       title: "Farm Area Calculator",
@@ -30,7 +32,7 @@ const FeatureGrid = () => {
       color: "bg-green-50 text-green-600",
       action: "Plan Budget",
       status: null,
-      href: "#costs"
+      href: "/cost-planning"
     },
     {
       title: "Equipment Rental",
@@ -111,7 +113,13 @@ const FeatureGrid = () => {
             <CardContent>
               <Button
                 className="w-full bg-green-600 hover:bg-green-700 text-white"
-                onClick={() => window.location.href = feature.href}
+                onClick={() => {
+                  if (feature.href.startsWith('/')) {
+                    navigate(feature.href);
+                  } else {
+                    window.location.href = feature.href;
+                  }
+                }}
               >
                 {feature.action}
               </Button>

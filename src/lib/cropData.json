@@ -1,0 +1,122 @@
+[
+  {
+    "name": "Wheat",
+    "planting_months": "November - December",
+    "water_timing": "Every 10-12 days",
+    "fertilizers": "NPK 120:60:40 kg/ha",
+    "soil_preparation": "Well-ploughed, leveled, weed-free",
+    "harvesting_time": "March - April",
+    "image": "/crops/wheat.jpg",
+    "cost": { "acre": 12000, "hectare": 30000, "sq_meter": 3, "bigha": 7500 }
+  },
+  {
+    "name": "Cotton",
+    "planting_months": "June - July",
+    "water_timing": "Every 7-10 days",
+    "fertilizers": "NPK 150:75:75 kg/ha",
+    "soil_preparation": "Deep ploughing, fine tilth",
+    "harvesting_time": "October - January",
+    "image": "/crops/cotton.jpg",
+    "cost": { "acre": 18000, "hectare": 45000, "sq_meter": 4.5, "bigha": 11250 }
+  },
+  {
+    "name": "Groundnut",
+    "planting_months": "June - July",
+    "water_timing": "Every 8-10 days",
+    "fertilizers": "NPK 20:40:0 kg/ha",
+    "soil_preparation": "Sandy loam, well-drained",
+    "harvesting_time": "September - October",
+    "image": "/crops/groundnut.jpg",
+    "cost": { "acre": 15000, "hectare": 37500, "sq_meter": 3.75, "bigha": 9375 }
+  },
+  {
+    "name": "Rice",
+    "planting_months": "June - July",
+    "water_timing": "Continuous flooding",
+    "fertilizers": "NPK 100:50:50 kg/ha",
+    "soil_preparation": "Puddled, leveled",
+    "harvesting_time": "October - November",
+    "image": "/crops/rice.jpg",
+    "cost": { "acre": 16000, "hectare": 40000, "sq_meter": 4, "bigha": 10000 }
+  },
+  {
+    "name": "Sugarcane",
+    "planting_months": "December - February",
+    "water_timing": "Every 7-12 days",
+    "fertilizers": "NPK 250:115:115 kg/ha",
+    "soil_preparation": "Deep ploughing, ridges",
+    "harvesting_time": "December - March",
+    "image": "/crops/sugarcane.jpg",
+    "cost": { "acre": 35000, "hectare": 87500, "sq_meter": 8.75, "bigha": 21875 }
+  },
+  {
+    "name": "Maize",
+    "planting_months": "June - July",
+    "water_timing": "Every 7-10 days",
+    "fertilizers": "NPK 120:60:40 kg/ha",
+    "soil_preparation": "Well-tilled, weed-free",
+    "harvesting_time": "September - October",
+    "image": "/crops/maize.jpg",
+    "cost": { "acre": 13000, "hectare": 32500, "sq_meter": 3.25, "bigha": 8125 }
+  },
+  {
+    "name": "Bajra (Pearl Millet)",
+    "planting_months": "June - July",
+    "water_timing": "Every 10-15 days",
+    "fertilizers": "NPK 60:40:20 kg/ha",
+    "soil_preparation": "Light, sandy loam",
+    "harvesting_time": "September - October",
+    "image": "/crops/bajra.jpg",
+    "cost": { "acre": 9000, "hectare": 22500, "sq_meter": 2.25, "bigha": 5625 }
+  },
+  {
+    "name": "Castor",
+    "planting_months": "July - August",
+    "water_timing": "Every 12-15 days",
+    "fertilizers": "NPK 80:40:40 kg/ha",
+    "soil_preparation": "Well-drained, sandy loam",
+    "harvesting_time": "December - January",
+    "image": "/crops/castor.jpg",
+    "cost": { "acre": 11000, "hectare": 27500, "sq_meter": 2.75, "bigha": 6875 }
+  },
+  {
+    "name": "Potato",
+    "planting_months": "October - November",
+    "water_timing": "Every 7-10 days",
+    "fertilizers": "NPK 150:100:100 kg/ha",
+    "soil_preparation": "Loose, friable, well-drained",
+    "harvesting_time": "January - February",
+    "image": "/crops/potato.jpg",
+    "cost": { "acre": 25000, "hectare": 62500, "sq_meter": 6.25, "bigha": 15625 }
+  },
+  {
+    "name": "Tomato",
+    "planting_months": "June - July, October - November",
+    "water_timing": "Every 5-7 days",
+    "fertilizers": "NPK 100:50:50 kg/ha",
+    "soil_preparation": "Well-tilled, organic matter",
+    "harvesting_time": "September - February",
+    "image": "/crops/tomato.jpg",
+    "cost": { "acre": 22000, "hectare": 55000, "sq_meter": 5.5, "bigha": 13750 }
+  },
+  {
+    "name": "Onion",
+    "planting_months": "October - November",
+    "water_timing": "Every 7-10 days",
+    "fertilizers": "NPK 100:50:50 kg/ha",
+    "soil_preparation": "Loose, well-drained",
+    "harvesting_time": "January - March",
+    "image": "/placeholder.svg",
+    "cost": { "acre": 20000, "hectare": 50000, "sq_meter": 5, "bigha": 12500 }
+  },
+  {
+    "name": "Cumin",
+    "planting_months": "November - December",
+    "water_timing": "Every 10-15 days",
+    "fertilizers": "NPK 60:30:20 kg/ha",
+    "soil_preparation": "Sandy loam, well-drained",
+    "harvesting_time": "February - March",
+    "image": "/placeholder.svg",
+    "cost": { "acre": 17000, "hectare": 42500, "sq_meter": 4.25, "bigha": 10625 }
+  }
+] 

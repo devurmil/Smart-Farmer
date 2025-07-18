@@ -12,6 +12,8 @@ import Index from "./pages/Index";
 import Calculator from "./pages/Calculator";
 import NotFound from "./pages/NotFound";
 import DiseaseDetection from "./components/DiseaseDetection";
+import CostPlanning from "./pages/CostPlanning";
+import CropDetail from "./pages/CropDetail";
 
 const queryClient = new QueryClient();
 
@@ -40,6 +42,8 @@ const App = () => {
                   <Route path="/" element={<Index />} />
                   <Route path="/calculator" element={<Calculator />} />
                   <Route path="/disease" element={<DiseaseDetection />} />
+                  <Route path="/cost-planning" element={<CostPlanning />} />
+                  <Route path="/cost-planning/:cropName" element={<CropDetail />} />
                   {/* Catch-all route */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>

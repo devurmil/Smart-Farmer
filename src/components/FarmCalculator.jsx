@@ -56,7 +56,7 @@ const FarmCalculator = () => {
       initMap();
     } else {
       const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=geometry,drawing`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyCgsbunkDdwkLdv67vy9GdTg2C3RAMtEr0&libraries=geometry,drawing`;
       script.async = true;
       script.defer = true;
       script.onload = initMap;

@@ -25,7 +25,7 @@ const navigationItems = [
   {
     name: "Cost Planning",
     icon: DollarSign,
-    href: "#costs",
+    href: "/costs-planning",
     current: false
   },
   {

@@ -1,7 +1,7 @@
 
 import { Calculator, Camera, DollarSign, Tractor, Newspaper, Store, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useLocation } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
 
 const navigationItems = [
   {
@@ -25,7 +25,7 @@ const navigationItems = [
   {
     name: "Cost Planning",
     icon: DollarSign,
-    href: "#costs",
+    href: "/cost-planning",
     current: false
   },
   {
@@ -59,9 +59,9 @@ const Navigation = () => {
           const isActive = location.pathname === item.href;
           
           return (
-            <a
+            <Link
               key={item.name}
-              href={item.href}
+              to={item.href}
               className={cn(
                 "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
                 isActive
@@ -71,7 +71,7 @@ const Navigation = () => {
             >
               <Icon className="h-5 w-5" />
               <span>{item.name}</span>
-            </a>
+            </Link>
           );
         })}
       </div>
