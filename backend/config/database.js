@@ -1,5 +1,6 @@
 const { Sequelize } = require('sequelize');
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../../.env') }); // Always load from root
 
 const sequelize = new Sequelize(
   process.env.DB_NAME,

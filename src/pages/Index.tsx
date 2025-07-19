@@ -1,5 +1,4 @@
 
-import Header from "@/components/Header";
 import Navigation from "@/components/Navigation";
 import DashboardCards from "@/components/DashboardCards";
 import FeatureGrid from "@/components/FeatureGrid";

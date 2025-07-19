@@ -260,9 +260,9 @@ const MarketIntelligence = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {marketPrices.map((price) => (
+                    {marketPrices.map((price, index) => (
                       <div
-                        key={price.crop}
+                        key={`${price.crop}-${price.marketLocation}-${index}`}
                         className={`p-4 rounded-lg border cursor-pointer transition-colors ${
                           selectedCrop === price.crop
                             ? "border-green-500 bg-green-50"
@@ -380,8 +380,8 @@ const MarketIntelligence = () => {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {predictions.map((prediction) => (
-                  <Card key={prediction.crop} className="border-l-4 border-l-blue-500">
+                {predictions.map((prediction, index) => (
+                  <Card key={`${prediction.crop}-${index}`} className="border-l-4 border-l-blue-500">
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between mb-3">
                         <h3 className="font-semibold">{prediction.crop}</h3>
@@ -430,8 +430,8 @@ const MarketIntelligence = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {['Cotton', 'Wheat', 'Groundnut', 'Rice'].map((crop) => (
-                      <div key={crop} className="p-4 border rounded-lg">
+                    {['Cotton', 'Wheat', 'Groundnut', 'Rice'].map((crop, index) => (
+                      <div key={`${crop}-weather-${index}`} className="p-4 border rounded-lg">
                         <div className="flex items-center justify-between mb-2">
                           <h4 className="font-semibold">{crop}</h4>
                           <Badge variant="outline">Monitoring</Badge>

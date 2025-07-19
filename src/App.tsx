@@ -21,38 +21,38 @@ import Signup from "./pages/Signup";
 
 const queryClient = new QueryClient();
 
-// Protected Route Component
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated, isLoading } = useUser();
-  
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
-      </div>
-    );
-  }
-  
-  return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
-};
-
-// Public Route Component (redirects to home if already authenticated)
-const PublicRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated, isLoading } = useUser();
-  
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
-      </div>
-    );
-  }
-  
-  return isAuthenticated ? <Navigate to="/" replace /> : <>{children}</>;
-};
-
 const AppContent = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+
+  // Protected Route Component - moved inside UserProvider
+  const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+    const { isAuthenticated, isLoading } = useUser();
+    
+    if (isLoading) {
+      return (
+        <div className="flex items-center justify-center h-screen">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+        </div>
+      );
+    }
+    
+    return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
+  };
+
+  // Public Route Component - moved inside UserProvider
+  const PublicRoute = ({ children }: { children: React.ReactNode }) => {
+    const { isAuthenticated, isLoading } = useUser();
+    
+    if (isLoading) {
+      return (
+        <div className="flex items-center justify-center h-screen">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+        </div>
+      );
+    }
+    
+    return isAuthenticated ? <Navigate to="/" replace /> : <>{children}</>;
+  };
 
   return (
     <div className="flex h-screen overflow-hidden">
