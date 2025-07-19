@@ -3,160 +3,91 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Newspaper, 
-  TrendingUp, 
-  AlertTriangle, 
-  Calendar, 
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Newspaper,
+  TrendingUp,
+  AlertTriangle,
+  Calendar,
   ExternalLink,
   Clock,
   Tag,
-  Globe
+  Globe,
+  RefreshCw,
+  Wifi,
+  WifiOff
 } from "lucide-react";
+import newsService, { NewsArticle, MarketUpdate } from "@/services/newsService";
 
-interface NewsItem {
-  id: string;
-  title: string;
-  summary: string;
-  category: "market" | "policy" | "weather" | "export" | "technology";
-  impact: "high" | "medium" | "low";
-  date: string;
-  source: string;
-  readTime: string;
-  tags: string[];
-  url?: string;
-}
-
-interface MarketUpdate {
-  id: string;
-  type: "price_alert" | "volume_spike" | "trend_change";
-  crop: string;
-  message: string;
-  timestamp: string;
-  severity: "info" | "warning" | "critical";
-}
+// Type alias for compatibility
+type NewsItem = NewsArticle;
 
 const MarketNews = () => {
   const [news, setNews] = useState<NewsItem[]>([]);
   const [marketUpdates, setMarketUpdates] = useState<MarketUpdate[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isOnline, setIsOnline] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
-  // Mock data generation
-  useEffect(() => {
-    const generateMockNews = (): NewsItem[] => {
-      const mockNews: NewsItem[] = [
-        {
-          id: "1",
-          title: "Cotton Prices Surge 15% Following Export Demand from Bangladesh",
-          summary: "Strong international demand and reduced domestic supply have pushed cotton prices to a 6-month high. Farmers are advised to consider selling strategies.",
-          category: "market",
-          impact: "high",
-          date: "2 hours ago",
-          source: "Agricultural Times",
-          readTime: "3 min read",
-          tags: ["Cotton", "Export", "Price Rise"],
-          url: "#"
-        },
-        {
-          id: "2",
-          title: "New Government Subsidy Scheme for Wheat Farmers Announced",
-          summary: "The Ministry of Agriculture announces a ₹5000 per hectare subsidy for wheat farmers adopting sustainable farming practices.",
-          category: "policy",
-          impact: "high",
-          date: "4 hours ago",
-          source: "Government Portal",
-          readTime: "5 min read",
-          tags: ["Wheat", "Subsidy", "Government"],
-          url: "#"
-        },
-        {
-          id: "3",
-          title: "Monsoon Forecast: Above Normal Rainfall Expected",
-          summary: "IMD predicts 105% of normal rainfall this season, potentially boosting Kharif crop yields but raising concerns about flooding in some regions.",
-          category: "weather",
-          impact: "medium",
-          date: "6 hours ago",
-          source: "Weather Bureau",
-          readTime: "4 min read",
-          tags: ["Monsoon", "Kharif", "Rainfall"],
-          url: "#"
-        },
-        {
-          id: "4",
-          title: "Rice Export Ban Lifted: Prices Expected to Stabilize",
-          summary: "Government lifts the temporary ban on rice exports, allowing farmers to access international markets again. Domestic prices may see adjustment.",
-          category: "export",
-          impact: "high",
-          date: "8 hours ago",
-          source: "Trade Ministry",
-          readTime: "3 min read",
-          tags: ["Rice", "Export", "Policy"],
-          url: "#"
-        },
-        {
-          id: "5",
-          title: "AI-Powered Crop Monitoring Technology Gains Traction",
-          summary: "New satellite-based monitoring systems help farmers optimize irrigation and detect diseases early, improving yields by up to 20%.",
-          category: "technology",
-          impact: "medium",
-          date: "1 day ago",
-          source: "AgriTech Today",
-          readTime: "6 min read",
-          tags: ["Technology", "AI", "Monitoring"],
-          url: "#"
-        },
-        {
-          id: "6",
-          title: "Onion Prices Drop 30% as New Harvest Arrives",
-          summary: "Fresh onion arrivals in major markets have caused a significant price correction. Storage holders are advised to release stock gradually.",
-          category: "market",
-          impact: "medium",
-          date: "1 day ago",
-          source: "Market Watch",
-          readTime: "2 min read",
-          tags: ["Onion", "Price Drop", "Harvest"],
-          url: "#"
-        }
-      ];
-      return mockNews;
-    };
+  // Fetch real news data
+  const fetchNewsData = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Fetch agricultural news and market updates
+      const [newsResponse, updates] = await Promise.all([
+        newsService.getAgriculturalNews(selectedCategory === "all" ? undefined : selectedCategory, 20),
+        newsService.getMarketUpdates()
+      ]);
 
-    const generateMockUpdates = (): MarketUpdate[] => {
-      return [
-        {
-          id: "1",
-          type: "price_alert",
-          crop: "Wheat",
-          message: "Wheat prices crossed ₹2,500/quintal in Delhi market",
-          timestamp: "15 minutes ago",
-          severity: "info"
-        },
-        {
-          id: "2",
-          type: "volume_spike",
-          crop: "Cotton",
-          message: "Unusual high trading volume detected - 300% above average",
-          timestamp: "1 hour ago",
-          severity: "warning"
-        },
-        {
-          id: "3",
-          type: "trend_change",
-          crop: "Rice",
-          message: "Price trend reversed from declining to rising",
-          timestamp: "2 hours ago",
-          severity: "critical"
-        }
-      ];
-    };
-
-    setTimeout(() => {
-      setNews(generateMockNews());
-      setMarketUpdates(generateMockUpdates());
+      if (newsResponse.success) {
+        setNews(newsResponse.articles);
+        setMarketUpdates(updates);
+        setIsOnline(true);
+        setLastUpdated(new Date());
+      } else {
+        throw new Error(newsResponse.error || 'Failed to fetch news');
+      }
+    } catch (error) {
+      console.error('Error fetching news data:', error);
+      setError(error instanceof Error ? error.message : 'Failed to fetch news data');
+      setIsOnline(false);
+      
+      // Keep existing data if available, otherwise show empty state
+      if (news.length === 0) {
+        setNews([]);
+        setMarketUpdates([]);
+      }
+    } finally {
       setLoading(false);
-    }, 800);
+    }
+  };
+
+  // Initial data fetch
+  useEffect(() => {
+    fetchNewsData();
   }, []);
+
+  // Refetch when category changes
+  useEffect(() => {
+    if (selectedCategory !== "all") {
+      fetchNewsData();
+    }
+  }, [selectedCategory]);
+
+  // Auto-refresh every 15 minutes
+  useEffect(() => {
+    const interval = setInterval(fetchNewsData, 15 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Handle manual refresh
+  const handleRefresh = () => {
+    fetchNewsData();
+  };
 
   const filteredNews = selectedCategory === "all" 
     ? news 
@@ -191,12 +122,13 @@ const MarketNews = () => {
     }
   };
 
-  if (loading) {
+  if (loading && news.length === 0) {
     return (
       <Card>
         <CardContent className="p-6">
           <div className="flex items-center justify-center h-64">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+            <span className="ml-3 text-gray-600">Loading latest agricultural news...</span>
           </div>
         </CardContent>
       </Card>
@@ -205,6 +137,20 @@ const MarketNews = () => {
 
   return (
     <div className="space-y-6">
+      {/* Connection Status Alert */}
+      {error && (
+        <Alert variant="destructive">
+          <WifiOff className="h-4 w-4" />
+          <AlertDescription>
+            {error}. Showing cached data if available.
+            <Button variant="outline" size="sm" onClick={handleRefresh} className="ml-2">
+              <RefreshCw className="h-3 w-3 mr-1" />
+              Retry
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
       <Tabs defaultValue="news" className="space-y-6">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="news">Market News</TabsTrigger>
@@ -220,12 +166,31 @@ const MarketNews = () => {
                   <CardTitle className="flex items-center">
                     <Newspaper className="h-5 w-5 mr-2" />
                     Agricultural Market News
+                    {isOnline ? (
+                      <Wifi className="h-4 w-4 ml-2 text-green-500" />
+                    ) : (
+                      <WifiOff className="h-4 w-4 ml-2 text-red-500" />
+                    )}
                   </CardTitle>
                   <CardDescription>
                     Latest news and updates affecting agricultural markets
+                    {lastUpdated && (
+                      <span className="block text-xs text-gray-500 mt-1">
+                        Last updated: {lastUpdated.toLocaleTimeString()}
+                      </span>
+                    )}
                   </CardDescription>
                 </div>
                 <div className="flex items-center space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleRefresh}
+                    disabled={loading}
+                  >
+                    <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                    Refresh
+                  </Button>
                   <Button variant="outline" size="sm">
                     <Calendar className="h-4 w-4 mr-2" />
                     Filter by Date
@@ -259,55 +224,76 @@ const MarketNews = () => {
 
               {/* News List */}
               <div className="space-y-4">
-                {filteredNews.map((item) => (
-                  <Card key={item.id} className="hover:shadow-md transition-shadow">
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center space-x-2">
-                          {getCategoryIcon(item.category)}
-                          <Badge variant="outline" className="capitalize">
-                            {item.category}
-                          </Badge>
-                          <Badge className={getImpactColor(item.impact)}>
-                            {item.impact} impact
-                          </Badge>
-                        </div>
-                        <div className="text-right text-sm text-gray-500">
-                          <div className="flex items-center">
-                            <Clock className="h-3 w-3 mr-1" />
-                            {item.date}
+                {filteredNews.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Newspaper className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-500">
+                      {loading ? "Loading news..." : "No news articles found for this category."}
+                    </p>
+                    {!loading && (
+                      <Button variant="outline" onClick={handleRefresh} className="mt-4">
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Try Again
+                      </Button>
+                    )}
+                  </div>
+                ) : (
+                  filteredNews.map((item) => (
+                    <Card key={item.id} className="hover:shadow-md transition-shadow">
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center space-x-2">
+                            {getCategoryIcon(item.category)}
+                            <Badge variant="outline" className="capitalize">
+                              {item.category}
+                            </Badge>
+                            <Badge className={getImpactColor(item.impact)}>
+                              {item.impact} impact
+                            </Badge>
+                          </div>
+                          <div className="text-right text-sm text-gray-500">
+                            <div className="flex items-center">
+                              <Clock className="h-3 w-3 mr-1" />
+                              {item.date}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      
-                      <h3 className="font-semibold text-lg mb-2 hover:text-green-600 cursor-pointer">
-                        {item.title}
-                      </h3>
-                      
-                      <p className="text-gray-600 mb-3 line-clamp-2">
-                        {item.summary}
-                      </p>
-                      
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4 text-sm text-gray-500">
-                          <span>{item.source}</span>
-                          <span>•</span>
-                          <span>{item.readTime}</span>
+                        
+                        <h3 className="font-semibold text-lg mb-2 hover:text-green-600 cursor-pointer">
+                          {item.title}
+                        </h3>
+                        
+                        <p className="text-gray-600 mb-3 line-clamp-2">
+                          {item.summary}
+                        </p>
+                        
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-4 text-sm text-gray-500">
+                            <span>{item.source}</span>
+                            <span>•</span>
+                            <span>{item.readTime}</span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            {item.tags.slice(0, 2).map((tag) => (
+                              <Badge key={tag} variant="secondary" className="text-xs">
+                                {tag}
+                              </Badge>
+                            ))}
+                            {item.url && item.url !== "#" && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => window.open(item.url, '_blank')}
+                              >
+                                <ExternalLink className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex items-center space-x-2">
-                          {item.tags.slice(0, 2).map((tag) => (
-                            <Badge key={tag} variant="secondary" className="text-xs">
-                              {tag}
-                            </Badge>
-                          ))}
-                          <Button variant="ghost" size="sm">
-                            <ExternalLink className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>
@@ -327,36 +313,53 @@ const MarketNews = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {marketUpdates.map((update) => (
-                  <div
-                    key={update.id}
-                    className={`p-4 border-l-4 rounded-lg ${getSeverityColor(update.severity)}`}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center space-x-2">
-                        <Badge variant="outline">{update.crop}</Badge>
-                        <Badge 
-                          className={`capitalize ${
-                            update.severity === "critical" ? "bg-red-100 text-red-700" :
-                            update.severity === "warning" ? "bg-yellow-100 text-yellow-700" :
-                            "bg-blue-100 text-blue-700"
-                          }`}
-                        >
-                          {update.type.replace("_", " ")}
-                        </Badge>
-                      </div>
-                      <span className="text-xs text-gray-500">{update.timestamp}</span>
-                    </div>
-                    <p className="text-sm font-medium">{update.message}</p>
+                {marketUpdates.length === 0 ? (
+                  <div className="text-center py-8">
+                    <AlertTriangle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-500">
+                      {loading ? "Loading market updates..." : "No market updates available."}
+                    </p>
                   </div>
-                ))}
+                ) : (
+                  marketUpdates.map((update) => (
+                    <div
+                      key={update.id}
+                      className={`p-4 border-l-4 rounded-lg ${getSeverityColor(update.severity)}`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center space-x-2">
+                          <Badge variant="outline">{update.crop}</Badge>
+                          <Badge
+                            className={`capitalize ${
+                              update.severity === "critical" ? "bg-red-100 text-red-700" :
+                              update.severity === "warning" ? "bg-yellow-100 text-yellow-700" :
+                              "bg-blue-100 text-blue-700"
+                            }`}
+                          >
+                            {update.type.replace("_", " ")}
+                          </Badge>
+                          {update.source && (
+                            <Badge variant="secondary" className="text-xs">
+                              {update.source}
+                            </Badge>
+                          )}
+                        </div>
+                        <span className="text-xs text-gray-500">{update.timestamp}</span>
+                      </div>
+                      <p className="text-sm font-medium">{update.message}</p>
+                    </div>
+                  ))
+                )}
               </div>
               
-              <div className="mt-6 text-center">
-                <Button variant="outline">
-                  Load More Updates
-                </Button>
-              </div>
+              {marketUpdates.length > 0 && (
+                <div className="mt-6 text-center">
+                  <Button variant="outline" onClick={handleRefresh} disabled={loading}>
+                    <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                    Refresh Updates
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

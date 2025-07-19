@@ -4,21 +4,23 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  Bell, 
-  Calendar, 
-  BarChart3, 
+import {
+  TrendingUp,
+  TrendingDown,
+  Bell,
+  Calendar,
+  BarChart3,
   Newspaper,
   Target,
   AlertTriangle,
   DollarSign,
-  Activity
+  Activity,
+  Cloud
 } from "lucide-react";
 import PriceChart from "@/components/PriceChart";
 import MarketNews from "@/components/MarketNews";
 import PriceAlerts from "@/components/PriceAlerts";
+import WeatherWidget from "@/components/WeatherWidget";
 import agmarknetService from "@/services/agmarknetService";
 import cropData from "@/lib/cropData.json";
 
@@ -233,10 +235,11 @@ const MarketIntelligence = () => {
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="prices" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="prices">Live Prices</TabsTrigger>
           <TabsTrigger value="trends">Market Trends</TabsTrigger>
           <TabsTrigger value="predictions">Price Predictions</TabsTrigger>
+          <TabsTrigger value="weather">Weather Impact</TabsTrigger>
           <TabsTrigger value="news">Market News</TabsTrigger>
         </TabsList>
 
@@ -406,6 +409,91 @@ const MarketIntelligence = () => {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Weather Impact Tab */}
+        <TabsContent value="weather" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div>
+              <WeatherWidget city="Ahmedabad" showForecast={true} showAlerts={true} />
+            </div>
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Cloud className="h-5 w-5 mr-2" />
+                    Weather Impact on Crops
+                  </CardTitle>
+                  <CardDescription>
+                    How current weather conditions affect your selected crops
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {['Cotton', 'Wheat', 'Groundnut', 'Rice'].map((crop) => (
+                      <div key={crop} className="p-4 border rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-semibold">{crop}</h4>
+                          <Badge variant="outline">Monitoring</Badge>
+                        </div>
+                        <div className="text-sm text-gray-600 space-y-1">
+                          <p>• Current conditions: Favorable for growth</p>
+                          <p>• Temperature impact: Optimal range</p>
+                          <p>• Moisture levels: Adequate</p>
+                          <p>• Risk factors: Monitor for pest activity</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Weather-Based Price Predictions</CardTitle>
+                  <CardDescription>
+                    How weather patterns may affect future crop prices
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                      <div>
+                        <div className="font-medium">Cotton</div>
+                        <div className="text-sm text-gray-600">Good weather conditions</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-green-600 font-semibold">+2.5%</div>
+                        <div className="text-xs text-gray-500">Expected increase</div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
+                      <div>
+                        <div className="font-medium">Wheat</div>
+                        <div className="text-sm text-gray-600">Moderate weather stress</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-yellow-600 font-semibold">-1.2%</div>
+                        <div className="text-xs text-gray-500">Potential decrease</div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                      <div>
+                        <div className="font-medium">Rice</div>
+                        <div className="text-sm text-gray-600">Optimal monsoon conditions</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-blue-600 font-semibold">+4.1%</div>
+                        <div className="text-xs text-gray-500">Strong growth expected</div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </TabsContent>
 
         {/* Market News Tab */}

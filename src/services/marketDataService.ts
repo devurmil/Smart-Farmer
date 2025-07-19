@@ -347,13 +347,30 @@ class MarketDataService {
    */
   async getMarketNews(): Promise<any[]> {
     try {
-      // Integrate with news APIs like NewsAPI, RSS feeds, etc.
-      const newsAPIs = [
-        "https://newsapi.org/v2/everything?q=agriculture+Gujarat&apiKey=YOUR_NEWS_API_KEY",
-        "https://feeds.feedburner.com/AgricultureNews", // RSS feed
-      ];
-
-      // For now, return mock news data
+      // Import news service dynamically to avoid circular dependencies
+      const { default: newsService } = await import('./newsService');
+      
+      // Fetch agricultural news with market focus
+      const newsResponse = await newsService.getAgriculturalNews('market', 10);
+      
+      if (newsResponse.success) {
+        return newsResponse.articles.map(article => ({
+          title: article.title,
+          summary: article.summary,
+          source: article.source,
+          date: article.date,
+          category: article.category,
+          url: article.url,
+          impact: article.impact,
+          tags: article.tags
+        }));
+      }
+      
+      throw new Error('Failed to fetch news from NewsAPI');
+    } catch (error) {
+      console.error("Error fetching market news:", error);
+      
+      // Fallback to mock news data
       return [
         {
           title: "Gujarat Cotton Prices Rise Due to Export Demand",
@@ -370,9 +387,6 @@ class MarketDataService {
           category: "harvest"
         }
       ];
-    } catch (error) {
-      console.error("Error fetching market news:", error);
-      return [];
     }
   }
 
