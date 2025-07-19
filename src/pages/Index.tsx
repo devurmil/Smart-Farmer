@@ -39,7 +39,7 @@ const Index = () => {
           <div className="max-w-7xl mx-auto">
             <div className="mb-8">
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                Welcome back, Rajesh! 🌾
+                Welcome back, Dear Farmer! 🌾
               </h1>
               <p className="text-gray-600">
                 Here's what's happening with your farm today. Your wheat crop is looking healthy and you have 2 equipment bookings this week.

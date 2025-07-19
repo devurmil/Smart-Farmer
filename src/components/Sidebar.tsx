@@ -1,9 +1,10 @@
-import { Calculator, Camera, DollarSign, Tractor, Newspaper, Store, BarChart3 } from "lucide-react";
+import { Calculator, Camera, DollarSign, Tractor, Newspaper, Store, BarChart3, Menu, Settings } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 interface SidebarProps {
   collapsed: boolean;
+  onToggleCollapse?: () => void;
 }
 
 const navigationItems = [
@@ -16,7 +17,7 @@ const navigationItems = [
   { name: "Suppliers", icon: Store, href: "#suppliers" }
 ];
 
-const Sidebar = ({ collapsed }: SidebarProps) => {
+const Sidebar = ({ collapsed, onToggleCollapse }: SidebarProps) => {
   const { pathname } = useLocation();
 
   return (
@@ -27,11 +28,12 @@ const Sidebar = ({ collapsed }: SidebarProps) => {
       )}
     >
       <div className="p-4 flex items-center justify-center border-b border-green-800">
-        <img
-          src="/logo.png"
-          alt="Logo"
-          className={`transition-all duration-300 ${collapsed ? "w-8 h-8" : "w-12 h-12"}`}
-        />
+        <button
+          onClick={onToggleCollapse}
+          className="p-1 rounded-md hover:bg-green-800 transition-colors"
+        >
+          <Menu className="h-5 w-5 text-white" />
+        </button>
       </div>
 
       <nav className="flex-1 px-2 py-4 space-y-2">
@@ -54,6 +56,19 @@ const Sidebar = ({ collapsed }: SidebarProps) => {
           );
         })}
       </nav>
+
+      {/* Settings Icon at the bottom */}
+      <div className="p-2 border-t border-green-800">
+        <button
+          className={cn(
+            "flex items-center gap-3 px-4 py-2 rounded-md hover:bg-green-800 transition-colors w-full",
+            collapsed ? "justify-center" : ""
+          )}
+        >
+          <Settings className="h-5 w-5" />
+          {!collapsed && <span>Settings</span>}
+        </button>
+      </div>
     </aside>
   );
 };

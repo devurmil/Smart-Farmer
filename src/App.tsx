@@ -28,13 +28,12 @@ const App = () => {
         <BrowserRouter>
           <div className="flex h-screen overflow-hidden">
             {/* Sidebar */}
-            {/* @ts-ignore */}
             <Sidebar collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed((prev) => !prev)} />
 
             {/* Main Content */}
             <div className="flex flex-col flex-1 overflow-auto">
-              {/* Header with toggle control */}
-              <Header onMenuClick={() => setSidebarCollapsed((prev) => !prev)} />
+              {/* Header */}
+              <Header />
 
               {/* Page Content */}
               <main className="flex-1 overflow-y-auto p-4 bg-gray-50">

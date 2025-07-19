@@ -1,14 +1,12 @@
-import { Search, Bell, User, Menu, X } from "lucide-react";
+import { Search, Bell, User, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-interface HeaderProps {
-  onMenuClick?: () => void;
-}
+interface HeaderProps {}
 
-const Header = ({ onMenuClick }: HeaderProps) => {
+const Header = ({}: HeaderProps) => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [showResults, setShowResults] = useState(false);
@@ -24,7 +22,7 @@ const Header = ({ onMenuClick }: HeaderProps) => {
     { name: "Dashboard", href: "/", description: "Main dashboard with overview", category: "Main" },
     { name: "Farm Area Calculator", href: "/calculator", description: "Calculate farm area using GPS and maps", category: "Tools" },
     { name: "AI Disease Detection", href: "/disease", description: "Detect crop diseases using AI", category: "Tools" },
-    { name: "Cost Planning", href: "#costs", description: "Plan farming budget and costs", category: "Planning" },
+    { name: "Cost Planning", href: "/cost-planning", description: "Plan farming budget and costs", category: "Planning" },
     { name: "Equipment Rental", href: "#equipment", description: "Rent tractors and farm equipment", category: "Services" },
     { name: "Market Intelligence", href: "#news", description: "Real-time crop prices and trends", category: "Market" },
     { name: "Supplier Network", href: "#suppliers", description: "Find verified suppliers", category: "Services" },
@@ -65,10 +63,6 @@ const Header = ({ onMenuClick }: HeaderProps) => {
     <header className="bg-white border-b border-gray-200 px-4 py-3 shadow-sm">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          {/* Sidebar Toggle Button */}
-          <Button variant="ghost" size="sm" onClick={onMenuClick}>
-            <Menu className="h-5 w-5" />
-          </Button>
           <div className="flex items-center space-x-2 cursor-pointer" onClick={handleLogoClick}>
             <div className="w-12 h-12 rounded-lg flex items-center justify-center overflow-hidden">
               <img 
