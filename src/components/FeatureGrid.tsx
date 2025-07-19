@@ -50,7 +50,7 @@ const FeatureGrid = () => {
       color: "bg-purple-50 text-purple-600",
       action: "View Prices",
       status: "Updated",
-      href: "#news"
+      href: "/market-intelligence"
     },
     {
       title: "Supplier Network",
