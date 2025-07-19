@@ -35,23 +35,49 @@ const Signup = () => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-      // Handle signup logic here
-      console.log('Signup attempted with:', formData);
-      
-      // For demo purposes, create a mock user
-      const mockUser = {
-        id: '1',
+    try {
+      // Real API call to backend
+      const requestData = {
         name: formData.fullName,
         email: formData.email,
-        loginMethod: 'email' as const
+        password: formData.password,
+        phone: formData.phone.replace(/^\+91/, '').replace(/\D/g, '') // Remove +91 and non-digits
       };
       
-      login(mockUser);
-      navigate('/');
-    }, 2000);
+      console.log('Sending data to backend:', requestData);
+      
+      const response = await fetch('http://localhost:5000/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData)
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Success - user created
+        console.log('Signup successful:', data);
+        login(data.data.user);
+        navigate('/');
+      } else {
+        // Error from backend
+        console.error('Signup failed:', data.message);
+        if (data.errors) {
+          console.error('Validation errors:', data.errors);
+          const errorMessages = data.errors.map((err: any) => `${err.field}: ${err.message}`).join(', ');
+          alert(`Signup failed: ${errorMessages}`);
+        } else {
+          alert(`Signup failed: ${data.message}`);
+        }
+      }
+    } catch (error) {
+      console.error('Signup error:', error);
+      alert('Signup failed: Network error. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
 

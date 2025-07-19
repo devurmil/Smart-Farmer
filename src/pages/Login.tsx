@@ -22,23 +22,37 @@ const Login = () => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      // Real API call to backend
+      const response = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: email,
+          password: password
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Success - user logged in
+        console.log('Login successful:', data);
+        login(data.data.user);
+        navigate('/');
+      } else {
+        // Error from backend
+        console.error('Login failed:', data.message);
+        alert(`Login failed: ${data.message}`);
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      alert('Login failed: Network error. Please try again.');
+    } finally {
       setIsLoading(false);
-      // Handle login logic here
-      console.log('Login attempted with:', { email, password });
-      
-      // For demo purposes, create a mock user
-      const mockUser = {
-        id: '1',
-        name: 'Demo Farmer',
-        email: email,
-        loginMethod: 'email' as const
-      };
-      
-      login(mockUser);
-      navigate('/');
-    }, 2000);
+    }
   };
 
 
