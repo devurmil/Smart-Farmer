@@ -40,7 +40,7 @@ const Login = () => {
       if (response.ok) {
         // Success - user logged in
         console.log('Login successful:', data);
-        login(data.data.user);
+        login(data.data.user, data.data.token);
         navigate('/');
       } else {
         // Error from backend

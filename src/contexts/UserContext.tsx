@@ -6,13 +6,15 @@ interface User {
   email: string;
   profilePicture?: string;
   loginMethod: 'email' | 'facebook' | 'google';
+  role?: string;
 }
 
 interface UserContextType {
   user: User | null;
+  token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (userData: User) => void;
+  login: (userData: User, authToken?: string) => void;
   logout: () => void;
   updateUser: (updates: Partial<User>) => void;
 }
@@ -33,31 +35,43 @@ interface UserProviderProps {
 
 export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // Check for existing user session on app load
   useEffect(() => {
     const savedUser = localStorage.getItem('smartFarmUser');
-    if (savedUser) {
+    const savedToken = localStorage.getItem('smartFarmToken');
+    
+    if (savedUser && savedToken) {
       try {
         const userData = JSON.parse(savedUser);
         setUser(userData);
+        setToken(savedToken);
       } catch (error) {
         console.error('Error parsing saved user data:', error);
         localStorage.removeItem('smartFarmUser');
+        localStorage.removeItem('smartFarmToken');
       }
     }
     setIsLoading(false);
   }, []);
 
-  const login = (userData: User) => {
+  const login = (userData: User, authToken?: string) => {
     setUser(userData);
     localStorage.setItem('smartFarmUser', JSON.stringify(userData));
+    
+    if (authToken) {
+      setToken(authToken);
+      localStorage.setItem('smartFarmToken', authToken);
+    }
   };
 
   const logout = () => {
     setUser(null);
+    setToken(null);
     localStorage.removeItem('smartFarmUser');
+    localStorage.removeItem('smartFarmToken');
     
     // Logout from Facebook if user was logged in via Facebook
     if (window.FB) {
@@ -75,7 +89,8 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 
   const value: UserContextType = {
     user,
-    isAuthenticated: !!user,
+    token,
+    isAuthenticated: !!user && !!token,
     isLoading,
     login,
     logout,

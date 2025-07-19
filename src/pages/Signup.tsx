@@ -16,7 +16,8 @@ const Signup = () => {
     email: '',
     phone: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    role: 'farmer'
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -24,7 +25,7 @@ const Signup = () => {
   
   const { isFacebookLoading, facebookLogin, isSDKLoaded } = useFacebookLogin();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
@@ -41,7 +42,8 @@ const Signup = () => {
         name: formData.fullName,
         email: formData.email,
         password: formData.password,
-        phone: formData.phone.replace(/^\+91/, '').replace(/\D/g, '') // Remove +91 and non-digits
+        phone: formData.phone.replace(/^\+91/, '').replace(/\D/g, ''), // Remove +91 and non-digits
+        role: formData.role
       };
       
       console.log('Sending data to backend:', requestData);
@@ -59,7 +61,7 @@ const Signup = () => {
       if (response.ok) {
         // Success - user created
         console.log('Signup successful:', data);
-        login(data.data.user);
+        login(data.data.user, data.data.token);
         navigate('/');
       } else {
         // Error from backend
@@ -164,6 +166,27 @@ const Signup = () => {
                     className="pl-10 h-11 border-gray-300 focus:border-green-500 focus:ring-green-500"
                     required
                   />
+                </div>
+              </div>
+
+              {/* Role Field */}
+              <div className="space-y-2">
+                <Label htmlFor="role" className="text-sm font-medium text-gray-700">
+                  Role
+                </Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <select
+                    id="role"
+                    name="role"
+                    value={formData.role}
+                    onChange={handleChange}
+                    className="w-full pl-10 h-11 border border-gray-300 rounded-md focus:border-green-500 focus:ring-green-500 bg-white text-gray-900"
+                    required
+                  >
+                    <option value="farmer">Farmer</option>
+                    <option value="owner">Equipment Owner</option>
+                  </select>
                 </div>
               </div>
 

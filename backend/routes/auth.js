@@ -9,7 +9,7 @@ const router = express.Router();
 // @access  Public
 router.post('/register', validate(registerSchema), async (req, res) => {
   try {
-    const { name, email, password, phone, location } = req.body;
+    const { name, email, password, phone, location, role } = req.body;
 
     // Check if user already exists
     const existingUser = await User.findOne({ where: { email } });
@@ -27,7 +27,8 @@ router.post('/register', validate(registerSchema), async (req, res) => {
       password,
       phone,
       location,
-      login_method: 'email'
+      login_method: 'email',
+      role
     });
 
     // Generate token

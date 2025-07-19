@@ -5,6 +5,8 @@ const Crop = require('./Crop');
 const DiseaseDetection = require('./DiseaseDetection');
 const WeatherData = require('./WeatherData');
 const CostPlan = require('./CostPlan');
+const Equipment = require('./Equipment');
+const Booking = require('./Booking');
 
 // Define associations
 User.hasMany(Farm, { foreignKey: 'user_id', as: 'farms' });
@@ -37,6 +39,16 @@ CostPlan.belongsTo(Farm, { foreignKey: 'farm_id', as: 'farm' });
 Crop.hasMany(CostPlan, { foreignKey: 'crop_id', as: 'costPlans' });
 CostPlan.belongsTo(Crop, { foreignKey: 'crop_id', as: 'crop' });
 
+// Equipment rental associations
+User.hasMany(Equipment, { foreignKey: 'ownerId', as: 'equipment' });
+Equipment.belongsTo(User, { foreignKey: 'ownerId', as: 'owner' });
+
+Equipment.hasMany(Booking, { foreignKey: 'equipmentId', as: 'bookings' });
+Booking.belongsTo(Equipment, { foreignKey: 'equipmentId', as: 'equipment' });
+
+User.hasMany(Booking, { foreignKey: 'userId', as: 'bookings' });
+Booking.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+
 // Sync database
 const syncDatabase = async (force = false) => {
   try {
@@ -56,5 +68,7 @@ module.exports = {
   DiseaseDetection,
   WeatherData,
   CostPlan,
+  Equipment,
+  Booking,
   syncDatabase
 };

@@ -31,7 +31,7 @@ const navigationItems = [
   {
     name: "Equipment Rental",
     icon: Tractor,
-    href: "#equipment",
+    href: "/equipment-rental",
     current: false
   },
   {

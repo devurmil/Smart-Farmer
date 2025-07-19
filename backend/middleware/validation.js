@@ -27,7 +27,8 @@ const registerSchema = Joi.object({
     lat: Joi.number().optional(),
     lng: Joi.number().optional(),
     address: Joi.string().optional()
-  }).optional()
+  }).optional(),
+  role: Joi.string().valid('farmer', 'owner').required()
 });
 
 const loginSchema = Joi.object({

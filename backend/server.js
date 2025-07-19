@@ -97,6 +97,11 @@ app.use('/api/farms', require('./routes/farms'));
 app.use('/api/crops', require('./routes/crops'));
 app.use('/api/disease', require('./routes/disease'));
 app.use('/api/cost-planning', require('./routes/cost-planning'));
+app.use('/api/equipment', require('./routes/equipment'));
+app.use('/api/booking', require('./routes/booking'));
+
+// Serve uploads directory for images
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // 404 handler for API routes
 app.use('/api/*', (req, res) => {

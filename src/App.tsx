@@ -18,6 +18,7 @@ import CropDetail from "./pages/CropDetail";
 import MarketIntelligence from "./pages/MarketIntelligence";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import EquipmentRentalPage from "./pages/EquipmentRentalPage";
 
 const queryClient = new QueryClient();
 
@@ -75,6 +76,7 @@ const AppContent = () => {
             <Route path="/cost-planning" element={<ProtectedRoute><CostPlanning /></ProtectedRoute>} />
             <Route path="/cost-planning/:cropName" element={<ProtectedRoute><CropDetail /></ProtectedRoute>} />
             <Route path="/market-intelligence" element={<ProtectedRoute><MarketIntelligence /></ProtectedRoute>} />
+            <Route path="/equipment-rental" element={<ProtectedRoute><EquipmentRentalPage /></ProtectedRoute>} />
             {/* Catch-all route */}
             <Route path="*" element={<NotFound />} />
           </Routes>
