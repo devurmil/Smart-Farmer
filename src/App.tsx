@@ -15,6 +15,7 @@ import NotFound from "./pages/NotFound";
 import DiseaseDetection from "./components/DiseaseDetection";
 import CostPlanning from "./pages/CostPlanning";
 import CropDetail from "./pages/CropDetail";
+import MarketIntelligence from "./pages/MarketIntelligence";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 
@@ -73,6 +74,7 @@ const AppContent = () => {
             <Route path="/disease" element={<ProtectedRoute><DiseaseDetection /></ProtectedRoute>} />
             <Route path="/cost-planning" element={<ProtectedRoute><CostPlanning /></ProtectedRoute>} />
             <Route path="/cost-planning/:cropName" element={<ProtectedRoute><CropDetail /></ProtectedRoute>} />
+            <Route path="/market-intelligence" element={<ProtectedRoute><MarketIntelligence /></ProtectedRoute>} />
             {/* Catch-all route */}
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -1,0 +1,211 @@
+{
+  "crops": [
+    {
+      "name": "Wheat",
+      "currentPrice": 2650,
+      "previousPrice": 2580,
+      "change": 70,
+      "changePercent": 2.71,
+      "trend": "up",
+      "marketCap": "High",
+      "volatility": "Low",
+      "seasonalTrend": "Rising",
+      "bestSellingMonths": ["March", "April", "May"],
+      "markets": [
+        { "location": "Delhi", "price": 2650, "quality": "Premium" },
+        { "location": "Mumbai", "price": 2620, "quality": "Grade A" },
+        { "location": "Pune", "price": 2580, "quality": "Grade A" },
+        { "location": "Ahmedabad", "price": 2700, "quality": "Premium" }
+      ],
+      "priceHistory": [
+        { "date": "2025-01-01", "price": 2400 },
+        { "date": "2025-01-15", "price": 2450 },
+        { "date": "2025-02-01", "price": 2500 },
+        { "date": "2025-02-15", "price": 2580 },
+        { "date": "2025-03-01", "price": 2650 }
+      ],
+      "demandFactors": ["Export demand", "Government procurement", "Weather conditions"],
+      "supplyFactors": ["Harvest season", "Storage levels", "Import policies"]
+    },
+    {
+      "name": "Cotton",
+      "currentPrice": 6200,
+      "previousPrice": 5950,
+      "change": 250,
+      "changePercent": 4.20,
+      "trend": "up",
+      "marketCap": "High",
+      "volatility": "Medium",
+      "seasonalTrend": "Peak",
+      "bestSellingMonths": ["November", "December", "January"],
+      "markets": [
+        { "location": "Mumbai", "price": 6200, "quality": "Premium" },
+        { "location": "Ahmedabad", "price": 6150, "quality": "Grade A" },
+        { "location": "Nagpur", "price": 6100, "quality": "Grade A" },
+        { "location": "Hyderabad", "price": 6250, "quality": "Premium" }
+      ],
+      "priceHistory": [
+        { "date": "2025-01-01", "price": 5800 },
+        { "date": "2025-01-15", "price": 5850 },
+        { "date": "2025-02-01", "price": 5900 },
+        { "date": "2025-02-15", "price": 5950 },
+        { "date": "2025-03-01", "price": 6200 }
+      ],
+      "demandFactors": ["Textile industry demand", "Export orders", "Quality premium"],
+      "supplyFactors": ["Harvest quality", "Weather impact", "Pest issues"]
+    },
+    {
+      "name": "Rice",
+      "currentPrice": 3200,
+      "previousPrice": 3250,
+      "change": -50,
+      "changePercent": -1.54,
+      "trend": "down",
+      "marketCap": "High",
+      "volatility": "Low",
+      "seasonalTrend": "Stable",
+      "bestSellingMonths": ["November", "December", "January"],
+      "markets": [
+        { "location": "Delhi", "price": 3200, "quality": "Basmati" },
+        { "location": "Kolkata", "price": 3100, "quality": "Grade A" },
+        { "location": "Chennai", "price": 3150, "quality": "Grade A" },
+        { "location": "Hyderabad", "price": 3180, "quality": "Premium" }
+      ],
+      "priceHistory": [
+        { "date": "2025-01-01", "price": 3300 },
+        { "date": "2025-01-15", "price": 3280 },
+        { "date": "2025-02-01", "price": 3260 },
+        { "date": "2025-02-15", "price": 3250 },
+        { "date": "2025-03-01", "price": 3200 }
+      ],
+      "demandFactors": ["Domestic consumption", "Export policies", "Quality grades"],
+      "supplyFactors": ["Monsoon impact", "Storage capacity", "Government stocks"]
+    },
+    {
+      "name": "Sugarcane",
+      "currentPrice": 350,
+      "previousPrice": 340,
+      "change": 10,
+      "changePercent": 2.94,
+      "trend": "up",
+      "marketCap": "Medium",
+      "volatility": "Low",
+      "seasonalTrend": "Rising",
+      "bestSellingMonths": ["December", "January", "February"],
+      "markets": [
+        { "location": "Pune", "price": 350, "quality": "High Sucrose" },
+        { "location": "Lucknow", "price": 345, "quality": "Standard" },
+        { "location": "Kolhapur", "price": 355, "quality": "High Sucrose" },
+        { "location": "Muzaffarnagar", "price": 340, "quality": "Standard" }
+      ],
+      "priceHistory": [
+        { "date": "2025-01-01", "price": 320 },
+        { "date": "2025-01-15", "price": 325 },
+        { "date": "2025-02-01", "price": 335 },
+        { "date": "2025-02-15", "price": 340 },
+        { "date": "2025-03-01", "price": 350 }
+      ],
+      "demandFactors": ["Sugar mill demand", "Ethanol production", "Crushing season"],
+      "supplyFactors": ["Harvest timing", "Transportation", "Mill capacity"]
+    },
+    {
+      "name": "Maize",
+      "currentPrice": 2100,
+      "previousPrice": 2080,
+      "change": 20,
+      "changePercent": 0.96,
+      "trend": "up",
+      "marketCap": "Medium",
+      "volatility": "Medium",
+      "seasonalTrend": "Stable",
+      "bestSellingMonths": ["October", "November", "December"],
+      "markets": [
+        { "location": "Delhi", "price": 2100, "quality": "Premium" },
+        { "location": "Hyderabad", "price": 2080, "quality": "Grade A" },
+        { "location": "Bangalore", "price": 2090, "quality": "Grade A" },
+        { "location": "Indore", "price": 2110, "quality": "Premium" }
+      ],
+      "priceHistory": [
+        { "date": "2025-01-01", "price": 2000 },
+        { "date": "2025-01-15", "price": 2020 },
+        { "date": "2025-02-01", "price": 2050 },
+        { "date": "2025-02-15", "price": 2080 },
+        { "date": "2025-03-01", "price": 2100 }
+      ],
+      "demandFactors": ["Poultry feed", "Starch industry", "Export demand"],
+      "supplyFactors": ["Kharif harvest", "Storage quality", "Pest damage"]
+    },
+    {
+      "name": "Groundnut",
+      "currentPrice": 5500,
+      "previousPrice": 5400,
+      "change": 100,
+      "changePercent": 1.85,
+      "trend": "up",
+      "marketCap": "Medium",
+      "volatility": "Medium",
+      "seasonalTrend": "Rising",
+      "bestSellingMonths": ["October", "November", "December"],
+      "markets": [
+        { "location": "Rajkot", "price": 5500, "quality": "Bold" },
+        { "location": "Junagadh", "price": 5480, "quality": "Java" },
+        { "location": "Kurnool", "price": 5450, "quality": "TJ" },
+        { "location": "Anantapur", "price": 5520, "quality": "Bold" }
+      ],
+      "priceHistory": [
+        { "date": "2025-01-01", "price": 5200 },
+        { "date": "2025-01-15", "price": 5250 },
+        { "date": "2025-02-01", "price": 5350 },
+        { "date": "2025-02-15", "price": 5400 },
+        { "date": "2025-03-01", "price": 5500 }
+      ],
+      "demandFactors": ["Oil extraction", "Export demand", "Confectionery use"],
+      "supplyFactors": ["Monsoon impact", "Aflatoxin levels", "Storage conditions"]
+    }
+  ],
+  "marketNews": [
+    {
+      "id": "1",
+      "title": "Cotton Exports Surge 25% in Q1 2025",
+      "summary": "Strong international demand drives cotton prices to new highs",
+      "category": "export",
+      "impact": "high",
+      "date": "2025-03-15",
+      "crops": ["Cotton"]
+    },
+    {
+      "id": "2",
+      "title": "Government Announces Minimum Support Price Increase",
+      "summary": "MSP for wheat increased by 5% for the upcoming season",
+      "category": "policy",
+      "impact": "high",
+      "date": "2025-03-14",
+      "crops": ["Wheat"]
+    },
+    {
+      "id": "3",
+      "title": "Favorable Weather Conditions Expected",
+      "summary": "IMD predicts normal monsoon, boosting crop prospects",
+      "category": "weather",
+      "impact": "medium",
+      "date": "2025-03-13",
+      "crops": ["Rice", "Cotton", "Sugarcane"]
+    }
+  ],
+  "priceAlerts": {
+    "thresholds": {
+      "high_volatility": 5,
+      "price_spike": 10,
+      "volume_surge": 200
+    },
+    "notifications": [
+      {
+        "type": "price_alert",
+        "crop": "Cotton",
+        "message": "Cotton prices increased by 4.2% in the last 24 hours",
+        "severity": "medium",
+        "timestamp": "2025-03-15T10:30:00Z"
+      }
+    ]
+  }
+}
