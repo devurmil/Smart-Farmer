@@ -3,10 +3,11 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
+import { UserProvider, useUser } from "./contexts/UserContext";
 
 import Index from "./pages/Index";
 import Calculator from "./pages/Calculator";
@@ -14,41 +15,83 @@ import NotFound from "./pages/NotFound";
 import DiseaseDetection from "./components/DiseaseDetection";
 import CostPlanning from "./pages/CostPlanning";
 import CropDetail from "./pages/CropDetail";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
 
 const queryClient = new QueryClient();
 
-const App = () => {
+// Protected Route Component
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { isAuthenticated, isLoading } = useUser();
+  
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+      </div>
+    );
+  }
+  
+  return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
+};
+
+// Public Route Component (redirects to home if already authenticated)
+const PublicRoute = ({ children }: { children: React.ReactNode }) => {
+  const { isAuthenticated, isLoading } = useUser();
+  
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+      </div>
+    );
+  }
+  
+  return isAuthenticated ? <Navigate to="/" replace /> : <>{children}</>;
+};
+
+const AppContent = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
 
+  return (
+    <div className="flex h-screen overflow-hidden">
+      {/* Sidebar */}
+      <Sidebar collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed((prev) => !prev)} />
+
+      {/* Main Content */}
+      <div className="flex flex-col flex-1 overflow-auto">
+        {/* Header */}
+        <Header />
+
+        {/* Page Content */}
+        <main className="flex-1 overflow-y-auto p-4 bg-gray-50">
+          <Routes>
+            <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+            <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
+            <Route path="/calculator" element={<ProtectedRoute><Calculator /></ProtectedRoute>} />
+            <Route path="/disease" element={<ProtectedRoute><DiseaseDetection /></ProtectedRoute>} />
+            <Route path="/cost-planning" element={<ProtectedRoute><CostPlanning /></ProtectedRoute>} />
+            <Route path="/cost-planning/:cropName" element={<ProtectedRoute><CropDetail /></ProtectedRoute>} />
+            {/* Catch-all route */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </main>
+      </div>
+    </div>
+  );
+};
+
+const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <div className="flex h-screen overflow-hidden">
-            {/* Sidebar */}
-            <Sidebar collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed((prev) => !prev)} />
-
-            {/* Main Content */}
-            <div className="flex flex-col flex-1 overflow-auto">
-              {/* Header */}
-              <Header />
-
-              {/* Page Content */}
-              <main className="flex-1 overflow-y-auto p-4 bg-gray-50">
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/calculator" element={<Calculator />} />
-                  <Route path="/disease" element={<DiseaseDetection />} />
-                  <Route path="/cost-planning" element={<CostPlanning />} />
-                  <Route path="/cost-planning/:cropName" element={<CropDetail />} />
-                  {/* Catch-all route */}
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </main>
-            </div>
-          </div>
+          <UserProvider>
+            <AppContent />
+          </UserProvider>
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>

@@ -7,9 +7,11 @@ import WeatherWidget from "@/components/WeatherWidget";
 import RecentActivity from "@/components/RecentActivity";
 import { useState } from "react";
 import { X } from "lucide-react";
+import { useUser } from "@/contexts/UserContext";
 
 const Index = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { user } = useUser();
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -39,7 +41,7 @@ const Index = () => {
           <div className="max-w-7xl mx-auto">
             <div className="mb-8">
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                Welcome back, Dear Farmer! 🌾
+                Welcome back, {user?.name || 'Dear Farmer'}! 🌾
               </h1>
               <p className="text-gray-600">
                 Here's what's happening with your farm today. Your wheat crop is looking healthy and you have 2 equipment bookings this week.
