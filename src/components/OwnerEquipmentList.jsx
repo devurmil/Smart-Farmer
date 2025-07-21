@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useUser } from '../contexts/UserContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, AlertCircle, Edit, Trash2, Eye } from 'lucide-react';
+import { Loader2, AlertCircle, Edit, Trash2, Eye, ChevronDown, CheckCircle, XCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -25,6 +25,8 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
   });
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [bookingData, setBookingData] = useState({});
+  const [bookingLoading, setBookingLoading] = useState({});
 
   const fetchEquipment = async () => {
     setLoading(true);
@@ -47,11 +49,40 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
     }
   };
 
+  // Fetch bookings for each equipment
+  const fetchBookings = async (equipmentId) => {
+    setBookingLoading((prev) => ({ ...prev, [equipmentId]: true }));
+    try {
+      const res = await fetch(`http://localhost:5000/api/booking/equipment/${equipmentId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Failed to fetch bookings');
+      const data = await res.json();
+      setBookingData((prev) => ({ ...prev, [equipmentId]: data }));
+    } catch {
+      setBookingData((prev) => ({ ...prev, [equipmentId]: [] }));
+    } finally {
+      setBookingLoading((prev) => ({ ...prev, [equipmentId]: false }));
+    }
+  };
+
   useEffect(() => {
     if (token) {
       fetchEquipment();
     }
   }, [token, refreshTrigger]);
+
+  // Fetch bookings for all equipment after equipment is loaded
+  useEffect(() => {
+    if (equipment.length > 0) {
+      equipment.forEach((item) => {
+        if (!bookingData[item.id]) {
+          fetchBookings(item.id);
+        }
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [equipment]);
 
   const handleView = (item) => {
     setSelectedEquipment(item);
@@ -223,6 +254,136 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
                   <span className="text-xs text-gray-500">
                     {item.bookings || 0} bookings
                   </span>
+                </div>
+
+                <div className="mt-4">
+                  {bookingLoading[item.id] ? (
+                    <div className="flex items-center text-gray-500 text-sm"><Loader2 className="w-4 h-4 animate-spin mr-2" />Loading Bookings...</div>
+                  ) : bookingData[item.id] ? (
+                    <div className="mt-2 bg-gray-50 rounded-lg p-2">
+                      <div className="font-semibold text-sm mb-1">Bookings:</div>
+                      {bookingData[item.id].length === 0 ? (
+                        <div className="text-xs text-gray-500">No bookings yet.</div>
+                      ) : (
+                        bookingData[item.id].map((booking) => (
+                          <div key={booking.id} className="border-b last:border-b-0 py-2 space-y-2">
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1">
+                                <div className="font-medium text-sm">{booking.startDate} to {booking.endDate}</div>
+                                <div className="text-xs text-gray-500">Status: {booking.status}</div>
+                              </div>
+                              <div className="flex-shrink-0">
+                                <span className={`inline-block px-2 py-1 rounded text-xs font-semibold ${
+                                  booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                  booking.status === 'approved' ? 'bg-blue-100 text-blue-800' :
+                                  booking.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                  booking.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                                  'bg-gray-100 text-gray-800'}
+                                `}>
+                                  {booking.status}
+                                </span>
+                              </div>
+                            </div>
+                            
+                            {/* Action buttons row */}
+                            <div className="flex gap-1 flex-wrap">
+                              {booking.status === 'pending' && (
+                                <>
+                                  <button
+                                    className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded"
+                                    title="Approve this booking"
+                                    onClick={async () => {
+                                      await fetch(`http://localhost:5000/api/booking/${booking.id}/approve`, {
+                                        method: 'PATCH',
+                                        headers: { 'Authorization': `Bearer ${token}` }
+                                      });
+                                      fetchBookings(item.id);
+                                    }}
+                                  >
+                                    ✓ Approve
+                                  </button>
+                                  <button
+                                    className="px-2 py-1 bg-yellow-600 hover:bg-yellow-700 text-red text-xs rounded"
+                                    title="Decline this booking"
+                                    onClick={async () => {
+                                      await fetch(`http://localhost:5000/api/booking/${booking.id}/decline`, {
+                                        method: 'PATCH',
+                                        headers: { 'Authorization': `Bearer ${token}` }
+                                      });
+                                      fetchBookings(item.id);
+                                    }}
+                                  >
+                                    ✗ Decline
+                                  </button>
+                                  <button
+                                    className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded"
+                                    title="Delete this booking"
+                                    onClick={async () => {
+                                      await fetch(`http://localhost:5000/api/booking/${booking.id}`, {
+                                        method: 'DELETE',
+                                        headers: { 'Authorization': `Bearer ${token}` }
+                                      });
+                                      fetchBookings(item.id);
+                                    }}
+                                  >
+                                    🗑 Delete
+                                  </button>
+                                </>
+                              )}
+                              {booking.status === 'approved' && (
+                                <>
+                                  <button
+                                    className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded"
+                                    onClick={async () => {
+                                      await fetch(`http://localhost:5000/api/booking/${booking.id}/complete`, {
+                                        method: 'PATCH',
+                                        headers: { 'Authorization': `Bearer ${token}` }
+                                      });
+                                      fetchBookings(item.id);
+                                    }}
+                                  >
+                                    ✓ Complete
+                                  </button>
+                                  <button
+                                    className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded"
+                                    title="Delete this booking"
+                                    onClick={async () => {
+                                      await fetch(`http://localhost:5000/api/booking/${booking.id}`, {
+                                        method: 'DELETE',
+                                        headers: { 'Authorization': `Bearer ${token}` }
+                                      });
+                                      fetchBookings(item.id);
+                                    }}
+                                  >
+                                    🗑 Delete
+                                  </button>
+                                </>
+                              )}
+                              {booking.status === 'completed' && (
+                                <CheckCircle className="w-4 h-4 text-green-600" />
+                              )}
+                              {booking.status === 'rejected' && (
+                                <XCircle className="w-4 h-4 text-red-600" />
+                              )}
+                            </div>
+                            <div className="text-xs text-gray-600">
+                              Farmer: {booking.user?.name || booking.userId}
+                              {booking.user?.email && (
+                                <>
+                                  <br />Email: <a href={`mailto:${booking.user.email}`} className="text-blue-600 underline">{booking.user.email}</a>
+                                </>
+                              )}
+                              {booking.user?.phone && (
+                                <>
+                                  <br />Phone: <a href={`tel:${booking.user.phone}`} className="text-blue-600 underline">{booking.user.phone}</a>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  ) : null}
                 </div>
               </div>
             </CardContent>

@@ -28,7 +28,7 @@ const registerSchema = Joi.object({
     lng: Joi.number().optional(),
     address: Joi.string().optional()
   }).optional(),
-  role: Joi.string().valid('farmer', 'owner').required()
+  role: Joi.string().valid('farmer', 'owner', 'supplier').required()
 });
 
 const loginSchema = Joi.object({

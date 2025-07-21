@@ -5,6 +5,7 @@ import { Wrench } from 'lucide-react';
 import AddEquipmentForm from '../components/AddEquipmentForm';
 import OwnerEquipmentList from '../components/OwnerEquipmentList';
 import EquipmentList from '../components/EquipmentList';
+import UserBookingsList from '../components/UserBookingsList';
 
 const EquipmentRentalPage = () => {
   const { user } = useUser();
@@ -50,6 +51,16 @@ const EquipmentRentalPage = () => {
               </CardHeader>
               <CardContent>
                 <EquipmentList />
+              </CardContent>
+            </Card>
+
+            {/* My Bookings */}
+            <Card>
+              <CardHeader>
+                <CardTitle>My Bookings</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <UserBookingsList />
               </CardContent>
             </Card>
           </div>

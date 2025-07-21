@@ -7,6 +7,8 @@ const WeatherData = require('./WeatherData');
 const CostPlan = require('./CostPlan');
 const Equipment = require('./Equipment');
 const Booking = require('./Booking');
+const Supply = require('./Supply');
+const SupplyOrder = require('./SupplyOrder');
 
 // Define associations
 User.hasMany(Farm, { foreignKey: 'user_id', as: 'farms' });
@@ -49,6 +51,19 @@ Booking.belongsTo(Equipment, { foreignKey: 'equipmentId', as: 'equipment' });
 User.hasMany(Booking, { foreignKey: 'userId', as: 'bookings' });
 Booking.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 
+// Supply associations
+User.hasMany(Supply, { foreignKey: 'supplierId', as: 'supplies' });
+Supply.belongsTo(User, { foreignKey: 'supplierId', as: 'supplier' });
+
+Supply.hasMany(SupplyOrder, { foreignKey: 'supplyId', as: 'orders' });
+SupplyOrder.belongsTo(Supply, { foreignKey: 'supplyId', as: 'supply' });
+
+User.hasMany(SupplyOrder, { foreignKey: 'buyerId', as: 'purchases' });
+SupplyOrder.belongsTo(User, { foreignKey: 'buyerId', as: 'buyer' });
+
+User.hasMany(SupplyOrder, { foreignKey: 'supplierId', as: 'sales' });
+SupplyOrder.belongsTo(User, { foreignKey: 'supplierId', as: 'seller' });
+
 // Sync database
 const syncDatabase = async (force = false) => {
   try {
@@ -70,5 +85,7 @@ module.exports = {
   CostPlan,
   Equipment,
   Booking,
+  Supply,
+  SupplyOrder,
   syncDatabase
 };

@@ -12,4 +12,22 @@ router.get('/equipment/:equipmentId', bookingController.getEquipmentBookings);
 // Get all bookings for the logged-in user (protected)
 router.get('/user', authMiddleware, bookingController.getUserBookings);
 
+// Get all bookings for the logged-in owner (protected)
+router.get('/owner', authMiddleware, bookingController.getOwnerBookings);
+
+// Approve a booking (owner only)
+router.patch('/:id/approve', authMiddleware, bookingController.approveBooking);
+
+// Mark booking as completed (owner only)
+router.patch('/:id/complete', authMiddleware, bookingController.completeBooking);
+
+// Decline a booking (owner only)
+router.patch('/:id/decline', authMiddleware, bookingController.declineBooking);
+
+// Cancel a booking (user who made the booking)
+router.patch('/:id/cancel', authMiddleware, bookingController.cancelBooking);
+
+// Delete a booking (owner or user who made the booking)
+router.delete('/:id', authMiddleware, bookingController.deleteBooking);
+
 module.exports = router;

@@ -1,11 +1,45 @@
 const { Equipment } = require('../models');
+const { Booking } = require('../models');
 const path = require('path');
 
-// Get all available equipment
+// Helper: Check if equipment is available for a given date range
+async function isEquipmentAvailable(equipmentId, startDate, endDate) {
+  // Find any approved bookings that overlap with the requested range
+  const overlapping = await Booking.findOne({
+    where: {
+      equipmentId,
+      status: 'approved',
+      [require('sequelize').Op.or]: [
+        {
+          startDate: { [require('sequelize').Op.between]: [startDate, endDate] }
+        },
+        {
+          endDate: { [require('sequelize').Op.between]: [startDate, endDate] }
+        },
+        {
+          startDate: { [require('sequelize').Op.lte]: startDate },
+          endDate: { [require('sequelize').Op.gte]: endDate }
+        }
+      ]
+    }
+  });
+  return !overlapping;
+}
+
+// Get all equipment (date-based availability)
 exports.getAllEquipment = async (req, res) => {
   try {
-    const equipment = await Equipment.findAll({ where: { available: true } });
-    res.json(equipment);
+    const { startDate, endDate } = req.query;
+    const equipmentList = await Equipment.findAll();
+    let result = equipmentList.map(e => e.toJSON());
+    // If date range is provided, check availability for each equipment
+    if (startDate && endDate) {
+      result = await Promise.all(result.map(async (item) => {
+        item.available = await isEquipmentAvailable(item.id, startDate, endDate);
+        return item;
+      }));
+    }
+    res.json(result);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch equipment.' });
   }

@@ -1,4 +1,4 @@
-import { Calculator, Camera, DollarSign, Tractor, Newspaper, Store, BarChart3, Menu, Settings } from "lucide-react";
+import { Calculator, Camera, DollarSign, Tractor, Newspaper, Store, BarChart3, Menu, Settings, Package } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
@@ -13,8 +13,9 @@ const navigationItems = [
   { name: "Disease Detection", icon: Camera, href: "/disease" },
   { name: "Cost Planning", icon: DollarSign, href: "/cost-planning" },
   { name: "Equipment Rental", icon: Tractor, href: "/equipment-rental" },
-  { name: "News & Markets", icon: Newspaper, href: "#news" },
-  { name: "Suppliers", icon: Store, href: "#suppliers" }
+  { name: "Farm Supply", icon: Package, href: "/farm-supply" },
+  { name: "News & Markets", icon: Newspaper, href: "/market-intelligence" },
+  { name: "Suppliers", icon: Store, href: "/suppliers" }
 ];
 
 const Sidebar = ({ collapsed, onToggleCollapse }: SidebarProps) => {

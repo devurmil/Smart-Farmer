@@ -99,6 +99,7 @@ app.use('/api/disease', require('./routes/disease'));
 app.use('/api/cost-planning', require('./routes/cost-planning'));
 app.use('/api/equipment', require('./routes/equipment'));
 app.use('/api/booking', require('./routes/booking'));
+app.use('/api/supplies', require('./routes/supplies'));
 
 // Serve uploads directory for images
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

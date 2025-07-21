@@ -186,6 +186,7 @@ const Signup = () => {
                   >
                     <option value="farmer">Farmer</option>
                     <option value="owner">Equipment Owner</option>
+                    <option value="supplier">Supplier</option>
                   </select>
                 </div>
               </div>

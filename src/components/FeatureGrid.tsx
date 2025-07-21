@@ -59,7 +59,7 @@ const FeatureGrid = () => {
       color: "bg-indigo-50 text-indigo-600",
       action: "Find Suppliers",
       status: null,
-      href: "#suppliers"
+      href: "/suppliers"
     },
     {
       title: "IoT Monitoring",

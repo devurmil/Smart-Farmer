@@ -6,7 +6,8 @@ import { Container, Box, Typography, TextField, Button, MenuItem, Alert } from '
 
 const roles = [
   { value: 'farmer', label: 'Farmer' },
-  { value: 'owner', label: 'Equipment Owner' }
+  { value: 'owner', label: 'Equipment Owner' },
+  { value: 'supplier', label: 'Supplier' }
 ];
 
 const SignupPage = () => {
