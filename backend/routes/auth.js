@@ -4,6 +4,8 @@ const { auth, generateToken } = require('../middleware/auth');
 const { validate, registerSchema, loginSchema } = require('../middleware/validation');
 const { auth: authMiddleware } = require('../middleware/auth');
 const { uploadProfileImage } = require('../middleware/upload');
+const jwt = require('jsonwebtoken');
+const nodemailer = require('nodemailer');
 const router = express.Router();
 
 // @route   POST /api/auth/register
@@ -263,6 +265,61 @@ router.post('/logout', auth, async (req, res) => {
       success: false,
       message: 'Server error during logout'
     });
+  }
+});
+
+// Forgot Password
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ success: false, message: 'Email is required' });
+    const user = await User.findOne({ where: { email } });
+    if (!user) return res.status(404).json({ success: false, message: 'No user found with this email' });
+    // Generate reset token (valid for 1 hour)
+    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
+    // Send email (configure SMTP in .env)
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: process.env.SMTP_PORT,
+      secure: process.env.SMTP_SECURE === 'true',
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS
+      }
+    });
+    await transporter.sendMail({
+      from: process.env.SMTP_FROM || process.env.SMTP_USER,
+      to: user.email,
+      subject: 'Password Reset - Smart Farm India',
+      html: `<p>Hello ${user.name},</p><p>Click <a href="${resetUrl}">here</a> to reset your password. This link is valid for 1 hour.</p>`
+    });
+    res.json({ success: true, message: 'Password reset link sent to your email.' });
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({ success: false, message: 'Server error during password reset request' });
+  }
+});
+
+// Reset Password
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { token, password } = req.body;
+    if (!token || !password) return res.status(400).json({ success: false, message: 'Token and new password are required' });
+    let payload;
+    try {
+      payload = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (err) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired token' });
+    }
+    const user = await User.findByPk(payload.id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    user.password = password;
+    await user.save();
+    res.json({ success: true, message: 'Password has been reset successfully.' });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ success: false, message: 'Server error during password reset' });
   }
 });
 

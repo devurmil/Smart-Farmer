@@ -153,9 +153,9 @@ const Header = ({}: HeaderProps) => {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="relative">
-                  {user?.profilePicture ? (
+                  {user?.profile_picture ? (
                     <img
-                      src={user.profilePicture}
+                      src={user.profile_picture}
                       alt={user.name}
                       className="w-8 h-8 rounded-full object-cover"
                     />

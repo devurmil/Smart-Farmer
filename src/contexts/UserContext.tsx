@@ -4,6 +4,7 @@ interface User {
   id: string;
   name: string;
   email: string;
+  phone?: string;
   profilePicture?: string;
   loginMethod: 'email' | 'facebook' | 'google';
   role?: string;
@@ -81,7 +82,14 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 
   const updateUser = (updates: Partial<User>) => {
     if (user) {
-      const updatedUser = { ...user, ...updates };
+      // Handle field mapping from backend to frontend
+      const mappedUpdates = {
+        ...updates,
+        profilePicture: updates.profilePicture || (updates as any).profile_picture,
+        loginMethod: updates.loginMethod || (updates as any).login_method,
+      };
+      
+      const updatedUser = { ...user, ...mappedUpdates };
       setUser(updatedUser);
       localStorage.setItem('smartFarmUser', JSON.stringify(updatedUser));
     }
