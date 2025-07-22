@@ -8,6 +8,8 @@ const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const router = express.Router();
 
+const otpStore = {};
+
 // @route   POST /api/auth/register
 // @desc    Register a new user
 // @access  Public
@@ -320,6 +322,72 @@ router.post('/reset-password', async (req, res) => {
   } catch (error) {
     console.error('Reset password error:', error);
     res.status(500).json({ success: false, message: 'Server error during password reset' });
+  }
+});
+
+// Request OTP for signup
+router.post('/request-otp', async (req, res) => {
+  try {
+    const { email, name } = req.body;
+    if (!email) return res.status(400).json({ success: false, message: 'Email is required' });
+    // Check if user already exists
+    const existingUser = await User.findOne({ where: { email } });
+    if (existingUser) return res.status(400).json({ success: false, message: 'User with this email already exists' });
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    otpStore[email] = { otp, expires: Date.now() + 10 * 60 * 1000 }; // valid for 10 min
+    // Send OTP email
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: process.env.SMTP_PORT,
+      secure: process.env.SMTP_SECURE === 'true',
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS
+      }
+    });
+    await transporter.sendMail({
+      from: process.env.SMTP_FROM || process.env.SMTP_USER,
+      to: email,
+      subject: 'Your Smart Farm OTP',
+      html: `<p>Hello${name ? ' ' + name : ''},</p><p>Your OTP for Smart Farm signup is: <b>${otp}</b></p><p>This code is valid for 10 minutes.</p>`
+    });
+    res.json({ success: true, message: 'OTP sent to your email.' });
+  } catch (error) {
+    console.error('Request OTP error:', error);
+    res.status(500).json({ success: false, message: 'Server error during OTP request' });
+  }
+});
+
+// Verify OTP and create user
+router.post('/verify-otp', async (req, res) => {
+  try {
+    const { name, email, password, phone, role, otp } = req.body;
+    if (!email || !otp) return res.status(400).json({ success: false, message: 'Email and OTP are required' });
+    const record = otpStore[email];
+    if (!record || record.otp !== otp || record.expires < Date.now()) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired OTP' });
+    }
+    // Remove OTP after use
+    delete otpStore[email];
+    // Check if user already exists
+    const existingUser = await User.findOne({ where: { email } });
+    if (existingUser) return res.status(400).json({ success: false, message: 'User with this email already exists' });
+    // Create user
+    const user = await User.create({
+      name,
+      email,
+      password,
+      phone,
+      role,
+      login_method: 'email',
+      is_verified: true
+    });
+    const token = generateToken(user.id);
+    res.status(201).json({ success: true, message: 'User created and verified', data: { user: user.toJSON(), token } });
+  } catch (error) {
+    console.error('Verify OTP error:', error);
+    res.status(500).json({ success: false, message: 'Server error during OTP verification' });
   }
 });
 
