@@ -43,6 +43,19 @@ const profileImageStorage = new CloudinaryStorage({
   }
 });
 
+// Cloudinary storage for supply images
+const supplyImageStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'smart-farm/supplies',
+    allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+    transformation: [
+      { width: 800, height: 600, crop: 'limit' },
+      { quality: 'auto' }
+    ]
+  }
+});
+
 // File filter function
 const fileFilter = (req, file, cb) => {
   // Check file type
@@ -67,6 +80,14 @@ const uploadProfileImage = multer({
   fileFilter: fileFilter,
   limits: {
     fileSize: 5 * 1024 * 1024 // 5MB limit
+  }
+});
+
+const uploadSupplyImage = multer({
+  storage: supplyImageStorage,
+  fileFilter: fileFilter,
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB limit
   }
 });
 
@@ -130,6 +151,7 @@ const deleteImage = async (publicId) => {
 module.exports = {
   uploadDiseaseImage,
   uploadProfileImage,
+  uploadSupplyImage,
   uploadLocal,
   handleUploadError,
   deleteImage,

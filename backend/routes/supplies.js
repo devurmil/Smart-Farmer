@@ -4,30 +4,8 @@ const multer = require('multer');
 const path = require('path');
 const { Supply, SupplyOrder, User } = require('../models');
 const { auth } = require('../middleware/auth');
+const { uploadSupplyImage } = require('../middleware/upload');
 const router = express.Router();
-
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/');
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'supply-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
-
-const upload = multer({ 
-  storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) {
-      cb(null, true);
-    } else {
-      cb(new Error('Only image files are allowed!'), false);
-    }
-  }
-});
 
 // @route   GET /api/supplies
 // @desc    Get all available supplies
@@ -56,7 +34,7 @@ router.get('/', async (req, res) => {
 // @route   POST /api/supplies
 // @desc    Add a new supply (suppliers only)
 // @access  Private
-router.post('/', auth, upload.single('image'), async (req, res) => {
+router.post('/', auth, uploadSupplyImage.single('image'), async (req, res) => {
   try {
     // Check if user is a supplier
     if (req.user.role !== 'supplier') {
@@ -95,8 +73,8 @@ router.post('/', auth, upload.single('image'), async (req, res) => {
       supplyData.location = JSON.parse(location);
     }
 
-    if (req.file) {
-      supplyData.imageUrl = '/uploads/' + req.file.filename;
+    if (req.file && req.file.path) {
+      supplyData.imageUrl = req.file.path;
     }
 
     const supply = await Supply.create(supplyData);
@@ -136,7 +114,7 @@ router.get('/my-supplies', auth, async (req, res) => {
 // @route   PUT /api/supplies/:id
 // @desc    Update a supply
 // @access  Private
-router.put('/:id', auth, upload.single('image'), async (req, res) => {
+router.put('/:id', auth, uploadSupplyImage.single('image'), async (req, res) => {
   try {
     const supply = await Supply.findByPk(req.params.id);
     
@@ -150,8 +128,8 @@ router.put('/:id', auth, upload.single('image'), async (req, res) => {
 
     const updateData = { ...req.body };
     
-    if (req.file) {
-      updateData.imageUrl = '/uploads/' + req.file.filename;
+    if (req.file && req.file.path) {
+      updateData.imageUrl = req.file.path;
     }
 
     if (updateData.price) {
