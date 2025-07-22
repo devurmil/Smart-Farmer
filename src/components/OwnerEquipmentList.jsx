@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useUser } from '../contexts/UserContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, AlertCircle, Edit, Trash2, Eye, ChevronDown, CheckCircle, XCircle } from 'lucide-react';
+import { Loader2, AlertCircle, Edit, Trash2, Eye, ChevronDown, CheckCircle, XCircle, Upload } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -161,28 +161,44 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <Loader2 className="w-8 h-8 animate-spin text-green-600" />
-        <span className="ml-2 text-gray-600">Loading your equipment...</span>
+      <div className="flex flex-col items-center justify-center py-16">
+        <div className="p-4 bg-emerald-100 rounded-full mb-4">
+          <Loader2 className="w-12 h-12 animate-spin text-emerald-600" />
+        </div>
+        <h3 className="text-lg font-semibold text-gray-800 mb-2">Loading Your Equipment</h3>
+        <p className="text-gray-600">Fetching your equipment listings...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex items-center justify-center py-8 text-red-600">
-        <AlertCircle className="w-5 h-5 mr-2" />
-        {error}
+      <div className="flex flex-col items-center justify-center py-16">
+        <div className="p-4 bg-red-100 rounded-full mb-4">
+          <AlertCircle className="w-12 h-12 text-red-600" />
+        </div>
+        <h3 className="text-lg font-semibold text-gray-800 mb-2">Error Loading Equipment</h3>
+        <p className="text-red-600 mb-4">{error}</p>
+        <Button
+          onClick={() => fetchEquipment()}
+          variant="outline"
+          className="bg-white hover:bg-gray-50"
+        >
+          Try Again
+        </Button>
       </div>
     );
   }
 
   if (equipment.length === 0) {
     return (
-      <div className="text-center py-8">
-        <p className="text-gray-600 mb-4">No equipment posted yet.</p>
-        <p className="text-sm text-gray-500">
-          Start by adding your first piece of equipment to begin earning rental income.
+      <div className="flex flex-col items-center justify-center py-16">
+        <div className="p-4 bg-gray-100 rounded-full mb-4">
+          <Upload className="w-12 h-12 text-gray-400" />
+        </div>
+        <h3 className="text-lg font-semibold text-gray-800 mb-2">No Equipment Listed Yet</h3>
+        <p className="text-gray-600 text-center max-w-md">
+          Start by adding your first piece of equipment above to begin earning rental income from fellow farmers.
         </p>
       </div>
     );

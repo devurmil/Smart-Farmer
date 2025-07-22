@@ -69,15 +69,6 @@ const FeatureGrid = () => {
       action: "View Sensors",
       status: "Pro",
       href: "#iot"
-    },
-    {
-      title: "Analytics Dashboard",
-      description: "Track farm performance with detailed insights and reports",
-      icon: BarChart3,
-      color: "bg-orange-50 text-orange-600",
-      action: "View Analytics",
-      status: "Pro",
-      href: "#analytics"
     }
   ];
 

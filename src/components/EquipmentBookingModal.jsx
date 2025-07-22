@@ -3,7 +3,19 @@ import { useUser } from '../contexts/UserContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { AlertCircle, CheckCircle, Loader2, X, Calendar } from 'lucide-react';
+import {
+  AlertCircle,
+  CheckCircle,
+  Loader2,
+  X,
+  Calendar,
+  IndianRupee,
+  Clock,
+  MapPin,
+  Shield,
+  Star,
+  Tractor
+} from 'lucide-react';
 
 const EquipmentBookingModal = ({ equipment, onClose, onBookingSuccess, startDate: propStartDate, endDate: propEndDate, available }) => {
   const { user, token } = useUser();
@@ -97,95 +109,210 @@ const EquipmentBookingModal = ({ equipment, onClose, onBookingSuccess, startDate
     }
   };
 
+  // Calculate total cost
+  const calculateTotalCost = () => {
+    if (!form.startDate || !form.endDate) return 0;
+    const start = new Date(form.startDate);
+    const end = new Date(form.endDate);
+    const daysDiff = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+    return daysDiff > 0 ? daysDiff * equipment.price : 0;
+  };
+
+  const totalCost = calculateTotalCost();
+  const days = form.startDate && form.endDate ? Math.ceil((new Date(form.endDate) - new Date(form.startDate)) / (1000 * 60 * 60 * 24)) : 0;
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-xl font-semibold">Book Equipment</h2>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClose}
-            className="h-8 w-8 p-0"
-          >
-            <X className="h-4 w-4" />
-          </Button>
+    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[95vh] overflow-y-auto shadow-2xl">
+        {/* Header */}
+        <div className="relative bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-8 rounded-t-2xl">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-white bg-opacity-20 rounded-full">
+                <Calendar className="h-6 w-6" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold">Book Equipment</h2>
+                <p className="text-blue-100">Reserve your equipment rental</p>
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onClose}
+              className="h-10 w-10 p-0 text-white hover:bg-white hover:bg-opacity-20 rounded-full"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
-        <div className="p-6">
+
+        <div className="p-8">
+          {/* Status Messages */}
           {success && (
-            <div className="flex items-center p-4 mb-4 bg-green-50 border border-green-200 rounded-md">
-              <CheckCircle className="w-5 h-5 text-green-600 mr-2" />
-              <span className="text-green-700">{success}</span>
+            <div className="flex items-center p-4 mb-6 bg-green-50 border border-green-200 rounded-xl">
+              <div className="p-1 bg-green-100 rounded-full mr-3">
+                <CheckCircle className="w-5 h-5 text-green-600" />
+              </div>
+              <div>
+                <h4 className="text-green-800 font-semibold">Booking Successful!</h4>
+                <p className="text-green-700 text-sm">{success}</p>
+              </div>
             </div>
           )}
+          
           {error && (
-            <div className="flex items-center p-4 mb-4 bg-red-50 border border-red-200 rounded-md">
-              <AlertCircle className="w-5 h-5 text-red-600 mr-2" />
-              <span className="text-red-700">{error}</span>
+            <div className="flex items-center p-4 mb-6 bg-red-50 border border-red-200 rounded-xl">
+              <div className="p-1 bg-red-100 rounded-full mr-3">
+                <AlertCircle className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <h4 className="text-red-800 font-semibold">Booking Error</h4>
+                <p className="text-red-700 text-sm">{error}</p>
+              </div>
             </div>
           )}
+          
           {overlapError && (
-            <div className="flex items-center p-4 mt-4 bg-yellow-50 border border-yellow-200 rounded-md">
-              <AlertCircle className="w-5 h-5 text-yellow-600 mr-2" />
-              <span className="text-yellow-700">This equipment is already booked for the selected dates. Please choose different dates.</span>
+            <div className="flex items-center p-4 mb-6 bg-amber-50 border border-amber-200 rounded-xl">
+              <div className="p-1 bg-amber-100 rounded-full mr-3">
+                <AlertCircle className="w-5 h-5 text-amber-600" />
+              </div>
+              <div>
+                <h4 className="text-amber-800 font-semibold">Date Conflict</h4>
+                <p className="text-amber-700 text-sm">This equipment is already booked for the selected dates. Please choose different dates.</p>
+              </div>
             </div>
           )}
-          {/* Equipment Details */}
-          <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-            <h3 className="font-semibold text-lg mb-2">{equipment.name}</h3>
-            <div className="space-y-1 text-sm text-gray-600">
-              <p><span className="font-medium">Type:</span> {equipment.type}</p>
-              <p><span className="font-medium">Price:</span> ₹{equipment.price} per day</p>
-              {equipment.description && <p><span className="font-medium">Description:</span> {equipment.description}</p>}
+
+          {/* Equipment Details Card */}
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 mb-8 border border-blue-100">
+            <div className="flex items-start gap-4">
+              <div className="p-3 bg-blue-100 rounded-lg">
+                <Tractor className="w-8 h-8 text-blue-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-xl font-bold text-gray-800 mb-2">{equipment.name}</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-blue-600">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      <span className="font-medium">Type:</span> {equipment.type}
+                    </div>
+                    <div className="flex items-center gap-2 text-green-600">
+                      <IndianRupee className="w-4 h-4" />
+                      <span className="font-medium">₹{equipment.price} per day</span>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <MapPin className="w-4 h-4" />
+                      <span>Available nearby</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-green-600">
+                      <Shield className="w-4 h-4" />
+                      <span>Fully insured</span>
+                    </div>
+                  </div>
+                </div>
+                {equipment.description && (
+                  <p className="mt-3 text-gray-600 text-sm">{equipment.description}</p>
+                )}
+              </div>
             </div>
           </div>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="startDate">Start Date</Label>
-              <Input
-                id="startDate"
-                name="startDate"
-                type="date"
-                value={form.startDate}
-                onChange={handleChange}
-                min={new Date().toISOString().split('T')[0]} // Prevent past dates
-                required
-              />
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Date Selection */}
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-3">
+                <Label htmlFor="startDate" className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-blue-600" />
+                  Start Date
+                </Label>
+                <Input
+                  id="startDate"
+                  name="startDate"
+                  type="date"
+                  value={form.startDate}
+                  onChange={handleChange}
+                  min={new Date().toISOString().split('T')[0]}
+                  required
+                  className="h-12 text-lg border-2 border-gray-200 focus:border-blue-500 rounded-lg"
+                />
+              </div>
+              <div className="space-y-3">
+                <Label htmlFor="endDate" className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-blue-600" />
+                  End Date
+                </Label>
+                <Input
+                  id="endDate"
+                  name="endDate"
+                  type="date"
+                  value={form.endDate}
+                  onChange={handleChange}
+                  min={form.startDate || new Date().toISOString().split('T')[0]}
+                  required
+                  className="h-12 text-lg border-2 border-gray-200 focus:border-blue-500 rounded-lg"
+                />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="endDate">End Date</Label>
-              <Input
-                id="endDate"
-                name="endDate"
-                type="date"
-                value={form.endDate}
-                onChange={handleChange}
-                min={form.startDate || new Date().toISOString().split('T')[0]} // Prevent dates before start date or past dates
-                required
-              />
-            </div>
-            <div className="flex gap-3 pt-4">
+
+            {/* Booking Summary */}
+            {days > 0 && (
+              <div className="bg-gray-50 rounded-xl p-6 space-y-4">
+                <h4 className="text-lg font-semibold text-gray-800 mb-4">Booking Summary</h4>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <Clock className="w-4 h-4" />
+                      <span>Duration</span>
+                    </div>
+                    <span className="font-semibold">{days} day{days > 1 ? 's' : ''}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <IndianRupee className="w-4 h-4" />
+                      <span>Rate per day</span>
+                    </div>
+                    <span className="font-semibold">₹{equipment.price}</span>
+                  </div>
+                  <hr className="border-gray-200" />
+                  <div className="flex justify-between items-center text-lg">
+                    <span className="font-semibold text-gray-800">Total Cost</span>
+                    <span className="font-bold text-green-600 text-2xl">₹{totalCost.toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex gap-4 pt-6">
               <Button
                 type="button"
                 variant="outline"
                 onClick={onClose}
-                className="flex-1"
+                className="flex-1 h-14 text-lg border-2 hover:bg-gray-50"
                 disabled={loading}
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
-                className="flex-1 bg-green-600 hover:bg-green-700"
-                disabled={loading || available === false}
+                className="flex-1 h-14 text-lg bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
+                disabled={loading || available === false || days <= 0}
               >
                 {loading ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Booking...
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    Processing Booking...
                   </>
                 ) : (
-                  'Book Equipment'
+                  <>
+                    <Calendar className="w-5 h-5 mr-2" />
+                    Confirm Booking
+                  </>
                 )}
               </Button>
             </div>

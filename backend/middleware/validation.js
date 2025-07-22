@@ -57,6 +57,12 @@ const createFarmSchema = Joi.object({
     state: Joi.string().optional(),
     country: Joi.string().optional()
   }).required(),
+  coordinates: Joi.array().items(
+    Joi.object({
+      lat: Joi.number().required(),
+      lng: Joi.number().required()
+    })
+  ).optional(),
   area_hectares: Joi.number().min(0).optional(),
   area_acres: Joi.number().min(0).optional(),
   soil_type: Joi.string().max(100).optional(),
@@ -75,6 +81,12 @@ const updateFarmSchema = Joi.object({
     state: Joi.string().optional(),
     country: Joi.string().optional()
   }).optional(),
+  coordinates: Joi.array().items(
+    Joi.object({
+      lat: Joi.number().required(),
+      lng: Joi.number().required()
+    })
+  ).optional(),
   area_hectares: Joi.number().min(0).optional(),
   area_acres: Joi.number().min(0).optional(),
   soil_type: Joi.string().max(100).optional(),

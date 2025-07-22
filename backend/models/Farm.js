@@ -29,6 +29,11 @@ const Farm = sequelize.define('Farm', {
     allowNull: true,
     comment: 'Stores {lat, lng, address, city, state, country}'
   },
+  coordinates: {
+    type: DataTypes.JSON,
+    allowNull: true,
+    comment: 'Array of {lat, lng} objects representing the farm boundary polygon'
+  },
   area_hectares: {
     type: DataTypes.DECIMAL(10, 2),
     allowNull: true,
