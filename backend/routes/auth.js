@@ -291,7 +291,7 @@ router.post('/forgot-password', async (req, res) => {
     await transporter.sendMail({
       from: process.env.SMTP_FROM || process.env.SMTP_USER,
       to: user.email,
-      subject: 'Password Reset - Smart Farm India',
+      subject: 'Reset Your Password',
       html: `<p>Hello ${user.name},</p><p>Click <a href="${resetUrl}">here</a> to reset your password. This link is valid for 1 hour.</p>`
     });
     res.json({ success: true, message: 'Password reset link sent to your email.' });
