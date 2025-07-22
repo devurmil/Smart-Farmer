@@ -60,8 +60,8 @@ exports.addEquipment = async (req, res) => {
   try {
     const { name, type, price, description } = req.body;
     let imageUrl = null;
-    if (req.file) {
-      imageUrl = `/uploads/${req.file.filename}`;
+    if (req.file && req.file.path) {
+      imageUrl = req.file.path;
     }
     const equipment = await Equipment.create({
       name,

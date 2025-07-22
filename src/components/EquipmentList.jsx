@@ -199,7 +199,7 @@ const EquipmentList = () => {
               {item.imageUrl ? (
                 <div className="aspect-video overflow-hidden bg-gradient-to-br from-blue-100 to-indigo-100">
                   <img
-                    src={`${getBackendUrl()}${item.imageUrl}`}
+                    src={item.imageUrl}
                     alt={item.name}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                     onError={(e) => {

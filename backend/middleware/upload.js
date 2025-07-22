@@ -56,6 +56,19 @@ const supplyImageStorage = new CloudinaryStorage({
   }
 });
 
+// Cloudinary storage for equipment images
+const equipmentImageStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'smart-farm/equipment',
+    allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+    transformation: [
+      { width: 800, height: 600, crop: 'limit' },
+      { quality: 'auto' }
+    ]
+  }
+});
+
 // File filter function
 const fileFilter = (req, file, cb) => {
   // Check file type
@@ -85,6 +98,14 @@ const uploadProfileImage = multer({
 
 const uploadSupplyImage = multer({
   storage: supplyImageStorage,
+  fileFilter: fileFilter,
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB limit
+  }
+});
+
+const uploadEquipmentImage = multer({
+  storage: equipmentImageStorage,
   fileFilter: fileFilter,
   limits: {
     fileSize: 10 * 1024 * 1024 // 10MB limit
@@ -152,6 +173,7 @@ module.exports = {
   uploadDiseaseImage,
   uploadProfileImage,
   uploadSupplyImage,
+  uploadEquipmentImage,
   uploadLocal,
   handleUploadError,
   deleteImage,

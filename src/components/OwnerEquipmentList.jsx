@@ -213,7 +213,7 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
             {item.imageUrl && (
               <div className="aspect-video overflow-hidden">
                 <img
-                  src={`${getBackendUrl()}${item.imageUrl}`}
+                  src={item.imageUrl}
                   alt={item.name}
                   className="w-full h-full object-cover"
                   onError={(e) => {
@@ -419,7 +419,7 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
               {selectedEquipment.imageUrl && (
                 <div className="aspect-video overflow-hidden rounded-lg">
                   <img
-                    src={`${getBackendUrl()}${selectedEquipment.imageUrl}`}
+                    src={selectedEquipment.imageUrl}
                     alt={selectedEquipment.name}
                     className="w-full h-full object-cover"
                   />

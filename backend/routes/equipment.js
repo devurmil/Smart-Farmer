@@ -4,6 +4,7 @@ const equipmentController = require('../controllers/equipmentController');
 const { auth: authMiddleware } = require('../middleware/auth');
 const multer = require('multer');
 const path = require('path');
+const { uploadEquipmentImage } = require('../middleware/upload');
 
 // Multer setup (no image format restriction)
 const storage = multer.diskStorage({
@@ -23,7 +24,7 @@ router.get('/', equipmentController.getAllEquipment);
 router.get('/owner', authMiddleware, equipmentController.getOwnerEquipment);
 
 // Protected: Add equipment (with image upload)
-router.post('/', authMiddleware, upload.single('image'), equipmentController.addEquipment);
+router.post('/', authMiddleware, uploadEquipmentImage.single('image'), equipmentController.addEquipment);
 
 // Public: Get equipment by ID
 router.get('/:id', equipmentController.getEquipmentById);
