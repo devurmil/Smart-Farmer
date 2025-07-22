@@ -21,6 +21,7 @@ import Signup from "./pages/Signup";
 import EquipmentRentalPage from "./pages/EquipmentRentalPage";
 import FarmSupplyPage from "./pages/FarmSupplyPage";
 import Suppliers from "./pages/Suppliers";
+import ProfileSettings from "./pages/ProfileSettings";
 
 const queryClient = new QueryClient();
 
@@ -81,6 +82,7 @@ const AppContent = () => {
             <Route path="/equipment-rental" element={<ProtectedRoute><EquipmentRentalPage /></ProtectedRoute>} />
             <Route path="/farm-supply" element={<ProtectedRoute><FarmSupplyPage /></ProtectedRoute>} />
             <Route path="/suppliers" element={<ProtectedRoute><Suppliers /></ProtectedRoute>} />
+            <Route path="/profile-settings" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />
             {/* Catch-all route */}
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -79,8 +79,8 @@ router.post('/detect', auth, uploadDiseaseImage.single('image'), handleUploadErr
       crop_id: crop_id || null,
       farm_id: farm_id || null,
       crop_type,
-      image_url: req.file.path,
-      image_public_id: req.file.filename,
+      image_url: req.file.path, // Cloudinary URL
+      image_public_id: req.file.filename, // Cloudinary public_id
       detected_disease: mockDetection.detected_disease,
       confidence_score: mockDetection.confidence_score,
       severity_level: diseaseTips.severity,

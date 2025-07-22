@@ -34,7 +34,8 @@ const User = sequelize.define('User', {
   },
   profile_picture: {
     type: DataTypes.TEXT,
-    allowNull: true
+    allowNull: true,
+    comment: 'Cloudinary URL for user profile picture'
   },
   login_method: {
     type: DataTypes.ENUM('email', 'facebook', 'google'),
@@ -47,7 +48,8 @@ const User = sequelize.define('User', {
   },
   phone: {
     type: DataTypes.STRING(20),
-    allowNull: true
+    allowNull: true,
+    unique: true
   },
   location: {
     type: DataTypes.JSON,

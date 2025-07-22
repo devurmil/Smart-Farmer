@@ -2,6 +2,8 @@ const express = require('express');
 const { User } = require('../models');
 const { auth, generateToken } = require('../middleware/auth');
 const { validate, registerSchema, loginSchema } = require('../middleware/validation');
+const { auth: authMiddleware } = require('../middleware/auth');
+const { uploadProfileImage } = require('../middleware/upload');
 const router = express.Router();
 
 // @route   POST /api/auth/register
@@ -18,6 +20,16 @@ router.post('/register', validate(registerSchema), async (req, res) => {
         success: false,
         message: 'User with this email already exists'
       });
+    }
+    // Check if phone is already used
+    if (phone) {
+      const existingPhone = await User.findOne({ where: { phone } });
+      if (existingPhone) {
+        return res.status(400).json({
+          success: false,
+          message: 'User with this phone number already exists'
+        });
+      }
     }
 
     // Create new user
@@ -251,6 +263,57 @@ router.post('/logout', auth, async (req, res) => {
       success: false,
       message: 'Server error during logout'
     });
+  }
+});
+
+// Update user profile
+router.put('/user/profile', authMiddleware, uploadProfileImage.single('profilePicture'), async (req, res) => {
+  try {
+    const { name, email, phone } = req.body;
+    const user = await User.findByPk(req.user.id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    // Check for unique email
+    if (email && email !== user.email) {
+      const existingEmail = await User.findOne({ where: { email } });
+      if (existingEmail) {
+        return res.status(400).json({ success: false, message: 'Email already in use' });
+      }
+    }
+    // Check for unique phone
+    if (phone && phone !== user.phone) {
+      const existingPhone = await User.findOne({ where: { phone } });
+      if (existingPhone) {
+        return res.status(400).json({ success: false, message: 'Phone number already in use' });
+      }
+    }
+    user.name = name || user.name;
+    user.email = email || user.email;
+    user.phone = phone || user.phone;
+    if (req.file && req.file.path) {
+      user.profile_picture = req.file.path;
+    }
+    await user.save();
+    res.json({ success: true, user: user.toJSON() });
+  } catch (error) {
+    console.error('Profile update error:', error);
+    res.status(500).json({ success: false, message: 'Server error during profile update' });
+  }
+});
+
+// Delete user profile (requires password)
+router.delete('/user/profile', authMiddleware, async (req, res) => {
+  try {
+    const { password } = req.body;
+    const user = await User.findByPk(req.user.id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    if (!password || !(await user.comparePassword(password))) {
+      return res.status(400).json({ success: false, message: 'Incorrect password' });
+    }
+    await user.destroy();
+    res.json({ success: true, message: 'Profile deleted' });
+  } catch (error) {
+    console.error('Profile delete error:', error);
+    res.status(500).json({ success: false, message: 'Server error during profile delete' });
   }
 });
 

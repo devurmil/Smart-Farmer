@@ -1,5 +1,5 @@
 import { Calculator, Camera, DollarSign, Tractor, Newspaper, Store, BarChart3, Menu, Settings, Package } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 interface SidebarProps {
@@ -20,6 +20,7 @@ const navigationItems = [
 
 const Sidebar = ({ collapsed, onToggleCollapse }: SidebarProps) => {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
 
   return (
     <aside
@@ -61,13 +62,14 @@ const Sidebar = ({ collapsed, onToggleCollapse }: SidebarProps) => {
       {/* Settings Icon at the bottom */}
       <div className="p-2 border-t border-green-800">
         <button
+          onClick={() => navigate('/profile-settings')}
           className={cn(
             "flex items-center gap-3 px-4 py-2 rounded-md hover:bg-green-800 transition-colors w-full",
             collapsed ? "justify-center" : ""
           )}
         >
           <Settings className="h-5 w-5" />
-          {!collapsed && <span>Settings</span>}
+          {!collapsed && <span>Profile Settings</span>}
         </button>
       </div>
     </aside>
