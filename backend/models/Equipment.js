@@ -24,17 +24,20 @@ const Equipment = sequelize.define('Equipment', {
     allowNull: false,
   },
   imageUrl: {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT, // allow longer Cloudinary URLs
     allowNull: true,
   },
   description: {
     type: DataTypes.TEXT,
     allowNull: true,
+    defaultValue: '',
   },
   available: {
     type: DataTypes.BOOLEAN,
     defaultValue: true,
   },
+}, {
+  timestamps: true, // adds createdAt and updatedAt
 });
 
 module.exports = Equipment;
