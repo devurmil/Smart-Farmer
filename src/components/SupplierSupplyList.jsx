@@ -181,7 +181,7 @@ const SupplierSupplyList = ({ refreshTrigger }) => {
           {supply.imageUrl && (
             <div className="mt-3">
               <img
-                src={`${getBackendUrl()}${supply.imageUrl}`}
+                src={supply.imageUrl}
                 alt={supply.name}
                 className="w-24 h-24 object-cover rounded border"
                 onError={(e) => {

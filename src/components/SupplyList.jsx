@@ -125,7 +125,7 @@ const SupplyList = () => {
             {supply.imageUrl && (
               <div className="aspect-video overflow-hidden">
                 <img
-                  src={`${getBackendUrl()}${supply.imageUrl}`}
+                  src={supply.imageUrl}
                   alt={supply.name}
                   className="w-full h-full object-cover"
                   onError={(e) => {
