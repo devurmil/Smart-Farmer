@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Eye, EyeOff, Mail, Lock, Leaf } from 'lucide-react';
 import { useFacebookLogin } from '@/hooks/useFacebookLogin';
 import { useUser } from '@/contexts/UserContext';
+import { getBackendUrl } from '@/lib/utils';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -24,7 +25,7 @@ const Login = () => {
     
     try {
       // Real API call to backend
-      const response = await fetch('http://localhost:5000/api/auth/login', {
+      const response = await fetch(`${getBackendUrl()}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

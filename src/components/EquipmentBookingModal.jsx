@@ -16,6 +16,7 @@ import {
   Star,
   Tractor
 } from 'lucide-react';
+import { getBackendUrl } from '@/lib/utils';
 
 const EquipmentBookingModal = ({ equipment, onClose, onBookingSuccess, startDate: propStartDate, endDate: propEndDate, available }) => {
   const { user, token } = useUser();
@@ -80,7 +81,7 @@ const EquipmentBookingModal = ({ equipment, onClose, onBookingSuccess, startDate
     }
 
     try {
-      const response = await fetch('http://localhost:5000/api/booking', {
+      const response = await fetch(`${getBackendUrl()}/api/booking`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

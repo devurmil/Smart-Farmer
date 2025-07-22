@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useUser } from '../contexts/UserContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, AlertCircle, XCircle, CheckCircle, Clock, Calendar, X } from 'lucide-react';
+import { getBackendUrl } from '@/lib/utils';
 
 const UserBookingsList = () => {
   const { user, token } = useUser();
@@ -13,7 +14,7 @@ const UserBookingsList = () => {
     setLoading(true);
     setError('');
     try {
-      const response = await fetch('http://localhost:5000/api/booking/user', {
+      const response = await fetch(`${getBackendUrl()}/api/booking/user`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -46,7 +47,7 @@ const UserBookingsList = () => {
       // Test server connectivity first
       console.log('Testing server connectivity...');
       try {
-        const testResponse = await fetch('http://localhost:5000/api/booking/user', {
+        const testResponse = await fetch(`${getBackendUrl()}/api/booking/user`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         console.log('Server connectivity test - Status:', testResponse.status);
@@ -59,7 +60,7 @@ const UserBookingsList = () => {
       }
       
       // Use the delete endpoint directly
-      const url = `http://localhost:5000/api/booking/${bookingId}`;
+      const url = `${getBackendUrl()}/api/booking/${bookingId}`;
       console.log('Delete URL:', url);
       
       const response = await fetch(url, {

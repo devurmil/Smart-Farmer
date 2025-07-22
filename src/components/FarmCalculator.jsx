@@ -11,6 +11,7 @@ import { MapPin, Save, Download, Trash2, Edit2, Calculator, Brain, Sprout } from
 import { useToast } from "@/hooks/use-toast";
 import replicateClient from "@/lib/replicate";
 import { useUser } from "@/contexts/UserContext";
+import { getBackendUrl } from '@/lib/utils';
 
 const FarmCalculator = () => {
   const { toast } = useToast();
@@ -418,7 +419,7 @@ const FarmCalculator = () => {
       description: farmDescription
     };
     try {
-      const response = await fetch("http://localhost:5000/api/farms", {
+      const response = await fetch(`${getBackendUrl()}/api/farms`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -765,7 +766,7 @@ const FarmCalculator = () => {
   // Delete a saved farm
   const deleteFarm = async (farmId) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/farms/${farmId}`, {
+      const response = await fetch(`${getBackendUrl()}/api/farms/${farmId}`, {
         method: "DELETE",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -825,7 +826,7 @@ const FarmCalculator = () => {
         return;
       }
       try {
-        const response = await fetch('http://localhost:5000/api/farms', {
+        const response = await fetch(`${getBackendUrl()}/api/farms`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
@@ -1260,7 +1261,7 @@ const FarmCalculator = () => {
               <h4 className="font-semibold text-blue-800 mb-2">Debug Information:</h4>
               <p>• Token: {token ? "✅ Present" : "❌ Missing"}</p>
               <p>• Saved Farms Count: {savedFarms.length}</p>
-              <p>• Backend URL: http://localhost:5000/api/farms</p>
+              <p>• Backend URL: https://smart-farmer-cyyz.onrender.com/api/farms</p>
             </div>
             
             {savedFarms.length === 0 ? (

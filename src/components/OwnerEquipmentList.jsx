@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { getBackendUrl } from '@/lib/utils';
 
 const OwnerEquipmentList = ({ refreshTrigger }) => {
   const { user, token } = useUser();
@@ -32,7 +33,7 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
     setLoading(true);
     setError('');
     try {
-      const response = await fetch('http://localhost:5000/api/equipment/owner', {
+      const response = await fetch(`${getBackendUrl()}/api/equipment/owner`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -53,7 +54,7 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
   const fetchBookings = async (equipmentId) => {
     setBookingLoading((prev) => ({ ...prev, [equipmentId]: true }));
     try {
-      const res = await fetch(`http://localhost:5000/api/booking/equipment/${equipmentId}`, {
+      const res = await fetch(`${getBackendUrl()}/api/booking/equipment/${equipmentId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (!res.ok) throw new Error('Failed to fetch bookings');
@@ -110,7 +111,7 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
     setIsUpdating(true);
     
     try {
-      const response = await fetch(`http://localhost:5000/api/equipment/${selectedEquipment.id}`, {
+      const response = await fetch(`${getBackendUrl()}/api/equipment/${selectedEquipment.id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -134,7 +135,7 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
     setIsDeleting(true);
     
     try {
-      const response = await fetch(`http://localhost:5000/api/equipment/${selectedEquipment.id}`, {
+      const response = await fetch(`${getBackendUrl()}/api/equipment/${selectedEquipment.id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -212,7 +213,7 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
             {item.imageUrl && (
               <div className="aspect-video overflow-hidden">
                 <img
-                  src={`http://localhost:5000${item.imageUrl}`}
+                  src={`${getBackendUrl()}${item.imageUrl}`}
                   alt={item.name}
                   className="w-full h-full object-cover"
                   onError={(e) => {
@@ -309,7 +310,7 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
                                     className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded"
                                     title="Approve this booking"
                                     onClick={async () => {
-                                      await fetch(`http://localhost:5000/api/booking/${booking.id}/approve`, {
+                                      await fetch(`${getBackendUrl()}/api/booking/${booking.id}/approve`, {
                                         method: 'PATCH',
                                         headers: { 'Authorization': `Bearer ${token}` }
                                       });
@@ -322,7 +323,7 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
                                     className="px-2 py-1 bg-yellow-600 hover:bg-yellow-700 text-red text-xs rounded"
                                     title="Decline this booking"
                                     onClick={async () => {
-                                      await fetch(`http://localhost:5000/api/booking/${booking.id}/decline`, {
+                                      await fetch(`${getBackendUrl()}/api/booking/${booking.id}/decline`, {
                                         method: 'PATCH',
                                         headers: { 'Authorization': `Bearer ${token}` }
                                       });
@@ -335,7 +336,7 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
                                     className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded"
                                     title="Delete this booking"
                                     onClick={async () => {
-                                      await fetch(`http://localhost:5000/api/booking/${booking.id}`, {
+                                      await fetch(`${getBackendUrl()}/api/booking/${booking.id}`, {
                                         method: 'DELETE',
                                         headers: { 'Authorization': `Bearer ${token}` }
                                       });
@@ -351,7 +352,7 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
                                   <button
                                     className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded"
                                     onClick={async () => {
-                                      await fetch(`http://localhost:5000/api/booking/${booking.id}/complete`, {
+                                      await fetch(`${getBackendUrl()}/api/booking/${booking.id}/complete`, {
                                         method: 'PATCH',
                                         headers: { 'Authorization': `Bearer ${token}` }
                                       });
@@ -364,7 +365,7 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
                                     className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded"
                                     title="Delete this booking"
                                     onClick={async () => {
-                                      await fetch(`http://localhost:5000/api/booking/${booking.id}`, {
+                                      await fetch(`${getBackendUrl()}/api/booking/${booking.id}`, {
                                         method: 'DELETE',
                                         headers: { 'Authorization': `Bearer ${token}` }
                                       });
@@ -418,7 +419,7 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
               {selectedEquipment.imageUrl && (
                 <div className="aspect-video overflow-hidden rounded-lg">
                   <img
-                    src={`http://localhost:5000${selectedEquipment.imageUrl}`}
+                    src={`${getBackendUrl()}${selectedEquipment.imageUrl}`}
                     alt={selectedEquipment.name}
                     className="w-full h-full object-cover"
                   />

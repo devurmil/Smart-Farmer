@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { AlertCircle, CheckCircle, Upload, Loader2 } from 'lucide-react';
+import { getBackendUrl } from '@/lib/utils';
 
 const AddEquipmentForm = ({ onEquipmentAdded }) => {
   const { user, token } = useUser();
@@ -34,7 +35,7 @@ const AddEquipmentForm = ({ onEquipmentAdded }) => {
       Object.entries(form).forEach(([key, value]) => formData.append(key, value));
       if (image) formData.append('image', image);
       
-      const response = await fetch('http://localhost:5000/api/equipment', {
+      const response = await fetch(`${getBackendUrl()}/api/equipment`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

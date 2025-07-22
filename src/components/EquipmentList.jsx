@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import EquipmentBookingModal from './EquipmentBookingModal';
 import { Input } from '@/components/ui/input';
+import { getBackendUrl } from '@/lib/utils';
 
 const EquipmentList = () => {
   const [equipment, setEquipment] = useState([]);
@@ -33,7 +34,7 @@ const EquipmentList = () => {
       setLoading(true);
       setError('');
       try {
-        let url = 'http://localhost:5000/api/equipment';
+        let url = `${getBackendUrl()}/api/equipment`;
         if (dateRange.startDate && dateRange.endDate) {
           url += `?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`;
         }
@@ -198,7 +199,7 @@ const EquipmentList = () => {
               {item.imageUrl ? (
                 <div className="aspect-video overflow-hidden bg-gradient-to-br from-blue-100 to-indigo-100">
                   <img
-                    src={`http://localhost:5000${item.imageUrl}`}
+                    src={`${getBackendUrl()}${item.imageUrl}`}
                     alt={item.name}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                     onError={(e) => {

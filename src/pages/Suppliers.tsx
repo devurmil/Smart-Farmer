@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Mail, Phone } from 'lucide-react';
+import { getBackendUrl } from '@/lib/utils';
 
 interface Supplier {
   id: string;
@@ -18,7 +19,7 @@ const Suppliers: React.FC = () => {
   useEffect(() => {
     const fetchSuppliers = async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/supplies/suppliers');
+        const res = await fetch(`${getBackendUrl()}/api/supplies/suppliers`);
         const data = await res.json();
         if (data.success) {
           setSuppliers(data.data);

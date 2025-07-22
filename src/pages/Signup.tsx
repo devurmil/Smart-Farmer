@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Eye, EyeOff, Mail, Lock, User, Phone, Leaf } from 'lucide-react';
 import { useFacebookLogin } from '@/hooks/useFacebookLogin';
 import { useUser } from '@/contexts/UserContext';
+import { getBackendUrl } from '@/lib/utils';
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -48,7 +49,7 @@ const Signup = () => {
       
       console.log('Sending data to backend:', requestData);
       
-      const response = await fetch('http://localhost:5000/api/auth/register', {
+      const response = await fetch(`${getBackendUrl()}/api/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

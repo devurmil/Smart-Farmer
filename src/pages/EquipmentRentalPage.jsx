@@ -18,6 +18,7 @@ import AddEquipmentForm from '../components/AddEquipmentForm';
 import OwnerEquipmentList from '../components/OwnerEquipmentList';
 import EquipmentList from '../components/EquipmentList';
 import UserBookingsList from '../components/UserBookingsList';
+import { getBackendUrl } from '@/lib/utils';
 
 const EquipmentRentalPage = () => {
   const { user, token } = useUser();
@@ -45,7 +46,7 @@ const EquipmentRentalPage = () => {
     
     try {
       // Fetch owner's equipment count
-      const equipmentResponse = await fetch('http://localhost:5000/api/equipment/owner', {
+      const equipmentResponse = await fetch(`${getBackendUrl()}/api/equipment/owner`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (equipmentResponse.ok) {
@@ -57,7 +58,7 @@ const EquipmentRentalPage = () => {
       }
 
       // Fetch owner's bookings
-      const bookingsResponse = await fetch('http://localhost:5000/api/booking/owner', {
+      const bookingsResponse = await fetch(`${getBackendUrl()}/api/booking/owner`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (bookingsResponse.ok) {
@@ -95,7 +96,7 @@ const EquipmentRentalPage = () => {
 
     try {
       // Fetch available equipment count
-      const equipmentResponse = await fetch('http://localhost:5000/api/equipment');
+      const equipmentResponse = await fetch(`${getBackendUrl()}/api/equipment`);
       if (equipmentResponse.ok) {
         const equipmentData = await equipmentResponse.json();
         const totalEquipment = equipmentData.length; // Show total equipment count
@@ -110,7 +111,7 @@ const EquipmentRentalPage = () => {
       }
 
       // Fetch farmer's bookings
-      const bookingsResponse = await fetch('http://localhost:5000/api/booking/user', {
+      const bookingsResponse = await fetch(`${getBackendUrl()}/api/booking/user`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (bookingsResponse.ok) {

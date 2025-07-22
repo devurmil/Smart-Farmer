@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, AlertCircle, Package, Truck, CheckCircle } from 'lucide-react';
+import { getBackendUrl } from '@/lib/utils';
 
 const SupplyOrders = ({ userRole }) => {
   const { user, token } = useUser();
@@ -16,7 +17,7 @@ const SupplyOrders = ({ userRole }) => {
       setLoading(true);
       setError('');
       try {
-        const response = await fetch('http://localhost:5000/api/supplies/orders', {
+        const response = await fetch(`${getBackendUrl()}/api/supplies/orders`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
@@ -35,7 +36,7 @@ const SupplyOrders = ({ userRole }) => {
 
   const handleStatusUpdate = async (orderId, newStatus) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/supplies/orders/${orderId}/status`, {
+      const response = await fetch(`${getBackendUrl()}/api/supplies/orders/${orderId}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

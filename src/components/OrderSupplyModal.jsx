@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { AlertCircle, CheckCircle, Loader2, X } from 'lucide-react';
+import { getBackendUrl } from '@/lib/utils';
 
 const OrderSupplyModal = ({ supply, onClose, onOrderSuccess }) => {
   const { user, token } = useUser();
@@ -29,7 +30,7 @@ const OrderSupplyModal = ({ supply, onClose, onOrderSuccess }) => {
     setError('');
 
     try {
-      const response = await fetch(`http://localhost:5000/api/supplies/${supply.id}/order`, {
+      const response = await fetch(`${getBackendUrl()}/api/supplies/${supply.id}/order`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

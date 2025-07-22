@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, AlertCircle, ShoppingCart, Package } from 'lucide-react';
 import OrderSupplyModal from './OrderSupplyModal';
+import { getBackendUrl } from '@/lib/utils';
 
 const SupplyList = () => {
   const { user, token } = useUser();
@@ -19,7 +20,7 @@ const SupplyList = () => {
       setLoading(true);
       setError('');
       try {
-        const response = await fetch('http://localhost:5000/api/supplies');
+        const response = await fetch(`${getBackendUrl()}/api/supplies`);
         if (!response.ok) throw new Error('Failed to fetch supplies');
         const data = await response.json();
         setSupplies(data);
@@ -124,7 +125,7 @@ const SupplyList = () => {
             {supply.imageUrl && (
               <div className="aspect-video overflow-hidden">
                 <img
-                  src={`http://localhost:5000${supply.imageUrl}`}
+                  src={`${getBackendUrl()}${supply.imageUrl}`}
                   alt={supply.name}
                   className="w-full h-full object-cover"
                   onError={(e) => {

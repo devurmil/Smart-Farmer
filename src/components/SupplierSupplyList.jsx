@@ -3,6 +3,7 @@ import { useUser } from '../contexts/UserContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, AlertCircle, Edit, Trash2, Package } from 'lucide-react';
+import { getBackendUrl } from '@/lib/utils';
 
 const SupplierSupplyList = ({ refreshTrigger }) => {
   const { user, token } = useUser();
@@ -15,7 +16,7 @@ const SupplierSupplyList = ({ refreshTrigger }) => {
       setLoading(true);
       setError('');
       try {
-        const response = await fetch('http://localhost:5000/api/supplies/my-supplies', {
+        const response = await fetch(`${getBackendUrl()}/api/supplies/my-supplies`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
@@ -36,7 +37,7 @@ const SupplierSupplyList = ({ refreshTrigger }) => {
     if (!confirm('Are you sure you want to delete this supply?')) return;
 
     try {
-      const response = await fetch(`http://localhost:5000/api/supplies/${supplyId}`, {
+      const response = await fetch(`${getBackendUrl()}/api/supplies/${supplyId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -180,7 +181,7 @@ const SupplierSupplyList = ({ refreshTrigger }) => {
           {supply.imageUrl && (
             <div className="mt-3">
               <img
-                src={`http://localhost:5000${supply.imageUrl}`}
+                src={`${getBackendUrl()}${supply.imageUrl}`}
                 alt={supply.name}
                 className="w-24 h-24 object-cover rounded border"
                 onError={(e) => {
