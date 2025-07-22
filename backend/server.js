@@ -24,6 +24,8 @@ const { syncDatabase } = require('./models');     // if syncDatabase is correctl
 
 const app = express();
 
+app.set('trust proxy', 1); // trust first proxy (needed for Render, Vercel, Heroku, etc.)
+
 // Security middleware
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" }
