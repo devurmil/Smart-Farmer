@@ -1,6 +1,7 @@
 import { Calculator, Camera, DollarSign, Tractor, Newspaper, Store, BarChart3, Menu, Settings, Package } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { useAuth } from "../context/AuthContext";
 
 interface SidebarProps {
   collapsed: boolean;
@@ -21,6 +22,8 @@ const navigationItems = [
 const Sidebar = ({ collapsed, onToggleCollapse }: SidebarProps) => {
   const { pathname } = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isAdmin = user && user.email && user.email === import.meta.env.VITE_ADMIN_MAIL;
 
   return (
     <aside
@@ -60,6 +63,22 @@ const Sidebar = ({ collapsed, onToggleCollapse }: SidebarProps) => {
           );
         })}
       </nav>
+
+      {/* Admin Logo above Settings (only for admin) */}
+      {isAdmin && (
+        <div className="p-2">
+          <button
+            className={cn(
+              "flex items-center gap-3 px-4 py-2 rounded-md hover:bg-green-600 dark:hover:bg-green-800 transition-colors w-full text-white",
+              collapsed ? "justify-center" : ""
+            )}
+            onClick={() => navigate('/admin')}
+          >
+            <img src="/admin_logo.png" alt="Admin Logo" className="h-7 w-7 object-contain" />
+            {!collapsed && <span>Admin</span>}
+          </button>
+        </div>
+      )}
 
       {/* Settings Icon at the bottom */}
       <div className="p-2 border-t border-green-800 dark:border-green-950">
