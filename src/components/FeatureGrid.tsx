@@ -94,10 +94,10 @@ const FeatureGrid = () => {
                   </span>
                 )}
               </div>
-              <CardTitle className="text-lg font-semibold text-gray-900">
+              <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">
                 {feature.title}
               </CardTitle>
-              <CardDescription className="text-sm text-gray-600">
+              <CardDescription className="text-sm text-gray-600 dark:text-gray-300">
                 {feature.description}
               </CardDescription>
             </CardHeader>

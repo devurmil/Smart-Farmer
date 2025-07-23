@@ -265,8 +265,8 @@ const ProfileSettings = () => {
           </Button>
           
           <div className="text-center">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Profile Settings</h1>
-            <p className="text-gray-600">Manage your account information and preferences</p>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Profile Settings</h1>
+            <p className="text-gray-600 dark:text-gray-300">Manage your account information and preferences</p>
           </div>
         </div>
 

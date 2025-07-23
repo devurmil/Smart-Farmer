@@ -24,12 +24,12 @@ const FarmSupplyPage = () => {
         {/* Header */}
         <div className="flex items-center gap-3 mb-8">
           <Package className="w-8 h-8 text-green-600" />
-          <h1 className="text-3xl font-bold text-gray-900">Farm Supply</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Farm Supply</h1>
         </div>
 
         {/* Debug info */}
-        <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded">
-          <p className="text-sm text-blue-700">
+        <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded">
+          <p className="text-sm text-blue-700 dark:text-blue-300">
             <strong>Debug Info:</strong> User role: {user?.role || 'Not set'}, 
             User ID: {user?.id || 'Not set'}
           </p>
