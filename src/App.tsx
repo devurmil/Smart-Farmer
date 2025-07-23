@@ -8,6 +8,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import { UserProvider, useUser } from "./contexts/UserContext";
+import { SettingsProvider, useSettings } from "./context/SettingsContext";
 
 import Index from "./pages/Index";
 import Calculator from "./pages/Calculator";
@@ -24,11 +25,19 @@ import Suppliers from "./pages/Suppliers";
 import ProfileSettings from "./pages/ProfileSettings";
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import SettingsPage from './pages/SettingsPage';
 
 const queryClient = new QueryClient();
 
 const AppContent = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  const { settings } = useSettings();
+
+  // Homepage Redirect Component - redirects to user's saved homepage
+  const HomepageRedirect = () => {
+    const homepagePath = settings.homepage;
+    return <Navigate to={homepagePath} replace />;
+  };
 
   // Protected Route Component - moved inside UserProvider
   const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -57,7 +66,7 @@ const AppContent = () => {
       );
     }
     
-    return isAuthenticated ? <Navigate to="/" replace /> : <>{children}</>;
+    return isAuthenticated ? <HomepageRedirect /> : <>{children}</>;
   };
 
   return (
@@ -71,9 +80,10 @@ const AppContent = () => {
         <Header />
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-4 bg-gray-50">
+        <main className="flex-1 overflow-y-auto p-4 bg-background">
           <Routes>
-            <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/dashboard" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/" element={<ProtectedRoute><HomepageRedirect /></ProtectedRoute>} />
             <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
             <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
             <Route path="/calculator" element={<ProtectedRoute><Calculator /></ProtectedRoute>} />
@@ -85,6 +95,7 @@ const AppContent = () => {
             <Route path="/farm-supply" element={<ProtectedRoute><FarmSupplyPage /></ProtectedRoute>} />
             <Route path="/suppliers" element={<ProtectedRoute><Suppliers /></ProtectedRoute>} />
             <Route path="/profile-settings" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
             <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
             <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
             {/* Catch-all route */}
@@ -103,9 +114,11 @@ const App = () => {
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <UserProvider>
-            <AppContent />
-          </UserProvider>
+          <SettingsProvider>
+            <UserProvider>
+              <AppContent />
+            </UserProvider>
+          </SettingsProvider>
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>

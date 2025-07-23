@@ -65,9 +65,9 @@ const DashboardOverview = ({ city = "Ahmedabad" }: DashboardOverviewProps) => {
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 main-bg">
         {[1, 2, 3].map((i) => (
-          <Card key={i}>
+          <Card key={i} className="card">
             <CardContent className="p-6">
               <div className="animate-pulse">
                 <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
@@ -82,11 +82,11 @@ const DashboardOverview = ({ city = "Ahmedabad" }: DashboardOverviewProps) => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 main-bg">
       {/* Quick Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {/* Weather Summary */}
-        <Card>
+        <Card className="card">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -104,7 +104,7 @@ const DashboardOverview = ({ city = "Ahmedabad" }: DashboardOverviewProps) => {
         </Card>
 
         {/* Humidity */}
-        <Card>
+        <Card className="card">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -123,7 +123,7 @@ const DashboardOverview = ({ city = "Ahmedabad" }: DashboardOverviewProps) => {
         </Card>
 
         {/* Market Activity */}
-        <Card>
+        <Card className="card">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -137,7 +137,7 @@ const DashboardOverview = ({ city = "Ahmedabad" }: DashboardOverviewProps) => {
         </Card>
 
         {/* News Updates */}
-        <Card>
+        <Card className="card">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -173,7 +173,7 @@ const DashboardOverview = ({ city = "Ahmedabad" }: DashboardOverviewProps) => {
         </div>
 
         {/* Latest News */}
-        <Card>
+        <Card className="card">
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center">
@@ -234,7 +234,7 @@ const DashboardOverview = ({ city = "Ahmedabad" }: DashboardOverviewProps) => {
       </div>
 
       {/* Market Insights */}
-      <Card>
+      <Card className="card">
         <CardHeader>
           <CardTitle className="flex items-center">
             <TrendingUp className="h-5 w-5 mr-2" />

@@ -161,13 +161,13 @@ const MarketIntelligence = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Market Intelligence</h1>
-          <p className="text-gray-600 mt-2">
+          <h1 className="text-3xl font-bold text-foreground">Market Intelligence</h1>
+          <p className="text-muted-foreground mt-2">
             Real-time crop prices, market trends, and intelligent insights
           </p>
         </div>
         <div className="flex items-center space-x-2">
-          <Badge variant="outline" className="bg-green-50 text-green-700">
+          <Badge variant="outline" className="bg-accent/10 text-accent-foreground">
             <Activity className="h-3 w-3 mr-1" />
             Live Data
           </Badge>
@@ -184,7 +184,7 @@ const MarketIntelligence = () => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Avg. Price Today</p>
+                <p className="text-sm text-muted-foreground">Avg. Price Today</p>
                 <p className="text-2xl font-bold">₹3,245</p>
               </div>
               <TrendingUp className="h-8 w-8 text-green-500" />
@@ -197,7 +197,7 @@ const MarketIntelligence = () => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Best Performing</p>
+                <p className="text-sm text-muted-foreground">Best Performing</p>
                 <p className="text-2xl font-bold">Cotton</p>
               </div>
               <Target className="h-8 w-8 text-blue-500" />
@@ -210,7 +210,7 @@ const MarketIntelligence = () => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Market Alerts</p>
+                <p className="text-sm text-muted-foreground">Market Alerts</p>
                 <p className="text-2xl font-bold">3</p>
               </div>
               <AlertTriangle className="h-8 w-8 text-orange-500" />
@@ -223,7 +223,7 @@ const MarketIntelligence = () => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Profit Potential</p>
+                <p className="text-sm text-muted-foreground">Profit Potential</p>
                 <p className="text-2xl font-bold">₹45K</p>
               </div>
               <DollarSign className="h-8 w-8 text-green-500" />
@@ -265,8 +265,8 @@ const MarketIntelligence = () => {
                         key={`${price.crop}-${price.marketLocation}-${index}`}
                         className={`p-4 rounded-lg border cursor-pointer transition-colors ${
                           selectedCrop === price.crop
-                            ? "border-green-500 bg-green-50"
-                            : "border-gray-200 hover:border-gray-300"
+                            ? "border-primary bg-accent/10"
+                            : "border-border hover:border-border/80"
                         }`}
                         onClick={() => setSelectedCrop(price.crop)}
                       >
@@ -274,7 +274,7 @@ const MarketIntelligence = () => {
                           <div className="flex items-center space-x-3">
                             <div>
                               <h3 className="font-semibold">{price.crop}</h3>
-                              <p className="text-sm text-gray-600">
+                              <p className="text-sm text-muted-foreground">
                                 {price.marketLocation} • {price.quality}
                               </p>
                             </div>
@@ -286,7 +286,7 @@ const MarketIntelligence = () => {
                               </span>
                               <div className={`flex items-center ${
                                 price.trend === "up" ? "text-green-600" : 
-                                price.trend === "down" ? "text-red-600" : "text-gray-600"
+                                price.trend === "down" ? "text-red-600" : "text-muted-foreground"
                               }`}>
                                 {price.trend === "up" ? (
                                   <TrendingUp className="h-4 w-4" />
@@ -298,7 +298,7 @@ const MarketIntelligence = () => {
                                 </span>
                               </div>
                             </div>
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-muted-foreground/60">
                               Updated: {price.lastUpdated}
                             </p>
                           </div>
@@ -319,13 +319,13 @@ const MarketIntelligence = () => {
                 <CardContent className="space-y-4">
                   {selectedCropPrice && (
                     <>
-                      <div className="text-center p-4 bg-gray-50 rounded-lg">
-                        <div className="text-3xl font-bold text-gray-900">
+                      <div className="text-center p-4 bg-accent/10 rounded-lg">
+                        <div className="text-3xl font-bold text-foreground">
                           ₹{selectedCropPrice.currentPrice.toLocaleString()}
                         </div>
                         <div className={`text-sm ${
                           selectedCropPrice.trend === "up" ? "text-green-600" : 
-                          selectedCropPrice.trend === "down" ? "text-red-600" : "text-gray-600"
+                          selectedCropPrice.trend === "down" ? "text-red-600" : "text-muted-foreground"
                         }`}>
                           {selectedCropPrice.change > 0 ? "+" : ""}₹{selectedCropPrice.change} 
                           ({selectedCropPrice.changePercent > 0 ? "+" : ""}{selectedCropPrice.changePercent}%)
@@ -334,15 +334,15 @@ const MarketIntelligence = () => {
                       
                       <div className="space-y-2">
                         <div className="flex justify-between">
-                          <span className="text-gray-600">Market:</span>
+                          <span className="text-muted-foreground">Market:</span>
                           <span className="font-medium">{selectedCropPrice.marketLocation}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-600">Quality:</span>
+                          <span className="text-muted-foreground">Quality:</span>
                           <span className="font-medium">{selectedCropPrice.quality}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-600">Previous Price:</span>
+                          <span className="text-muted-foreground">Previous Price:</span>
                           <span className="font-medium">₹{selectedCropPrice.previousPrice.toLocaleString()}</span>
                         </div>
                       </div>
@@ -393,14 +393,14 @@ const MarketIntelligence = () => {
                       </div>
                       
                       <div className="flex items-center justify-between mb-3">
-                        <span className="text-sm text-gray-600">Confidence:</span>
+                        <span className="text-sm text-muted-foreground">Confidence:</span>
                         <span className="text-sm font-medium">{prediction.confidence}%</span>
                       </div>
                       
                       <div className="space-y-1">
-                        <p className="text-xs text-gray-600">Key factors:</p>
+                        <p className="text-xs text-muted-foreground">Key factors:</p>
                         {prediction.factors.slice(0, 2).map((factor, index) => (
-                          <p key={index} className="text-xs text-gray-500">• {factor}</p>
+                          <p key={index} className="text-xs text-muted-foreground/60">• {factor}</p>
                         ))}
                       </div>
                     </CardContent>
@@ -436,7 +436,7 @@ const MarketIntelligence = () => {
                           <h4 className="font-semibold">{crop}</h4>
                           <Badge variant="outline">Monitoring</Badge>
                         </div>
-                        <div className="text-sm text-gray-600 space-y-1">
+                        <div className="text-sm text-muted-foreground space-y-1">
                           <p>• Current conditions: Favorable for growth</p>
                           <p>• Temperature impact: Optimal range</p>
                           <p>• Moisture levels: Adequate</p>
@@ -457,36 +457,36 @@ const MarketIntelligence = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                    <div className="flex items-center justify-between p-3 bg-accent/10 rounded-lg">
                       <div>
                         <div className="font-medium">Cotton</div>
-                        <div className="text-sm text-gray-600">Good weather conditions</div>
+                        <div className="text-sm text-muted-foreground">Good weather conditions</div>
                       </div>
                       <div className="text-right">
                         <div className="text-green-600 font-semibold">+2.5%</div>
-                        <div className="text-xs text-gray-500">Expected increase</div>
+                        <div className="text-xs text-muted-foreground/60">Expected increase</div>
                       </div>
                     </div>
                     
-                    <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
+                    <div className="flex items-center justify-between p-3 bg-accent/5 rounded-lg">
                       <div>
                         <div className="font-medium">Wheat</div>
-                        <div className="text-sm text-gray-600">Moderate weather stress</div>
+                        <div className="text-sm text-muted-foreground">Moderate weather stress</div>
                       </div>
                       <div className="text-right">
                         <div className="text-yellow-600 font-semibold">-1.2%</div>
-                        <div className="text-xs text-gray-500">Potential decrease</div>
+                        <div className="text-xs text-muted-foreground/60">Potential decrease</div>
                       </div>
                     </div>
                     
-                    <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                    <div className="flex items-center justify-between p-3 bg-accent/10 rounded-lg">
                       <div>
                         <div className="font-medium">Rice</div>
-                        <div className="text-sm text-gray-600">Optimal monsoon conditions</div>
+                        <div className="text-sm text-muted-foreground">Optimal monsoon conditions</div>
                       </div>
                       <div className="text-right">
                         <div className="text-blue-600 font-semibold">+4.1%</div>
-                        <div className="text-xs text-gray-500">Strong growth expected</div>
+                        <div className="text-xs text-muted-foreground/60">Strong growth expected</div>
                       </div>
                     </div>
                   </div>

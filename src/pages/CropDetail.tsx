@@ -159,22 +159,22 @@ const CropDetail = () => {
 
   // Add a main card above the detail cards
   return (
-    <div className="flex min-h-screen items-center justify-center bg-white">
+    <div className="flex min-h-screen items-center justify-center bg-background">
       <div className="w-full max-w-6xl flex justify-center items-center" style={{ backgroundImage: `url(${bgSrc})`, backgroundSize: 'cover', backgroundPosition: 'center', borderRadius: '2rem', width: '80vw', minHeight: '80vh', boxShadow: '0 4px 32px rgba(0,0,0,0.08)', overflow: 'hidden' }}>
         <div className="max-w-3xl w-full p-8 relative z-10">
           <button
             onClick={() => navigate('/cost-planning')}
-            className="flex items-center gap-2 px-3 py-2 bg-white hover:bg-green-100 border border-green-200 rounded-lg shadow transition-colors mb-4"
+            className="flex items-center gap-2 px-3 py-2 bg-card hover:bg-accent border border-border rounded-lg shadow transition-colors mb-4"
             aria-label="Back to Cost Planning"
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
           <div className="w-full max-w-2xl mx-auto mb-10">
-            <div className="border rounded-2xl bg-white shadow-lg flex flex-row items-center gap-6 p-8">
+            <div className="border border-border rounded-2xl bg-card shadow-lg flex flex-row items-center gap-6 p-8">
               <img src={iconSrc} alt={crop.name} className="w-24 h-24 object-cover rounded-xl border-2 border-green-100 shadow-sm" />
               <div className="flex-1">
-                <div className="text-3xl font-bold text-gray-900 mb-2">{crop.name}</div>
-                <div className="mt-2 px-4 py-2 bg-green-100 text-green-700 rounded-full text-lg font-semibold inline-block">
+                <div className="text-3xl font-bold text-foreground mb-2">{crop.name}</div>
+                <div className="mt-2 px-4 py-2 bg-primary/10 text-primary rounded-full text-lg font-semibold inline-block">
                   ₹{crop.cost?.[selectedUnit]?.toLocaleString('en-IN') || '-'} / {unitLabels[selectedUnit] || selectedUnit}
                 </div>
               </div>
@@ -182,60 +182,60 @@ const CropDetail = () => {
           </div>
           <div className="flex flex-col space-y-8 w-full">
             {/* Planting & Harvesting Card */}
-            <div className="border rounded-lg p-4 bg-white flex flex-col items-center">
+            <div className="border border-border rounded-lg p-4 bg-card flex flex-col items-center">
               <div className="flex items-center gap-2 mb-2">
                 <Calendar className="h-6 w-6 text-green-600" />
                 <h2 className="text-lg font-semibold">Planting & Harvesting</h2>
               </div>
-              <div className="mb-2 text-gray-700">
+              <div className="mb-2 text-muted-foreground">
                 <span className="font-medium">Planting Months:</span> {crop.planting_months}
               </div>
-              <div className="mb-2 text-gray-700">
+              <div className="mb-2 text-muted-foreground">
                 <span className="font-medium">Harvesting Time:</span> {crop.harvesting_time}
               </div>
             </div>
             {/* Irrigation/Water */}
-            <div className="border rounded-lg p-6 bg-white flex flex-row items-center gap-6 w-full max-w-2xl mx-auto">
-              <img src={waterSrc} alt="Water Example" className="w-40 h-28 object-cover rounded border border-gray-200" />
+            <div className="border border-border rounded-lg p-6 bg-card flex flex-row items-center gap-6 w-full max-w-2xl mx-auto">
+              <img src={waterSrc} alt="Water Example" className="w-40 h-28 object-cover rounded border border-border" />
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
                   <img src={waterSrc} alt="Water" className="h-6 w-6 rounded" />
                   <h2 className="text-lg font-semibold">Water Timing</h2>
                 </div>
-                <div className="mb-2 text-gray-800 text-base font-medium">{crop.water_timing}</div>
-                <div className="text-sm text-gray-700 mt-2 font-normal">{cropPractices[crop.name]?.irrigation}</div>
+                <div className="mb-2 text-foreground text-base font-medium">{crop.water_timing}</div>
+                <div className="text-sm text-muted-foreground mt-2 font-normal">{cropPractices[crop.name]?.irrigation}</div>
               </div>
             </div>
             {/* Fertilizer */}
-            <div className="border rounded-lg p-6 bg-white flex flex-row items-center gap-6 w-full max-w-2xl mx-auto">
-              <img src={fertilizerSrc} alt="Fertilizer Example" className="w-40 h-28 object-cover rounded border border-gray-200" />
+            <div className="border border-border rounded-lg p-6 bg-card flex flex-row items-center gap-6 w-full max-w-2xl mx-auto">
+              <img src={fertilizerSrc} alt="Fertilizer Example" className="w-40 h-28 object-cover rounded border border-border" />
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
                   <img src={fertilizerSrc} alt="Fertilizer" className="h-6 w-6 rounded" />
                   <h2 className="text-lg font-semibold">Fertilizers</h2>
                 </div>
-                <div className="mb-2 text-gray-800 text-base font-medium">{crop.fertilizers}</div>
-                <div className="text-sm text-gray-700 mt-2 font-normal">{cropPractices[crop.name]?.fertilizer}</div>
+                <div className="mb-2 text-foreground text-base font-medium">{crop.fertilizers}</div>
+                <div className="text-sm text-muted-foreground mt-2 font-normal">{cropPractices[crop.name]?.fertilizer}</div>
               </div>
             </div>
             {/* Soil Preparation */}
-            <div className="border rounded-lg p-6 bg-white flex flex-row items-center gap-6 w-full max-w-2xl mx-auto">
-              <img src={soilSrc} alt="Soil Example" className="w-40 h-28 object-cover rounded border border-gray-200" />
+            <div className="border border-border rounded-lg p-6 bg-card flex flex-row items-center gap-6 w-full max-w-2xl mx-auto">
+              <img src={soilSrc} alt="Soil Example" className="w-40 h-28 object-cover rounded border border-border" />
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
                   <img src={soilSrc} alt="Soil" className="h-6 w-6 rounded" />
                   <h2 className="text-lg font-semibold">Soil Preparation</h2>
                 </div>
-                <div className="mb-2 text-gray-800 text-base font-medium">{crop.soil_preparation}</div>
-                <div className="text-sm text-gray-700 mt-2 font-normal">{cropPractices[crop.name]?.soil}</div>
+                <div className="mb-2 text-foreground text-base font-medium">{crop.soil_preparation}</div>
+                <div className="text-sm text-muted-foreground mt-2 font-normal">{cropPractices[crop.name]?.soil}</div>
               </div>
             </div>
             {/* Growth Stage */}
             {stageSrc && (
               <div className="w-full flex flex-col items-center mt-12">
-                <div className="bg-white/80 rounded-xl p-6 w-full max-w-2xl flex flex-col items-center">
-                  <h2 className="text-2xl font-bold mb-4 text-gray-900">Growth Stage of {crop.name}</h2>
-                  <img src={stageSrc} alt={`Growth Stage of ${crop.name}`} className="w-full max-w-2xl max-h-[350px] object-contain rounded-xl border border-gray-200 shadow mx-auto" />
+                <div className="bg-card/90 rounded-xl p-6 w-full max-w-2xl flex flex-col items-center">
+                  <h2 className="text-2xl font-bold mb-4 text-foreground">Growth Stage of {crop.name}</h2>
+                  <img src={stageSrc} alt={`Growth Stage of ${crop.name}`} className="w-full max-w-2xl max-h-[350px] object-contain rounded-xl border border-border shadow mx-auto" />
                 </div>
               </div>
             )}

@@ -70,20 +70,20 @@ const Header = ({}: HeaderProps) => {
   }, []);
 
   return (
-    <header className="bg-white border-b border-gray-200 px-4 py-3 shadow-sm">
+    <header className="bg-card border-b border-border px-4 py-3 shadow-sm">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2 cursor-pointer" onClick={handleLogoClick}>
             <div className="w-12 h-12 rounded-lg flex items-center justify-center overflow-hidden">
-              <img 
-                src="/logo.png" 
-                alt="Smart Farmer Logo" 
+              <img
+                src="/logo.png"
+                alt="Smart Farmer Logo"
                 className="w-full h-full object-cover"
               />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-900">Smart Farmer</h1>
-              <p className="text-xs text-gray-500">Assistant Platform</p>
+              <h1 className="text-xl font-bold text-foreground">Smart Farmer</h1>
+              <p className="text-xs text-muted-foreground">Assistant Platform</p>
             </div>
           </div>
         </div>
@@ -100,7 +100,7 @@ const Header = ({}: HeaderProps) => {
                 setShowResults(e.target.value.length > 0);
               }}
               onFocus={() => setShowResults(searchQuery.length > 0)}
-              className="pl-10 pr-10 py-2 w-full bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              className="pl-10 pr-10 py-2 w-full bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-foreground placeholder:text-muted-foreground"
               style={{ minWidth: 0 }}
             />
             {searchQuery && (
@@ -115,27 +115,27 @@ const Header = ({}: HeaderProps) => {
               </button>
             )}
             {showResults && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
+              <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
                 {filteredResults.length > 0 ? (
                   filteredResults.map((item, index) => (
                     <button
                       key={index}
                       onClick={() => handleSearchClick(item.href)}
-                      className="w-full text-left px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 transition-colors"
+                      className="w-full text-left px-4 py-3 hover:bg-accent hover:text-accent-foreground border-b border-border last:border-b-0 transition-colors"
                     >
                       <div className="flex items-center justify-between">
                         <div>
-                          <div className="font-medium text-gray-900">{item.name}</div>
-                          <div className="text-sm text-gray-500">{item.description}</div>
+                          <div className="font-medium text-popover-foreground">{item.name}</div>
+                          <div className="text-sm text-muted-foreground">{item.description}</div>
                         </div>
-                        <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                        <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
                           {item.category}
                         </span>
                       </div>
                     </button>
                   ))
                 ) : (
-                  <div className="px-4 py-3 text-gray-500 text-sm">
+                  <div className="px-4 py-3 text-muted-foreground text-sm">
                     No results found for "{searchQuery}"
                   </div>
                 )}
@@ -200,10 +200,10 @@ const Header = ({}: HeaderProps) => {
         </div>
         {/* Mobile Search Overlay */}
         {isMobile && mobileSearchOpen && (
-          <div className="absolute left-0 right-0 top-full z-50 bg-white flex flex-col p-4 transition-all border-b border-gray-200 shadow-lg" style={{ minHeight: 'calc(100vh - 64px)' }}>
+          <div className="absolute left-0 right-0 top-full z-50 bg-background flex flex-col p-4 transition-all border-b border-border shadow-lg" style={{ minHeight: 'calc(100vh - 64px)' }}>
             <div className="flex items-center mb-4">
               <button onClick={() => setMobileSearchOpen(false)} className="mr-2">
-                <X className="h-6 w-6 text-gray-600" />
+                <X className="h-6 w-6 text-muted-foreground" />
               </button>
               <input
                 autoFocus
@@ -215,7 +215,7 @@ const Header = ({}: HeaderProps) => {
                   setShowResults(e.target.value.length > 0);
                 }}
                 onFocus={() => setShowResults(searchQuery.length > 0)}
-                className="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="flex-1 px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-input text-foreground placeholder:text-muted-foreground"
               />
               {searchQuery && (
                 <button
@@ -231,7 +231,7 @@ const Header = ({}: HeaderProps) => {
             </div>
             <div className="flex-1 overflow-y-auto">
               {showResults && (
-                <div className="bg-white border border-gray-200 rounded-lg shadow-lg max-h-96 overflow-y-auto">
+                <div className="bg-popover border border-border rounded-lg shadow-lg max-h-96 overflow-y-auto">
                   {filteredResults.length > 0 ? (
                     filteredResults.map((item, index) => (
                       <button
@@ -240,21 +240,21 @@ const Header = ({}: HeaderProps) => {
                           handleSearchClick(item.href);
                           setMobileSearchOpen(false);
                         }}
-                        className="w-full text-left px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 transition-colors"
+                        className="w-full text-left px-4 py-3 hover:bg-accent hover:text-accent-foreground border-b border-border last:border-b-0 transition-colors"
                       >
                         <div className="flex items-center justify-between">
                           <div>
-                            <div className="font-medium text-gray-900">{item.name}</div>
-                            <div className="text-sm text-gray-500">{item.description}</div>
+                            <div className="font-medium text-popover-foreground">{item.name}</div>
+                            <div className="text-sm text-muted-foreground">{item.description}</div>
                           </div>
-                          <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                          <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
                             {item.category}
                           </span>
                         </div>
                       </button>
                     ))
                   ) : (
-                    <div className="px-4 py-3 text-gray-500 text-sm">
+                    <div className="px-4 py-3 text-muted-foreground text-sm">
                       No results found for "{searchQuery}"
                     </div>
                   )}

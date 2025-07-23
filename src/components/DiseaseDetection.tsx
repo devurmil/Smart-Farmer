@@ -532,7 +532,7 @@ const DiseaseDetection = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50">
+    <div className="min-h-screen bg-background">
       {/* Hero Section */}
       <div className="relative overflow-hidden bg-gradient-to-r from-emerald-600 to-green-700">
         <div className="absolute inset-0 bg-black opacity-10"></div>
@@ -578,7 +578,7 @@ const DiseaseDetection = () => {
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Main Detection Card */}
           <div className="lg:col-span-2">
-            <Card className="overflow-hidden shadow-2xl border-0 bg-white/80 backdrop-blur-sm">
+            <Card className="overflow-hidden shadow-2xl border-border bg-card backdrop-blur-sm">
               <CardHeader className="bg-gradient-to-r from-emerald-500 to-green-600 text-white p-8">
                 <div className="flex items-center gap-3">
                   <Camera className="w-8 h-8" />
@@ -596,10 +596,10 @@ const DiseaseDetection = () => {
                 <div className="space-y-4">
                   <div className="flex items-center gap-3 mb-4">
                     <div className="w-8 h-8 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center font-bold">1</div>
-                    <Label className="text-lg font-semibold text-gray-800">Select Your Crop Type</Label>
+                    <Label className="text-lg font-semibold text-foreground">Select Your Crop Type</Label>
                   </div>
                   <select
-                    className="w-full p-4 text-lg border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-emerald-200 focus:border-emerald-500 transition-all duration-200 bg-white"
+                    className="w-full p-4 text-lg border-2 border-border rounded-xl focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all duration-200 bg-input text-foreground"
                     value={selectedCrop}
                     onChange={handleCropChange}
                   >
@@ -618,7 +618,7 @@ const DiseaseDetection = () => {
                     <div className="space-y-4">
                       <div className="flex items-center gap-3 mb-4">
                         <div className="w-8 h-8 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center font-bold">2</div>
-                        <Label className="text-lg font-semibold text-gray-800">
+                        <Label className="text-lg font-semibold text-foreground">
                           Upload {cropOptions.find(c => c.value === selectedCrop)?.label} Image
                         </Label>
                       </div>
@@ -688,7 +688,7 @@ const DiseaseDetection = () => {
                     <div className="space-y-4">
                       <div className="flex items-center gap-3 mb-4">
                         <div className="w-8 h-8 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center font-bold">3</div>
-                        <Label className="text-lg font-semibold text-gray-800">AI Analysis</Label>
+                        <Label className="text-lg font-semibold text-foreground">AI Analysis</Label>
                       </div>
                       
                       <Button
@@ -729,10 +729,10 @@ const DiseaseDetection = () => {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* How It Works */}
-            <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+            <Card className="shadow-lg border-border bg-card backdrop-blur-sm">
               <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-2 text-xl text-gray-800">
-                  <Info className="w-6 h-6 text-emerald-600" />
+                <CardTitle className="flex items-center gap-2 text-xl text-foreground">
+                  <Info className="w-6 h-6 text-primary" />
                   How It Works
                 </CardTitle>
               </CardHeader>
@@ -740,29 +740,29 @@ const DiseaseDetection = () => {
                 <div className="flex gap-3">
                   <div className="w-6 h-6 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 mt-0.5">1</div>
                   <div>
-                    <h4 className="font-semibold text-gray-800">Select Crop</h4>
-                    <p className="text-sm text-gray-600">Choose from 16 supported crop types</p>
+                    <h4 className="font-semibold text-foreground">Select Crop</h4>
+                    <p className="text-sm text-muted-foreground">Choose from 16 supported crop types</p>
                   </div>
                 </div>
                 <div className="flex gap-3">
                   <div className="w-6 h-6 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 mt-0.5">2</div>
                   <div>
-                    <h4 className="font-semibold text-gray-800">Upload Image</h4>
-                    <p className="text-sm text-gray-600">Take or upload a clear photo of the affected plant</p>
+                    <h4 className="font-semibold text-foreground">Upload Image</h4>
+                    <p className="text-sm text-muted-foreground">Take or upload a clear photo of the affected plant</p>
                   </div>
                 </div>
                 <div className="flex gap-3">
-                  <div className="w-6 h-6 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 mt-0.5">3</div>
+                  <div className="w-6 h-6 bg-primary/20 text-primary rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 mt-0.5">3</div>
                   <div>
-                    <h4 className="font-semibold text-gray-800">Get Results</h4>
-                    <p className="text-sm text-gray-600">AI analyzes and provides instant diagnosis</p>
+                    <h4 className="font-semibold text-foreground">Get Results</h4>
+                    <p className="text-sm text-muted-foreground">AI analyzes and provides instant diagnosis</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             {/* Supported Crops */}
-            <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+            <Card className="shadow-lg border-border bg-card backdrop-blur-sm">
               <CardHeader className="pb-4">
                 <CardTitle className="flex items-center gap-2 text-xl text-gray-800">
                   <Leaf className="w-6 h-6 text-emerald-600" />
@@ -796,7 +796,7 @@ const DiseaseDetection = () => {
 
             <div className="grid md:grid-cols-2 gap-8">
               {/* Detection Result */}
-              <Card className="shadow-xl border-0 bg-white overflow-hidden">
+              <Card className="shadow-xl border-border bg-card overflow-hidden">
                 <CardHeader className={`${
                   detectedDisease && (detectedDisease === 'Healthy' || detectedDisease.includes('Healthy'))
                     ? 'bg-gradient-to-r from-emerald-500 to-green-600'
@@ -827,7 +827,7 @@ const DiseaseDetection = () => {
 
               {/* Treatment Guide */}
               {detectedDisease && (
-                <Card className="shadow-xl border-0 bg-white overflow-hidden">
+                <Card className="shadow-xl border-border bg-card overflow-hidden">
                   <CardHeader className={`${
                     detectedDisease === 'Healthy' || detectedDisease.includes('Healthy')
                       ? 'bg-gradient-to-r from-emerald-500 to-green-600'

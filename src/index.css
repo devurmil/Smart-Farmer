@@ -103,3 +103,13 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+.card, .bg-card {
+  background: hsl(var(--card));
+  color: hsl(var(--card-foreground));
+}
+
+.main-bg {
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+}

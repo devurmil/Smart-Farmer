@@ -913,14 +913,14 @@ const FarmCalculator = () => {
         <label htmlFor="farm-section" className="block font-semibold mb-1">Select Section:</label>
         <select
           id="farm-section"
-          className="w-full p-2 border rounded-md"
+          className="w-full p-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
           value={activeTab}
           onChange={e => setActiveTab(e.target.value)}
         >
-          <option value="calculator">Calculator</option>
-          <option value="viewer">Farm Viewer</option>
-          <option value="ai-analysis">AI Analysis</option>
-          <option value="saved">Saved Farms ({savedFarms.length})</option>
+          <option value="calculator" className="bg-background text-foreground">Calculator</option>
+          <option value="viewer" className="bg-background text-foreground">Farm Viewer</option>
+          <option value="ai-analysis" className="bg-background text-foreground">AI Analysis</option>
+          <option value="saved" className="bg-background text-foreground">Saved Farms ({savedFarms.length})</option>
         </select>
       </div>
 
@@ -994,9 +994,9 @@ const FarmCalculator = () => {
               <CardContent className="space-y-4">
                 <div>
                   <Label htmlFor="unit">Unit</Label>
-                  <select 
+                  <select
                     id="unit"
-                    className="w-full p-2 border rounded-md"
+                    className="w-full p-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
                     value={unit}
                     onChange={(e) => {
                       setUnit(e.target.value);
@@ -1006,9 +1006,9 @@ const FarmCalculator = () => {
                       }
                     }}
                   >
-                    <option value="acres">Acres</option>
-                    <option value="hectares">Hectares</option>
-                    <option value="sqmeters">Square Meters</option>
+                    <option value="acres" className="bg-background text-foreground">Acres</option>
+                    <option value="hectares" className="bg-background text-foreground">Hectares</option>
+                    <option value="sqmeters" className="bg-background text-foreground">Square Meters</option>
                   </select>
                 </div>
 
@@ -1151,35 +1151,35 @@ const FarmCalculator = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="soilType">Soil Type</Label>
-                <select 
+                <select
                   id="soilType"
-                  className="w-full p-2 border rounded-md"
+                  className="w-full p-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
                   value={soilType}
                   onChange={(e) => setSoilType(e.target.value)}
                 >
-                  <option value="">Select soil type...</option>
-                  <option value="clay">Clay</option>
-                  <option value="sandy">Sandy</option>
-                  <option value="loamy">Loamy</option>
-                  <option value="silty">Silty</option>
-                  <option value="peaty">Peaty</option>
+                  <option value="" className="bg-background text-foreground">Select soil type...</option>
+                  <option value="clay" className="bg-background text-foreground">Clay</option>
+                  <option value="sandy" className="bg-background text-foreground">Sandy</option>
+                  <option value="loamy" className="bg-background text-foreground">Loamy</option>
+                  <option value="silty" className="bg-background text-foreground">Silty</option>
+                  <option value="peaty" className="bg-background text-foreground">Peaty</option>
                 </select>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="climate">Climate</Label>
-                <select 
+                <select
                   id="climate"
-                  className="w-full p-2 border rounded-md"
+                  className="w-full p-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
                   value={climate}
                   onChange={(e) => setClimate(e.target.value)}
                 >
-                  <option value="">Select climate...</option>
-                  <option value="tropical">Tropical</option>
-                  <option value="subtropical">Subtropical</option>
-                  <option value="temperate">Temperate</option>
-                  <option value="arid">Arid</option>
-                  <option value="semi-arid">Semi-arid</option>
+                  <option value="" className="bg-background text-foreground">Select climate...</option>
+                  <option value="tropical" className="bg-background text-foreground">Tropical</option>
+                  <option value="subtropical" className="bg-background text-foreground">Subtropical</option>
+                  <option value="temperate" className="bg-background text-foreground">Temperate</option>
+                  <option value="arid" className="bg-background text-foreground">Arid</option>
+                  <option value="semi-arid" className="bg-background text-foreground">Semi-arid</option>
                 </select>
               </div>
 

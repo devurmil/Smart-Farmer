@@ -1,0 +1,139 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 142 76% 36%;
+    --primary-foreground: 355.7 100% 97.3%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222.2 84% 4.9%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222.2 84% 4.9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 142 76% 36%;
+    --sidebar-background: 142 20% 97%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 142 76% 36%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 142 50% 92%;
+    --sidebar-accent-foreground: 142 76% 20%;
+    --sidebar-border: 142 30% 88%;
+    --sidebar-ring: 142 76% 36%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    /* Main backgrounds - different shades for hierarchy */
+    --background: 222.2 84% 4.9%;           /* Darkest - main background */
+    --foreground: 210 40% 98%;              /* Light text */
+    
+    /* Cards and surfaces - layered approach */
+    --card: 220 13% 9%;                     /* Slightly lighter than background */
+    --card-foreground: 210 40% 98%;
+    
+    /* Popovers and dropdowns - needs to be visible */
+    --popover: 224 71% 4%;                  /* Very dark but distinguishable */
+    --popover-foreground: 210 40% 98%;
+    
+    /* Primary colors */
+    --primary: 142 70% 45%;                 /* Green theme color */
+    --primary-foreground: 222.2 84% 4.9%;
+    
+    /* Secondary elements - medium gray */
+    --secondary: 215 27.9% 16.9%;           /* Medium dark gray */
+    --secondary-foreground: 210 40% 98%;
+    
+    /* Muted elements - lighter gray */
+    --muted: 215 27.9% 16.9%;               /* Same as secondary for consistency */
+    --muted-foreground: 215.4 16.3% 65.1%; /* Muted text */
+    
+    /* Accent elements - slightly different from secondary */
+    --accent: 216 27.9% 18%;                /* Slightly lighter than secondary */
+    --accent-foreground: 210 40% 98%;
+    
+    /* Destructive */
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    
+    /* Borders and inputs - visible but subtle */
+    --border: 217.2 32.6% 17.5%;            /* Subtle borders */
+    --input: 217.2 32.6% 17.5%;             /* Input backgrounds */
+    --ring: 142 70% 45%;                    /* Focus rings */
+    
+    /* Sidebar - darker than main content */
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 142 70% 45%;
+    --sidebar-primary-foreground: 355.7 100% 97.3%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 142 70% 45%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer components {
+  /* Enhanced card styling for better dark mode */
+  .card {
+    @apply bg-card text-card-foreground border-border;
+  }
+  
+  /* Dropdown and select styling */
+  .select-content {
+    @apply bg-popover text-popover-foreground border-border shadow-md;
+  }
+  
+  /* Input styling */
+  .input {
+    @apply bg-input border-border text-foreground placeholder:text-muted-foreground;
+  }
+  
+  /* Button variants */
+  .btn-secondary {
+    @apply bg-secondary text-secondary-foreground hover:bg-secondary/80;
+  }
+  
+  .btn-outline {
+    @apply border-border bg-background hover:bg-accent hover:text-accent-foreground;
+  }
+  
+  /* Muted text */
+  .text-muted {
+    @apply text-muted-foreground;
+  }
+  
+  /* Accent backgrounds */
+  .bg-accent {
+    @apply bg-accent text-accent-foreground;
+  }
+  
+  /* Card variations for layering */
+  .card-elevated {
+    @apply bg-card border-border shadow-sm;
+  }
+  
+  .card-nested {
+    @apply bg-accent/50 border-border;
+  }
+}

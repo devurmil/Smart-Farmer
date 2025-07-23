@@ -68,25 +68,25 @@ const AddEquipmentForm = ({ onEquipmentAdded }) => {
   return (
     <div className="space-y-6">
       {success && (
-        <div className="flex items-center p-4 bg-green-50 border border-green-200 rounded-xl">
-          <div className="p-1 bg-green-100 rounded-full mr-3">
-            <CheckCircle className="w-5 h-5 text-green-600" />
+        <div className="flex items-center p-4 bg-accent border border-border rounded-xl">
+          <div className="p-1 bg-accent rounded-full mr-3">
+            <CheckCircle className="w-5 h-5 text-accent-foreground" />
           </div>
           <div>
-            <h4 className="text-green-800 font-semibold">Equipment Added Successfully!</h4>
-            <p className="text-green-700 text-sm">{success}</p>
+            <h4 className="text-accent-foreground font-semibold">Equipment Added Successfully!</h4>
+            <p className="text-muted-foreground text-sm">{success}</p>
           </div>
         </div>
       )}
       
       {error && (
-        <div className="flex items-center p-4 bg-red-50 border border-red-200 rounded-xl">
-          <div className="p-1 bg-red-100 rounded-full mr-3">
-            <AlertCircle className="w-5 h-5 text-red-600" />
+        <div className="flex items-center p-4 bg-destructive/10 border border-destructive/20 rounded-xl">
+          <div className="p-1 bg-destructive/20 rounded-full mr-3">
+            <AlertCircle className="w-5 h-5 text-destructive" />
           </div>
           <div>
-            <h4 className="text-red-800 font-semibold">Error Adding Equipment</h4>
-            <p className="text-red-700 text-sm">{error}</p>
+            <h4 className="text-destructive font-semibold">Error Adding Equipment</h4>
+            <p className="text-destructive/80 text-sm">{error}</p>
           </div>
         </div>
       )}
@@ -94,7 +94,7 @@ const AddEquipmentForm = ({ onEquipmentAdded }) => {
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid md:grid-cols-2 gap-6">
           <div className="space-y-3">
-            <Label htmlFor="name" className="text-lg font-semibold text-gray-800">Equipment Name</Label>
+            <Label htmlFor="name" className="text-lg font-semibold text-foreground">Equipment Name</Label>
             <Input
               id="name"
               name="name"
@@ -102,19 +102,19 @@ const AddEquipmentForm = ({ onEquipmentAdded }) => {
               onChange={handleChange}
               placeholder="e.g., John Deere 5050D Tractor"
               required
-              className="h-12 text-lg border-2 border-gray-200 focus:border-emerald-500 rounded-lg"
+              className="h-12 text-lg border-2 border-border focus:border-primary rounded-lg bg-background text-foreground"
             />
           </div>
           
           <div className="space-y-3">
-            <Label htmlFor="type" className="text-lg font-semibold text-gray-800">Equipment Type</Label>
+            <Label htmlFor="type" className="text-lg font-semibold text-foreground">Equipment Type</Label>
             <select
               id="type"
               name="type"
               value={form.type}
               onChange={handleChange}
               required
-              className="h-12 w-full px-4 text-lg border-2 border-gray-200 focus:border-emerald-500 rounded-lg bg-white"
+              className="h-12 w-full px-4 text-lg border-2 border-border focus:border-primary rounded-lg bg-background text-foreground"
             >
               <option value="">Select Equipment Type</option>
               <option value="Tractor">Tractor</option>
@@ -130,10 +130,10 @@ const AddEquipmentForm = ({ onEquipmentAdded }) => {
         </div>
         
         <div className="space-y-3">
-          <Label htmlFor="price" className="text-lg font-semibold text-gray-800">Price per Day (₹)</Label>
+          <Label htmlFor="price" className="text-lg font-semibold text-foreground">Price per Day (₹)</Label>
           <div className="relative">
             <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
-              <span className="text-xl text-gray-500">₹</span>
+              <span className="text-xl text-muted-foreground">₹</span>
             </div>
             <Input
               id="price"
@@ -143,13 +143,13 @@ const AddEquipmentForm = ({ onEquipmentAdded }) => {
               onChange={handleChange}
               placeholder="2500"
               required
-              className="h-12 pl-10 text-lg border-2 border-gray-200 focus:border-emerald-500 rounded-lg"
+              className="h-12 pl-10 text-lg border-2 border-border focus:border-primary rounded-lg bg-background text-foreground"
             />
           </div>
         </div>
         
         <div className="space-y-3">
-          <Label htmlFor="description" className="text-lg font-semibold text-gray-800">Description</Label>
+          <Label htmlFor="description" className="text-lg font-semibold text-foreground">Description</Label>
           <Textarea
             id="description"
             name="description"
@@ -157,13 +157,13 @@ const AddEquipmentForm = ({ onEquipmentAdded }) => {
             onChange={handleChange}
             placeholder="Describe your equipment's features, condition, year, and availability details..."
             rows={4}
-            className="text-lg border-2 border-gray-200 focus:border-emerald-500 rounded-lg resize-none"
+            className="text-lg border-2 border-border focus:border-primary rounded-lg resize-none bg-background text-foreground"
           />
         </div>
         
         <div className="space-y-3">
-          <Label className="text-lg font-semibold text-gray-800">Equipment Image</Label>
-          <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-emerald-400 transition-colors">
+          <Label className="text-lg font-semibold text-foreground">Equipment Image</Label>
+          <div className="border-2 border-dashed border-border rounded-xl p-6 text-center hover:border-primary transition-colors">
             <div className="relative">
               <input
                 type="file"
@@ -176,14 +176,14 @@ const AddEquipmentForm = ({ onEquipmentAdded }) => {
                   <Upload className="w-8 h-8 text-emerald-600" />
                 </div>
                 <div>
-                  <p className="text-lg text-gray-600 font-medium">
+                  <p className="text-lg text-muted-foreground font-medium">
                     {image ? (
                       <span className="text-emerald-600">✓ {image.name}</span>
                     ) : (
                       'Click to upload or drag and drop'
                     )}
                   </p>
-                  <p className="text-sm text-gray-400 mt-1">
+                  <p className="text-sm text-muted-foreground/60 mt-1">
                     PNG, JPG, JPEG up to 10MB
                   </p>
                 </div>

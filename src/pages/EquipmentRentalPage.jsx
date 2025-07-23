@@ -139,7 +139,7 @@ const EquipmentRentalPage = () => {
   }, [token, user?.role, refreshTrigger]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+    <div className="min-h-screen bg-background">
       {/* Hero Section */}
       <div className="relative overflow-hidden bg-gradient-to-r from-blue-600 to-indigo-700">
         <div className="absolute inset-0 bg-black opacity-10"></div>
@@ -150,7 +150,7 @@ const EquipmentRentalPage = () => {
                 <Tractor className="w-12 h-12 text-white" />
               </div>
             </div>
-            <h1 className="text-4xl md:text-6xl font-bold text-black mb-4">
+            <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">
               {user?.role === 'owner' ? 'Manage Your Equipment' : 'Rent Farm Equipment'}
             </h1>
             <p className="text-xl md:text-2xl text-blue-100 mb-8 max-w-3xl mx-auto">
@@ -227,7 +227,7 @@ const EquipmentRentalPage = () => {
             </div>
 
             {/* Add Equipment Form */}
-            <Card className="shadow-xl border-0 bg-white/90 backdrop-blur-sm overflow-hidden">
+            <Card className="shadow-xl border-border bg-card backdrop-blur-sm overflow-hidden">
               <CardHeader className="bg-gradient-to-r from-emerald-500 to-green-600 text-white p-8">
                 <div className="flex items-center gap-3">
                   <Plus className="w-8 h-8" />
@@ -245,7 +245,7 @@ const EquipmentRentalPage = () => {
             </Card>
 
             {/* My Equipment Listings */}
-            <Card className="shadow-xl border-0 bg-white/90 backdrop-blur-sm overflow-hidden">
+            <Card className="shadow-xl border-border bg-card backdrop-blur-sm overflow-hidden">
               <CardHeader className="bg-gradient-to-r from-emerald-500 to-green-600 text-white p-8">
                 <div className="flex items-center gap-3">
                   <Wrench className="w-8 h-8" />
@@ -306,7 +306,7 @@ const EquipmentRentalPage = () => {
             </div>
 
             {/* Available Equipment */}
-            <Card className="shadow-xl border-0 bg-white/90 backdrop-blur-sm overflow-hidden">
+            <Card className="shadow-xl border-border bg-card backdrop-blur-sm overflow-hidden">
               <CardHeader className="bg-gradient-to-r from-emerald-500 to-green-600 text-white p-8">
                 <div className="flex items-center gap-3">
                   <Tractor className="w-8 h-8" />
@@ -324,7 +324,7 @@ const EquipmentRentalPage = () => {
             </Card>
 
             {/* My Bookings */}
-            <Card className="shadow-xl border-0 bg-white/90 backdrop-blur-sm overflow-hidden">
+            <Card className="shadow-xl border-border bg-card backdrop-blur-sm overflow-hidden">
               <CardHeader className="bg-gradient-to-r from-emerald-500 to-green-600 text-white p-8">
                 <div className="flex items-center gap-3">
                   <Calendar className="w-8 h-8" />

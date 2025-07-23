@@ -37,16 +37,16 @@ const DashboardCards = () => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
       {stats.map((stat, index) => (
-        <Card key={index} className="hover:shadow-lg transition-shadow">
+        <Card key={index} className="hover:shadow-lg transition-shadow bg-card border-border">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
               {stat.title}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-2xl font-bold text-gray-900">
+                <div className="text-2xl font-bold text-foreground">
                   {stat.value}
                 </div>
                 <div className="flex items-center space-x-1 mt-1">
@@ -60,13 +60,13 @@ const DashboardCards = () => {
                     <AlertTriangle className="h-4 w-4 text-yellow-500" />
                   )}
                   <span className={`text-sm ${
-                    stat.trend === "up" ? "text-green-600" : 
-                    stat.trend === "down" ? "text-red-600" : "text-yellow-600"
+                    stat.trend === "up" ? "text-green-600 dark:text-green-400" :
+                    stat.trend === "down" ? "text-red-600 dark:text-red-400" : "text-yellow-600 dark:text-yellow-400"
                   }`}>
                     {stat.change}
                   </span>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   {stat.description}
                 </p>
               </div>

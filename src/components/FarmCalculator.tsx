@@ -196,41 +196,42 @@ const FarmCalculator = () => {
   }
 
   return (
-    <Card>
+    <Card className="bg-card border-border shadow-sm">
       <CardHeader>
-        <CardTitle>Farm Area Calculator</CardTitle>
-        <CardDescription>Draw your farm on the map to calculate area.</CardDescription>
+        <CardTitle className="text-card-foreground">Farm Area Calculator</CardTitle>
+        <CardDescription className="text-muted-foreground">Draw your farm on the map to calculate area.</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label>Farm Name</Label>
+              <Label className="text-foreground">Farm Name</Label>
               <Input
                 placeholder="Enter farm name"
                 value={farmName}
                 onChange={(e) => setFarmName(e.target.value)}
+                className="bg-input border-border text-foreground placeholder:text-muted-foreground"
               />
             </div>
             <div>
-              <Label>Unit</Label>
-              <select 
-                value={unit} 
+              <Label className="text-foreground">Unit</Label>
+              <select
+                value={unit}
                 onChange={(e) => setUnit(e.target.value as 'acres' | 'hectares' | 'sqm')}
-                className="w-full p-2 border rounded"
+                className="w-full p-2 border border-border rounded bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
               >
-                <option value="acres">Acres</option>
-                <option value="hectares">Hectares</option>
-                <option value="sqm">Square Meters</option>
+                <option value="acres" className="bg-background text-foreground">Acres</option>
+                <option value="hectares" className="bg-background text-foreground">Hectares</option>
+                <option value="sqm" className="bg-background text-foreground">Square Meters</option>
               </select>
             </div>
           </div>
 
           <div className="flex gap-2">
-            <button onClick={handleStartDrawing} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+            <button onClick={handleStartDrawing} className="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors">
               Start Drawing Polygon
             </button>
-            <button onClick={handleClearMap} className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
+            <button onClick={handleClearMap} className="px-4 py-2 bg-secondary text-secondary-foreground rounded hover:bg-secondary/80 transition-colors">
               Clear Map
             </button>
           </div>
@@ -244,31 +245,31 @@ const FarmCalculator = () => {
 
           {coordinates.length > 0 && (
             <div className="mt-4">
-              <h4 className="font-semibold">Current Polygon Points: {coordinates.length}</h4>
-              <div className="text-sm text-gray-600">
+              <h4 className="font-semibold text-foreground">Current Polygon Points: {coordinates.length}</h4>
+              <div className="text-sm text-muted-foreground">
                 Click and drag the polygon points to adjust the area.
               </div>
             </div>
           )}
 
           <div className="mt-4">
-            <h3 className="font-semibold">Saved Farms:</h3>
+            <h3 className="font-semibold text-foreground">Saved Farms:</h3>
             {savedFarms.length === 0 ? (
-              <p className="text-gray-500">No farms saved yet</p>
+              <p className="text-muted-foreground">No farms saved yet</p>
             ) : (
               <div className="space-y-2">
                 {savedFarms.map(farm => (
-                  <div key={farm.id} className="flex items-center justify-between p-3 border rounded">
+                  <div key={farm.id} className="flex items-center justify-between p-3 border border-border rounded bg-card">
                     <div>
                       <Badge variant="outline">{farm.name}</Badge>
-                      <span className="ml-2">{farm.area.toFixed(2)} {farm.unit}</span>
-                      <span className="ml-2 text-sm text-gray-500">
+                      <span className="ml-2 text-foreground">{farm.area.toFixed(2)} {farm.unit}</span>
+                      <span className="ml-2 text-sm text-muted-foreground">
                         ({farm.coordinates.length} points)
                       </span>
                     </div>
                     <button
                       onClick={() => deleteFarm(farm.id)}
-                      className="px-2 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600"
+                      className="px-2 py-1 text-sm bg-destructive text-destructive-foreground rounded hover:bg-destructive/90 transition-colors"
                     >
                       Delete
                     </button>

@@ -5,6 +5,8 @@ import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import EquipmentRentalPage from './pages/EquipmentRentalPage';
 import CssBaseline from '@mui/material/CssBaseline';
+import { SettingsProvider } from './context/SettingsContext';
+import SettingsPage from './pages/SettingsPage';
 
 function PrivateRoute({ children }) {
   const { user } = useAuth();
@@ -13,24 +15,32 @@ function PrivateRoute({ children }) {
 
 function AppRoutes() {
   const { user } = useAuth();
+  // Use settings for homepage redirection
+  const { settings } = React.useContext(require('./context/SettingsContext'));
+  const homepage = settings?.homepage || '/';
   return (
     <Routes>
-      <Route path="/login" element={user ? <Navigate to="/equipment-rental" /> : <LoginPage />} />
-      <Route path="/signup" element={user ? <Navigate to="/equipment-rental" /> : <SignupPage />} />
+      <Route path="/login" element={user ? <Navigate to={homepage} /> : <LoginPage />} />
+      <Route path="/signup" element={user ? <Navigate to={homepage} /> : <SignupPage />} />
       <Route path="/equipment-rental" element={<PrivateRoute><EquipmentRentalPage /></PrivateRoute>} />
-      <Route path="*" element={<Navigate to={user ? "/equipment-rental" : "/login"} />} />
+      <Route path="/settings" element={<SettingsPage />} />
+      {/* Redirect root to default homepage */}
+      <Route path="/" element={<Navigate to={homepage} />} />
+      <Route path="*" element={<Navigate to={user ? homepage : "/login"} />} />
     </Routes>
   );
 }
 
 function App() {
   return (
-    <AuthProvider>
-      <CssBaseline />
-      <Router>
-        <AppRoutes />
-      </Router>
-    </AuthProvider>
+    <SettingsProvider>
+      <AuthProvider>
+        <CssBaseline />
+        <Router>
+          <AppRoutes />
+        </Router>
+      </AuthProvider>
+    </SettingsProvider>
   );
 }
 
