@@ -10,10 +10,24 @@ const router = express.Router();
 // @route   GET /api/supplies
 // @desc    Get all available supplies
 // @access  Public
-router.get('/', async (req, res) => {
+router.get('/', auth, async (req, res) => {
   try {
+    const { page = 1, limit = 10, user_id } = req.query;
+    const offset = (page - 1) * limit;
+
+    // Admin can fetch for any user, others only for themselves
+    let targetUserId = req.user.id;
+    if (
+      user_id &&
+      req.user.email === process.env.ADMIN_MAIL
+    ) {
+      targetUserId = user_id;
+    }
+
+    const whereClause = { supplierId: targetUserId };
+
     const supplies = await Supply.findAll({
-      where: { available: true },
+      where: whereClause,
       include: [
         {
           model: User,

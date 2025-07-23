@@ -18,7 +18,35 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // Public: Get all available equipment
-router.get('/', equipmentController.getAllEquipment);
+router.get('/', authMiddleware, async (req, res) => {
+  try {
+    const { page = 1, limit = 10, user_id } = req.query;
+    const offset = (page - 1) * limit;
+
+    // Admin can fetch for any user, others only for themselves
+    let targetUserId = req.user.id;
+    if (
+      user_id &&
+      req.user.email === process.env.ADMIN_MAIL
+    ) {
+      targetUserId = user_id;
+    }
+
+    const whereClause = { user_id: targetUserId };
+    const equipment = await equipmentController.getAllEquipment(offset, limit, whereClause);
+    const totalCount = await equipmentController.getEquipmentCount(whereClause);
+
+    res.json({
+      success: true,
+      data: equipment,
+      total: totalCount,
+      page,
+      limit,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to fetch equipment', error: error.message });
+  }
+});
 
 // Protected: Get equipment for owner
 router.get('/owner', authMiddleware, equipmentController.getOwnerEquipment);

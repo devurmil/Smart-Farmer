@@ -9,10 +9,19 @@ const router = express.Router();
 // @access  Private
 router.get('/', auth, async (req, res) => {
   try {
-    const { page = 1, limit = 10, is_active } = req.query;
+    const { page = 1, limit = 10, is_active, user_id } = req.query;
     const offset = (page - 1) * limit;
 
-    const whereClause = { user_id: req.user.id };
+    // Admin can fetch for any user, others only for themselves
+    let targetUserId = req.user.id;
+    if (
+      user_id &&
+      req.user.email === process.env.ADMIN_MAIL
+    ) {
+      targetUserId = user_id;
+    }
+
+    const whereClause = { user_id: targetUserId };
     if (is_active !== undefined) {
       whereClause.is_active = is_active === 'true';
     }

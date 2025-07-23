@@ -1,35 +1,88 @@
 const express = require('express');
 const { User } = require('../models');
 const { auth } = require('../middleware/auth');
+const bcrypt = require('bcryptjs');
 const router = express.Router();
 
 // Only allow admin (by email) to access this route
+const isAdmin = (req) => req.user.email === process.env.ADMIN_MAIL;
+
+// GET all users
 router.get('/', auth, async (req, res) => {
   try {
-    // Check if the logged-in user is admin
-    if (req.user.email !== process.env.ADMIN_MAIL) {
-      return res.status(403).json({
-        success: false,
-        message: 'Access denied. Admins only.'
-      });
+    if (!isAdmin(req)) {
+      return res.status(403).json({ success: false, message: 'Access denied. Admins only.' });
     }
-
-    // Fetch all users (exclude password hash)
-    const users = await User.findAll({
-      attributes: { exclude: ['password'] },
-      order: [['created_at', 'DESC']]
-    });
-
-    res.json({
-      success: true,
-      data: { users }
-    });
+    const users = await User.findAll({ attributes: { exclude: ['password'] }, order: [['created_at', 'DESC']] });
+    res.json({ success: true, data: { users } });
   } catch (error) {
     console.error('Get all users error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error while fetching users'
-    });
+    res.status(500).json({ success: false, message: 'Server error while fetching users' });
+  }
+});
+
+// DELETE user
+router.delete('/:id', auth, async (req, res) => {
+  try {
+    if (!isAdmin(req)) {
+      return res.status(403).json({ success: false, message: 'Access denied. Admins only.' });
+    }
+    const user = await User.findByPk(req.params.id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    await user.destroy();
+    res.json({ success: true, message: 'User deleted successfully' });
+  } catch (error) {
+    console.error('Delete user error:', error);
+    res.status(500).json({ success: false, message: 'Server error while deleting user' });
+  }
+});
+
+// UPDATE user
+router.put('/:id', auth, async (req, res) => {
+  try {
+    if (!isAdmin(req)) {
+      return res.status(403).json({ success: false, message: 'Access denied. Admins only.' });
+    }
+    const user = await User.findByPk(req.params.id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    const { name, email, phone, password, role } = req.body;
+    if (name) user.name = name;
+    if (email) user.email = email;
+    if (phone) user.phone = phone;
+    if (role) user.role = role;
+    if (password) user.password = await bcrypt.hash(password, 12);
+    await user.save();
+    const updatedUser = user.toJSON();
+    delete updatedUser.password;
+    res.json({ success: true, message: 'User updated successfully', data: { user: updatedUser } });
+  } catch (error) {
+    console.error('Update user error:', error);
+    res.status(500).json({ success: false, message: 'Server error while updating user' });
+  }
+});
+
+// CREATE user
+router.post('/', auth, async (req, res) => {
+  try {
+    if (!isAdmin(req)) {
+      return res.status(403).json({ success: false, message: 'Access denied. Admins only.' });
+    }
+    const { name, email, phone, password, role } = req.body;
+    if (!name || !email || !password || !role) {
+      return res.status(400).json({ success: false, message: 'Name, email, password, and role are required' });
+    }
+    const existing = await User.findOne({ where: { email } });
+    if (existing) {
+      return res.status(400).json({ success: false, message: 'User with this email already exists' });
+    }
+    const hashedPassword = await bcrypt.hash(password, 12);
+    const newUser = await User.create({ name, email, phone, password: hashedPassword, role });
+    const userObj = newUser.toJSON();
+    delete userObj.password;
+    res.status(201).json({ success: true, message: 'User created successfully', data: { user: userObj } });
+  } catch (error) {
+    console.error('Create user error:', error);
+    res.status(500).json({ success: false, message: 'Server error while creating user' });
   }
 });
 
