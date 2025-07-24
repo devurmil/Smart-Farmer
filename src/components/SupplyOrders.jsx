@@ -7,7 +7,7 @@ import { Loader2, AlertCircle, Package, Truck, CheckCircle } from 'lucide-react'
 import { getBackendUrl } from '@/lib/utils';
 
 const SupplyOrders = ({ userRole }) => {
-  const { user, token } = useUser();
+  const { user } = useUser();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -30,7 +30,7 @@ const SupplyOrders = ({ userRole }) => {
       }
     };
     fetchOrders();
-  }, [token]);
+  }, []);
 
   const handleStatusUpdate = async (orderId, newStatus) => {
     try {

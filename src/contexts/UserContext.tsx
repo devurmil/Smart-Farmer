@@ -13,7 +13,6 @@ interface User {
 
 interface UserContextType {
   user: User | null;
-  token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (userData: User) => void;
@@ -87,7 +86,6 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 
   const value: UserContextType = {
     user,
-    token: null, // No token in context anymore
     isAuthenticated: !!user,
     isLoading,
     login,

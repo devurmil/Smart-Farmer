@@ -8,7 +8,7 @@ import { AlertCircle, CheckCircle, Loader2, X } from 'lucide-react';
 import { getBackendUrl } from '@/lib/utils';
 
 const OrderSupplyModal = ({ supply, onClose, onOrderSuccess }) => {
-  const { user, token } = useUser();
+  const { user } = useUser();
   const [form, setForm] = useState({
     quantity: '1',
     deliveryAddress: '',

@@ -6,7 +6,7 @@ import { Loader2, AlertCircle, Edit, Trash2, Package } from 'lucide-react';
 import { getBackendUrl } from '@/lib/utils';
 
 const SupplierSupplyList = ({ refreshTrigger }) => {
-  const { user, token } = useUser();
+  const { user } = useUser();
   const [supplies, setSupplies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -39,8 +39,8 @@ const SupplierSupplyList = ({ refreshTrigger }) => {
         setLoading(false);
       }
     };
-    if (token && user) fetchSupplies();
-  }, [token, user, refreshTrigger]);
+    if (user) fetchSupplies();
+  }, [user, refreshTrigger]);
 
   const handleDelete = async (supplyId) => {
     if (!confirm('Are you sure you want to delete this supply?')) return;

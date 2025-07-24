@@ -15,7 +15,7 @@ import { getBackendUrl } from '@/lib/utils';
 
 const FarmCalculator = () => {
   const { toast } = useToast();
-  const { token } = useUser();
+  const { user } = useUser();
   const mapRef = useRef(null);
   const viewMapRef = useRef(null);
   const [map, setMap] = useState(null);
@@ -818,24 +818,15 @@ const FarmCalculator = () => {
 
   useEffect(() => {
     const fetchFarms = async () => {
-      console.log("Fetching farms, token:", token ? "present" : "missing");
-      if (!token) {
-        console.log("No token available, skipping farm fetch");
-        return;
-      }
       try {
         const response = await fetch(`${getBackendUrl()}/api/farms`, {
           credentials: 'include',
         });
         const result = await response.json();
-        console.log("Farm fetch response:", result);
         if (response.ok && result.data && result.data.farms) {
-          console.log("Farms loaded:", result.data.farms.length);
           // Filter out soft-deleted farms (is_active === false)
           const activeFarms = result.data.farms.filter(farm => farm.is_active !== false);
           setSavedFarms(activeFarms);
-        } else {
-          console.log("No farms found or error:", result);
         }
       } catch (error) {
         console.error("Error fetching farms:", error);
@@ -848,7 +839,7 @@ const FarmCalculator = () => {
     };
     fetchFarms();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token]);
+  }, []);
 
   const [activeTab, setActiveTab] = useState("calculator");
 
@@ -1255,7 +1246,7 @@ const FarmCalculator = () => {
             {/* Debug information */}
             <div className="mb-4 p-3 bg-blue-50 rounded-lg text-sm">
               <h4 className="font-semibold text-blue-800 mb-2">Debug Information:</h4>
-              <p>• Token: {token ? "✅ Present" : "❌ Missing"}</p>
+              <p>• Token: {user ? "✅ Present" : "❌ Missing"}</p>
               <p>• Saved Farms Count: {savedFarms.length}</p>
               <p>• Backend URL: https://smart-farmer-cyyz.onrender.com/api/farms</p>
             </div>
@@ -1265,7 +1256,7 @@ const FarmCalculator = () => {
                 <p className="text-gray-500 mb-4">
                   No saved farms yet. Create your first farm profile using the calculator.
                 </p>
-                {!token && (
+                {!user && (
                   <div className="p-3 bg-yellow-50 rounded-lg text-sm text-yellow-800">
                     ⚠️ You might need to log in first to see saved farms.
                   </div>

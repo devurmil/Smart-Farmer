@@ -5,7 +5,7 @@ import { Loader2, AlertCircle, XCircle, CheckCircle, Clock, Calendar, X } from '
 import { getBackendUrl } from '@/lib/utils';
 
 const UserBookingsList = () => {
-  const { user, token } = useUser();
+  const { user } = useUser();
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -30,17 +30,17 @@ const UserBookingsList = () => {
   };
 
   useEffect(() => {
-    if (token) {
+    if (user) {
       fetchUserBookings();
     }
-  }, [token]);
+  }, [user]);
 
   const handleCancelBooking = async (bookingId) => {
     if (!confirm('Are you sure you want to cancel this booking?')) return;
     
     try {
       console.log('Canceling booking ID:', bookingId);
-      console.log('Using token:', token ? 'Token present' : 'No token');
+      console.log('Using token:', user ? 'Token present' : 'No token');
       
       // Test server connectivity first
       console.log('Testing server connectivity...');
