@@ -16,6 +16,7 @@ const SignupPage = () => {
   const [loading, setLoading] = useState(false);
   const { signup } = useAuth();
   const navigate = useNavigate();
+  const [showAdblockAlert, setShowAdblockAlert] = useState(true);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -37,7 +38,12 @@ const SignupPage = () => {
   };
 
   return (
-    <Container maxWidth="xs">
+    <Container maxWidth="sm">
+      {showAdblockAlert && (
+        <Alert severity="warning" onClose={() => setShowAdblockAlert(false)} style={{ marginBottom: 16 }}>
+          <strong>Please disable all AdBlockers to use this Website!</strong>
+        </Alert>
+      )}
       <Box sx={{ mt: 8, p: 3, boxShadow: 2, borderRadius: 2, bgcolor: 'background.paper' }}>
         <Typography variant="h5" align="center" gutterBottom>Sign Up</Typography>
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}

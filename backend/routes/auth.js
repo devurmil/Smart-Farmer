@@ -49,13 +49,19 @@ router.post('/register', validate(registerSchema), async (req, res) => {
 
     // Generate token
     const token = generateToken(user.id);
+    // Set HTTP-only cookie
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 1 week
+    });
 
     res.status(201).json({
       success: true,
       message: 'User registered successfully',
       data: {
-        user: user.toJSON(),
-        token
+        user: user.toJSON()
       }
     });
   } catch (error) {
@@ -97,13 +103,19 @@ router.post('/login', validate(loginSchema), async (req, res) => {
 
     // Generate token
     const token = generateToken(user.id);
+    // Set HTTP-only cookie
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 1 week
+    });
 
     res.json({
       success: true,
       message: 'Login successful',
       data: {
-        user: user.toJSON(),
-        token
+        user: user.toJSON()
       }
     });
   } catch (error) {
@@ -254,9 +266,12 @@ router.get('/me', auth, async (req, res) => {
 // @access  Private
 router.post('/logout', auth, async (req, res) => {
   try {
-    // In a JWT implementation, logout is typically handled client-side
-    // by removing the token. Here we can log the logout event.
-    
+    // Clear the HTTP-only cookie
+    res.clearCookie('token', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+    });
     res.json({
       success: true,
       message: 'Logout successful'

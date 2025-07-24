@@ -15,9 +15,7 @@ const UserBookingsList = () => {
     setError('');
     try {
       const response = await fetch(`${getBackendUrl()}/api/booking/user`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        credentials: 'include',
       });
       
       if (!response.ok) throw new Error('Failed to fetch your bookings');
@@ -48,7 +46,7 @@ const UserBookingsList = () => {
       console.log('Testing server connectivity...');
       try {
         const testResponse = await fetch(`${getBackendUrl()}/api/booking/user`, {
-          headers: { 'Authorization': `Bearer ${token}` }
+          credentials: 'include'
         });
         console.log('Server connectivity test - Status:', testResponse.status);
         if (!testResponse.ok) {
@@ -65,8 +63,8 @@ const UserBookingsList = () => {
       
       const response = await fetch(url, {
         method: 'DELETE',
+        credentials: 'include',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });

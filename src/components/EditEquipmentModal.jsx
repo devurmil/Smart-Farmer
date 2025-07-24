@@ -31,13 +31,12 @@ const EditEquipmentModal = ({ equipment, onClose, onEquipmentUpdated, isAdmin = 
     setError('');
     setSuccess('');
     try {
-      const token = localStorage.getItem('token');
       const response = await fetch(`${getBackendUrl()}/api/equipment/${equipment.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify(form),
       });
       if (!response.ok) throw new Error('Failed to update equipment');

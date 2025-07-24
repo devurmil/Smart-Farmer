@@ -42,12 +42,11 @@ const EquipmentRentalPage = () => {
   };
 
   const fetchOwnerStats = async () => {
-    if (!token || user?.role !== 'owner') return;
-    
+    if (!user?.role || user?.role !== 'owner') return;
     try {
       // Fetch owner's equipment count
       const equipmentResponse = await fetch(`${getBackendUrl()}/api/equipment/owner`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include',
       });
       if (equipmentResponse.ok) {
         const equipmentData = await equipmentResponse.json();
@@ -56,15 +55,13 @@ const EquipmentRentalPage = () => {
           totalEquipment: equipmentData.length
         }));
       }
-
       // Fetch owner's bookings
       const bookingsResponse = await fetch(`${getBackendUrl()}/api/booking/owner`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include',
       });
       if (bookingsResponse.ok) {
         const bookingsData = await bookingsResponse.json();
         const activeBookings = bookingsData.filter(b => b.status === 'approved' || b.status === 'pending').length;
-        
         // Calculate monthly earnings (this month's completed bookings)
         const currentMonth = new Date().getMonth();
         const currentYear = new Date().getFullYear();
@@ -79,7 +76,6 @@ const EquipmentRentalPage = () => {
             const days = Math.ceil((new Date(b.endDate) - new Date(b.startDate)) / (1000 * 60 * 60 * 24));
             return sum + (days * (b.equipment?.price || 0));
           }, 0);
-
         setOwnerStats(prev => ({
           ...prev,
           activeBookings,
@@ -92,32 +88,30 @@ const EquipmentRentalPage = () => {
   };
 
   const fetchFarmerStats = async () => {
-    if (!token || user?.role === 'owner') return;
-
+    if (user?.role === 'owner') return;
     try {
       // Fetch available equipment count
-      const equipmentResponse = await fetch(`${getBackendUrl()}/api/equipment`);
+      const equipmentResponse = await fetch(`${getBackendUrl()}/api/equipment`, {
+        credentials: 'include',
+      });
       if (equipmentResponse.ok) {
         const equipmentData = await equipmentResponse.json();
         const totalEquipment = equipmentData.length; // Show total equipment count
         const avgPrice = equipmentData.length > 0 ?
           Math.round(equipmentData.reduce((sum, e) => sum + (parseFloat(e.price) || 0), 0) / equipmentData.length) : 0;
-        
         setFarmerStats(prev => ({
           ...prev,
           availableEquipment: totalEquipment, // Show all equipment, not just available
           avgPrice
         }));
       }
-
       // Fetch farmer's bookings
       const bookingsResponse = await fetch(`${getBackendUrl()}/api/booking/user`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include',
       });
       if (bookingsResponse.ok) {
         const bookingsData = await bookingsResponse.json();
         const myBookings = bookingsData.length;
-
         setFarmerStats(prev => ({
           ...prev,
           myBookings
@@ -130,14 +124,14 @@ const EquipmentRentalPage = () => {
 
 
   React.useEffect(() => {
-    if (token) {
+    if (user?.role) {
       if (user?.role === 'owner') {
         fetchOwnerStats();
       } else if (user?.role === 'farmer') {
         fetchFarmerStats();
       }
     }
-  }, [token, user?.role, refreshTrigger]);
+  }, [user?.role, refreshTrigger]);
 
   return (
     <div className="min-h-screen bg-background">

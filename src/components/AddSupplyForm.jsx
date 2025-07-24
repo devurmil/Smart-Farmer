@@ -55,9 +55,7 @@ const AddSupplyForm = ({ onSupplyAdded, isAdmin = false, suppliers = [], onClose
       
       const response = await fetch(`${getBackendUrl()}/api/supplies`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+        credentials: 'include',
         body: formData,
       });
       

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
@@ -10,6 +10,18 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+  const [showAdblockAlert, setShowAdblockAlert] = useState(true);
+
+  useEffect(() => {
+    const checkAdBlocker = () => {
+      if (showAdblockAlert) {
+        setShowAdblockAlert(false);
+      }
+    };
+    checkAdBlocker();
+    const interval = setInterval(checkAdBlocker, 1000); // Check every second
+    return () => clearInterval(interval);
+  }, []);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -20,8 +32,8 @@ const LoginPage = () => {
     setLoading(true);
     setError('');
     try {
-      const res = await axios.post('/api/auth/login', form);
-      login(res.data.data.user, res.data.data.token);
+      const res = await axios.post('/api/auth/login', form, { withCredentials: true });
+      login(res.data.data.user);
       navigate('/equipment-rental');
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed');
@@ -31,7 +43,12 @@ const LoginPage = () => {
   };
 
   return (
-    <Container maxWidth="xs">
+    <Container maxWidth="sm">
+      {showAdblockAlert && (
+        <Alert severity="warning" onClose={() => setShowAdblockAlert(false)} style={{ marginBottom: 16 }}>
+          <strong>Please disable all AdBlockers to use this Website!</strong>
+        </Alert>
+      )}
       <Box sx={{ mt: 8, p: 3, boxShadow: 2, borderRadius: 2, bgcolor: 'background.paper' }}>
         <Typography variant="h5" align="center" gutterBottom>Log In</Typography>
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}

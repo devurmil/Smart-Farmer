@@ -423,8 +423,8 @@ const FarmCalculator = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify(farmPayload),
       });
       const result = await response.json();
@@ -768,9 +768,7 @@ const FarmCalculator = () => {
     try {
       const response = await fetch(`${getBackendUrl()}/api/farms/${farmId}`, {
         method: "DELETE",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-        },
+        credentials: 'include',
       });
       if (!response.ok) {
         const result = await response.json();
@@ -827,9 +825,7 @@ const FarmCalculator = () => {
       }
       try {
         const response = await fetch(`${getBackendUrl()}/api/farms`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
+          credentials: 'include',
         });
         const result = await response.json();
         console.log("Farm fetch response:", result);

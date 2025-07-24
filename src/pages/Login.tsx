@@ -30,6 +30,7 @@ const Login = () => {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           email: email,
           password: password
@@ -41,9 +42,7 @@ const Login = () => {
       if (response.ok) {
         // Success - user logged in
         console.log('Login successful:', data);
-        localStorage.setItem('token', data.data.token);
-        localStorage.setItem('user', JSON.stringify(data.data.user));
-        login(data.data.user, data.data.token);
+        login(data.data.user);
         navigate('/');
       } else {
         // Error from backend

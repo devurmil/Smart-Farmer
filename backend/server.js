@@ -6,6 +6,7 @@ const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') }); // Always load from root
+const cookieParser = require('cookie-parser');
 
 // Warn if required environment variables are missing
 const requiredEnv = [
@@ -79,6 +80,9 @@ app.use(cors(corsOptions));
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Add cookie-parser middleware
+app.use(cookieParser());
 
 // Compression middleware
 app.use(compression());

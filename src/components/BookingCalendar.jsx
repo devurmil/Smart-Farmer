@@ -44,7 +44,7 @@ const BookingCalendar = ({ open, onClose, equipmentId, onBooked }) => {
         startDate: start,
         endDate: end
       }, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        withCredentials: true,
       });
       setSuccess('Booking successful!');
       if (onBooked) onBooked();

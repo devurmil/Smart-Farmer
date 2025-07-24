@@ -8,7 +8,7 @@ import OrderSupplyModal from './OrderSupplyModal';
 import { getBackendUrl } from '@/lib/utils';
 
 const SupplyList = () => {
-  const { user, token } = useUser();
+  const { user } = useUser();
   const [supplies, setSupplies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -21,9 +21,7 @@ const SupplyList = () => {
       setError('');
       try {
         const response = await fetch(`${getBackendUrl()}/api/supplies`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
+          credentials: 'include',
         });
         if (!response.ok) throw new Error('Failed to fetch supplies');
         const data = await response.json();
@@ -35,7 +33,7 @@ const SupplyList = () => {
       }
     };
     fetchSupplies();
-  }, [token]);
+  }, []);
 
   const handleOrderClose = () => setOpenOrderModal(null);
 

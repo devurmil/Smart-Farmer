@@ -152,9 +152,7 @@ const ProfileSettings = () => {
       const backendUrl = await getBackendUrl();
       const res = await fetch(`${backendUrl}/api/auth/user/profile`, {
         method: 'PUT',
-        headers: { 
-          Authorization: `Bearer ${localStorage.getItem('smartFarmToken') || ''}` 
-        },
+        credentials: 'include',
         body: formData,
       });
       
@@ -204,8 +202,8 @@ const ProfileSettings = () => {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('smartFarmToken') || ''}`,
         },
+        credentials: 'include',
         body: JSON.stringify({ password: form.password }),
       });
       

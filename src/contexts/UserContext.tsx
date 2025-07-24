@@ -16,7 +16,7 @@ interface UserContextType {
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (userData: User, authToken?: string) => void;
+  login: (userData: User) => void;
   logout: () => void;
   updateUser: (updates: Partial<User>) => void;
 }
@@ -37,45 +37,37 @@ interface UserProviderProps {
 
 export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check for existing user session on app load
+  // On mount, fetch user from backend using cookie
   useEffect(() => {
-    const savedUser = localStorage.getItem('smartFarmUser');
-    const savedToken = localStorage.getItem('smartFarmToken');
-    
-    if (savedUser && savedToken) {
+    const fetchUser = async () => {
       try {
-        const userData = JSON.parse(savedUser);
-        setUser(userData);
-        setToken(savedToken);
-      } catch (error) {
-        console.error('Error parsing saved user data:', error);
-        localStorage.removeItem('smartFarmUser');
-        localStorage.removeItem('smartFarmToken');
+        const res = await fetch('/api/auth/me', { credentials: 'include' });
+        const data = await res.json();
+        if (res.ok && data.success && data.data && data.data.user) {
+          setUser(data.data.user);
+        } else {
+          setUser(null);
+        }
+      } catch (err) {
+        setUser(null);
+      } finally {
+        setIsLoading(false);
       }
-    }
-    setIsLoading(false);
+    };
+    fetchUser();
   }, []);
 
-  const login = (userData: User, authToken?: string) => {
+  const login = (userData: User) => {
     setUser(userData);
-    localStorage.setItem('smartFarmUser', JSON.stringify(userData));
-    
-    if (authToken) {
-      setToken(authToken);
-      localStorage.setItem('smartFarmToken', authToken);
-    }
   };
 
   const logout = () => {
     setUser(null);
-    setToken(null);
-    localStorage.removeItem('smartFarmUser');
-    localStorage.removeItem('smartFarmToken');
-    
-    // Logout from Facebook if user was logged in via Facebook
+    // Also call backend to clear cookie
+    fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+    // Facebook logout if needed
     if (window.FB) {
       window.FB.logout();
     }
@@ -83,23 +75,20 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 
   const updateUser = (updates: Partial<User>) => {
     if (user) {
-      // Handle field mapping from backend to frontend
       const mappedUpdates = {
         ...updates,
         profilePicture: updates.profilePicture || (updates as any).profile_picture,
         loginMethod: updates.loginMethod || (updates as any).login_method,
       };
-      
       const updatedUser = { ...user, ...mappedUpdates };
       setUser(updatedUser);
-      localStorage.setItem('smartFarmUser', JSON.stringify(updatedUser));
     }
   };
 
   const value: UserContextType = {
     user,
-    token,
-    isAuthenticated: !!user && !!token,
+    token: null, // No token in context anymore
+    isAuthenticated: !!user,
     isLoading,
     login,
     logout,

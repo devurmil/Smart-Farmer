@@ -45,9 +45,7 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
         return;
       }
       const response = await fetch(url, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        credentials: 'include',
       });
       if (!response.ok) throw new Error('Failed to fetch equipment');
       const data = await response.json();
@@ -64,7 +62,7 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
     setBookingLoading((prev) => ({ ...prev, [equipmentId]: true }));
     try {
       const res = await fetch(`${getBackendUrl()}/api/booking/equipment/${equipmentId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include',
       });
       if (!res.ok) throw new Error('Failed to fetch bookings');
       const data = await res.json();
@@ -122,8 +120,8 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
     try {
       const response = await fetch(`${getBackendUrl()}/api/equipment/${selectedEquipment.id}`, {
         method: 'PUT',
+        credentials: 'include',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(editForm)
@@ -146,9 +144,7 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
     try {
       const response = await fetch(`${getBackendUrl()}/api/equipment/${selectedEquipment.id}`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        credentials: 'include',
       });
       
       if (!response.ok) throw new Error('Failed to delete equipment');
@@ -321,7 +317,7 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
                                     onClick={async () => {
                                       await fetch(`${getBackendUrl()}/api/booking/${booking.id}/approve`, {
                                         method: 'PATCH',
-                                        headers: { 'Authorization': `Bearer ${token}` }
+                                        credentials: 'include',
                                       });
                                       fetchBookings(item.id);
                                     }}
@@ -334,7 +330,7 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
                                     onClick={async () => {
                                       await fetch(`${getBackendUrl()}/api/booking/${booking.id}/decline`, {
                                         method: 'PATCH',
-                                        headers: { 'Authorization': `Bearer ${token}` }
+                                        credentials: 'include',
                                       });
                                       fetchBookings(item.id);
                                     }}
@@ -347,7 +343,7 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
                                     onClick={async () => {
                                       await fetch(`${getBackendUrl()}/api/booking/${booking.id}`, {
                                         method: 'DELETE',
-                                        headers: { 'Authorization': `Bearer ${token}` }
+                                        credentials: 'include',
                                       });
                                       fetchBookings(item.id);
                                     }}
@@ -363,7 +359,7 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
                                     onClick={async () => {
                                       await fetch(`${getBackendUrl()}/api/booking/${booking.id}/complete`, {
                                         method: 'PATCH',
-                                        headers: { 'Authorization': `Bearer ${token}` }
+                                        credentials: 'include',
                                       });
                                       fetchBookings(item.id);
                                     }}
@@ -376,7 +372,7 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
                                     onClick={async () => {
                                       await fetch(`${getBackendUrl()}/api/booking/${booking.id}`, {
                                         method: 'DELETE',
-                                        headers: { 'Authorization': `Bearer ${token}` }
+                                        credentials: 'include',
                                       });
                                       fetchBookings(item.id);
                                     }}
