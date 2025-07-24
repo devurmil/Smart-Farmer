@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useUser } from '../contexts/UserContext';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import {
@@ -128,11 +128,12 @@ const EquipmentRentalPage = () => {
     }
   };
 
+
   React.useEffect(() => {
     if (token) {
       if (user?.role === 'owner') {
         fetchOwnerStats();
-      } else {
+      } else if (user?.role === 'farmer') {
         fetchFarmerStats();
       }
     }

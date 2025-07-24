@@ -8,9 +8,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { AlertCircle, CheckCircle, Upload, Loader2 } from 'lucide-react';
 import { getBackendUrl } from '@/lib/utils';
 
-const AddEquipmentForm = ({ onEquipmentAdded }) => {
+const AddEquipmentForm = ({ onEquipmentAdded, isAdmin = false, owners = [], onClose }) => {
   const { user, token } = useUser();
-  const [form, setForm] = useState({ name: '', type: '', price: '', description: '' });
+  const [form, setForm] = useState({ name: '', type: '', price: '', description: '', ownerId: '' });
   const [image, setImage] = useState(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
@@ -32,7 +32,10 @@ const AddEquipmentForm = ({ onEquipmentAdded }) => {
     
     try {
       const formData = new FormData();
-      Object.entries(form).forEach(([key, value]) => formData.append(key, value));
+      Object.entries(form).forEach(([key, value]) => {
+        if (key === 'ownerId' && !isAdmin) return; // Only send ownerId if admin
+        if (value) formData.append(key, value);
+      });
       if (image) formData.append('image', image);
       
       const response = await fetch(`${getBackendUrl()}/api/equipment`, {
@@ -46,7 +49,7 @@ const AddEquipmentForm = ({ onEquipmentAdded }) => {
       if (!response.ok) throw new Error('Failed to add equipment');
       
       setSuccess('Equipment added successfully!');
-      setForm({ name: '', type: '', price: '', description: '' });
+      setForm({ name: '', type: '', price: '', description: '', ownerId: '' });
       setImage(null);
       
       // Reset file input
@@ -57,6 +60,7 @@ const AddEquipmentForm = ({ onEquipmentAdded }) => {
       if (onEquipmentAdded) {
         onEquipmentAdded();
       }
+      if (onClose) onClose();
       
     } catch (err) {
       setError(err.message || 'Failed to add equipment');
@@ -92,6 +96,24 @@ const AddEquipmentForm = ({ onEquipmentAdded }) => {
       )}
       
       <form onSubmit={handleSubmit} className="space-y-6">
+        {isAdmin && owners.length > 0 && (
+          <div className="space-y-3">
+            <Label htmlFor="ownerId" className="text-lg font-semibold text-foreground">Select Owner</Label>
+            <select
+              id="ownerId"
+              name="ownerId"
+              value={form.ownerId}
+              onChange={handleChange}
+              required
+              className="h-12 w-full px-4 text-lg border-2 border-border focus:border-primary rounded-lg bg-background text-foreground"
+            >
+              <option value="">Select Owner</option>
+              {owners.map(owner => (
+                <option key={owner.id} value={owner.id}>{owner.name} ({owner.email})</option>
+              ))}
+            </select>
+          </div>
+        )}
         <div className="grid md:grid-cols-2 gap-6">
           <div className="space-y-3">
             <Label htmlFor="name" className="text-lg font-semibold text-foreground">Equipment Name</Label>

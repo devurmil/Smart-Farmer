@@ -84,18 +84,20 @@ exports.getOwnerEquipment = async (req, res) => {
 // Add new equipment (with image upload)
 exports.addEquipment = async (req, res) => {
   try {
-    const { name, type, price, description } = req.body;
+    const { name, type, price, description, ownerId } = req.body;
     let imageUrl = null;
     if (req.file && req.file.path) {
       imageUrl = req.file.path;
     }
+    // If admin and ownerId is provided, use it; otherwise use req.user.id
+    const finalOwnerId = req.user.role === 'admin' && ownerId ? ownerId : req.user.id;
     const equipment = await Equipment.create({
       name,
       type,
       price,
       description,
       imageUrl,
-      ownerId: req.user.id,
+      ownerId: finalOwnerId,
       available: true,
     });
     res.status(201).json(equipment);

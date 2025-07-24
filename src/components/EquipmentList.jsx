@@ -46,7 +46,7 @@ const EquipmentList = () => {
         });
         if (!response.ok) throw new Error('Failed to fetch equipment');
         const data = await response.json();
-        setEquipment(data);
+        setEquipment(data.data || data); // Ensure equipment is always an array
       } catch (err) {
         setError('Failed to fetch equipment');
       } finally {
@@ -66,7 +66,7 @@ const EquipmentList = () => {
     setRefresh((r) => !r);
   };
 
-  const filteredEquipment = equipment.filter(item => {
+  const filteredEquipment = (equipment || []).filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          item.type.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = filterType === 'all' || item.type.toLowerCase().includes(filterType.toLowerCase());

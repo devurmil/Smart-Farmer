@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useUser } from '../contexts/UserContext';
 import { getBackendUrl } from '@/lib/utils';
+import AddEquipmentForm from '../components/AddEquipmentForm';
 
 interface User {
   id: string;
@@ -85,6 +86,9 @@ const AdminPage: React.FC = () => {
   const [suppliesError, setSuppliesError] = useState<string | null>(null);
   const [showDeleteSupply, setShowDeleteSupply] = useState(false);
   const [deleteSupplyId, setDeleteSupplyId] = useState<string | null>(null);
+
+  const [showAddEquipment, setShowAddEquipment] = useState(false);
+  const [owners, setOwners] = useState<User[]>([]);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -324,6 +328,13 @@ const AdminPage: React.FC = () => {
     fetchContent();
   }, [showContent, contentUser, token]);
 
+  // Fetch owners for AddEquipmentForm
+  useEffect(() => {
+    if (activeSection === 'equipment') {
+      fetchUsers();
+    }
+  }, [activeSection]);
+
   return (
     <div className="main-bg min-h-screen p-8">
       <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
@@ -401,7 +412,23 @@ const AdminPage: React.FC = () => {
         <>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold">Equipment Management</h2>
+            <button className="bg-green-700 text-white px-4 py-2 rounded hover:bg-green-800" onClick={() => setShowAddEquipment(true)}>
+              Add Equipment
+            </button>
           </div>
+          {showAddEquipment && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+              <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-lg relative">
+                <button className="absolute top-4 right-4 text-gray-500 hover:text-gray-700" onClick={() => setShowAddEquipment(false)}>&times;</button>
+                <AddEquipmentForm
+                  isAdmin={true}
+                  owners={users}
+                  onClose={() => setShowAddEquipment(false)}
+                  onEquipmentAdded={fetchAllEquipment}
+                />
+              </div>
+            </div>
+          )}
           {equipmentLoading && <div>Loading equipment...</div>}
           {equipmentError && <div className="text-red-600">{equipmentError}</div>}
           {!equipmentLoading && !equipmentError && (

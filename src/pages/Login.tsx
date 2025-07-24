@@ -41,6 +41,8 @@ const Login = () => {
       if (response.ok) {
         // Success - user logged in
         console.log('Login successful:', data);
+        localStorage.setItem('token', data.data.token);
+        localStorage.setItem('user', JSON.stringify(data.data.user));
         login(data.data.user, data.data.token);
         navigate('/');
       } else {
