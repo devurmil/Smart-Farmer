@@ -41,7 +41,7 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
       if (user?.role === 'admin') {
         url = `${getBackendUrl()}/api/equipment`;
       } else if (user?.role === 'owner') {
-        url = `${getBackendUrl()}/api/equipment/owner?page=${pageNum}&limit=${limit}`;
+        url = `${getBackendUrl()}/api/equipment/owner?page=${pageNum}&limit=${limit}&t=${Date.now()}`;
       } else {
         setEquipment([]);
         setLoading(false);
