@@ -23,7 +23,7 @@ const Sidebar = ({ collapsed, onToggleCollapse }: SidebarProps) => {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { user } = useUser();
-  const isAdmin = user && user.email && user.email === import.meta.env.VITE_ADMIN_MAIL;
+  const isAdmin = user && user.role === 'admin';
 
   return (
     <aside

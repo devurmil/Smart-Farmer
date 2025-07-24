@@ -33,6 +33,8 @@ const queryClient = new QueryClient();
 const AppContent = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const { settings } = useSettings();
+  const { user } = useUser();
+  const isAdmin = user && user.role === 'admin';
 
   // Homepage Redirect Component - redirects to user's saved homepage
   const HomepageRedirect = () => {
@@ -97,7 +99,7 @@ const AppContent = () => {
             <Route path="/suppliers" element={<ProtectedRoute><Suppliers /></ProtectedRoute>} />
             <Route path="/profile-settings" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
-            <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
+            <Route path="/admin" element={isAdmin ? <ProtectedRoute><AdminPage /></ProtectedRoute> : <Navigate to="/" replace />} />
             <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
             <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
             {/* Catch-all route */}
