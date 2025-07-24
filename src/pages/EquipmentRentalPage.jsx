@@ -21,7 +21,7 @@ import UserBookingsList from '../components/UserBookingsList';
 import { getBackendUrl } from '@/lib/utils';
 
 const EquipmentRentalPage = () => {
-  const { user, token } = useUser();
+  const { user } = useUser();
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [ownerStats, setOwnerStats] = useState({
     totalEquipment: 0,
