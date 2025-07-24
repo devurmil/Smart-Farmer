@@ -44,11 +44,6 @@ const LoginPage = () => {
 
   return (
     <Container maxWidth="sm">
-      {showAdblockAlert && (
-        <Alert severity="warning" onClose={() => setShowAdblockAlert(false)} style={{ marginBottom: 16 }}>
-          <strong>Please disable all AdBlockers to use this Website!</strong>
-        </Alert>
-      )}
       <Box sx={{ mt: 8, p: 3, boxShadow: 2, borderRadius: 2, bgcolor: 'background.paper' }}>
         <Typography variant="h5" align="center" gutterBottom>Log In</Typography>
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
