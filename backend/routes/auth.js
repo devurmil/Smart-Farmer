@@ -55,7 +55,7 @@ router.post('/register', validate(registerSchema), async (req, res) => {
       secure: true, // Always true for cross-site (Vercel)
       sameSite: 'none', // Required for cross-site cookies
       path: '/', // Required for cross-site cookies
-      domain: '.vercel.app', // Ensure cookie is valid for all Vercel subdomains
+     // Ensure cookie is valid for all Vercel subdomains
       maxAge: 7 * 24 * 60 * 60 * 1000 // 1 week
     });
 
