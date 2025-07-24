@@ -49,15 +49,6 @@ router.post('/register', validate(registerSchema), async (req, res) => {
 
     // Generate token
     const token = generateToken(user.id);
-    // Set HTTP-only cookie for cross-site
-    res.cookie('token', token, {
-      httpOnly: true,
-      secure: true, // Always true for cross-site (Vercel)
-      sameSite: 'none', // Required for cross-site cookies
-      path: '/', // Required for cross-site cookies
-     // Ensure cookie is valid for all Vercel subdomains
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 1 week
-    });
 
     res.status(201).json({
       success: true,
@@ -105,15 +96,6 @@ router.post('/login', validate(loginSchema), async (req, res) => {
 
     // Generate token
     const token = generateToken(user.id);
-    // Set HTTP-only cookie for cross-site
-    res.cookie('token', token, {
-      httpOnly: true,
-      secure: true, // Always true for cross-site (Vercel)
-      sameSite: 'none', // Required for cross-site cookies
-      path: '/', // Required for cross-site cookies
-      domain: '.vercel.app', // Ensure cookie is valid for all Vercel subdomains
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 1 week
-    });
 
     res.json({
       success: true,
@@ -170,6 +152,14 @@ router.post('/facebook', async (req, res) => {
 
     // Generate token
     const token = generateToken(user.id);
+
+    // Set token as HTTP-only cookie for security
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
 
     res.json({
       success: true,
@@ -228,6 +218,14 @@ router.post('/google', async (req, res) => {
     // Generate token
     const token = generateToken(user.id);
 
+    // Set token as HTTP-only cookie for security
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
+
     res.json({
       success: true,
       message: 'Google login successful',
@@ -270,14 +268,9 @@ router.get('/me', auth, async (req, res) => {
 // @access  Private
 router.post('/logout', auth, async (req, res) => {
   try {
-    // Clear the HTTP-only cookie
-    res.clearCookie('token', {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'none',
-      path: '/',
-      domain: '.vercel.app',
-    });
+    // In a JWT implementation, logout is typically handled client-side
+    // by removing the token. Here we can log the logout event.
+    
     res.json({
       success: true,
       message: 'Logout successful'
@@ -405,6 +398,15 @@ router.post('/verify-otp', async (req, res) => {
       is_verified: true
     });
     const token = generateToken(user.id);
+    
+    // Set token as HTTP-only cookie for security
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
+    
     res.status(201).json({ success: true, message: 'User created and verified', data: { user: user.toJSON(), token } });
   } catch (error) {
     console.error('Verify OTP error:', error);

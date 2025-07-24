@@ -17,11 +17,15 @@ const SupplyList = () => {
 
   useEffect(() => {
     const fetchSupplies = async () => {
+      if (!user) return;
+      
       setLoading(true);
       setError('');
       try {
         const response = await fetch(`${getBackendUrl()}/api/supplies`, {
-          credentials: 'include',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
         });
         if (!response.ok) throw new Error('Failed to fetch supplies');
         const data = await response.json();
@@ -33,7 +37,7 @@ const SupplyList = () => {
       }
     };
     fetchSupplies();
-  }, []);
+  }, [token]);
 
   const handleOrderClose = () => setOpenOrderModal(null);
 

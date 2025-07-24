@@ -4,8 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { getBackendUrl } from '@/lib/utils';
+import { useUser } from '../contexts/UserContext';
 
 const EditEquipmentModal = ({ equipment, onClose, onEquipmentUpdated, isAdmin = false }) => {
+  const { token } = useUser();
   const [form, setForm] = useState({
     name: equipment.name || '',
     type: equipment.type || '',

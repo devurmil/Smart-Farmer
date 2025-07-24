@@ -3,52 +3,56 @@ const { User } = require('../models');
 
 const auth = async (req, res, next) => {
   try {
-    // Read token from cookie first, fallback to Authorization header
-    let token = req.cookies.token;
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    
     if (!token) {
-      token = req.header('Authorization')?.replace('Bearer ', '');
-    }
-    if (!token) {
-      return res.status(401).json({ 
-        success: false, 
-        message: 'Access denied. No token provided.' 
+      return res.status(401).json({
+        success: false,
+        message: 'Access denied. No token provided.'
       });
     }
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findByPk(decoded.id);
     if (!user) {
-      return res.status(401).json({ 
-        success: false, 
-        message: 'Invalid token. User not found.' 
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid token. User not found.'
       });
     }
     req.user = user;
+    console.log('Auth successful - User:', user.email, 'Role:', user.role); // Debug log
     next();
   } catch (error) {
     if (error.name === 'JsonWebTokenError') {
-      return res.status(401).json({ 
-        success: false, 
-        message: 'Invalid token.' 
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid token.'
       });
     }
     if (error.name === 'TokenExpiredError') {
-      return res.status(401).json({ 
-        success: false, 
-        message: 'Token expired.' 
+      return res.status(401).json({
+        success: false,
+        message: 'Token expired.'
       });
     }
     
     console.error('Auth middleware error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Server error during authentication.' 
+    res.status(500).json({
+      success: false,
+      message: 'Server error during authentication.'
     });
   }
 };
 
 const optionalAuth = async (req, res, next) => {
   try {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
+    // First, try to get token from cookies (new cookie-based auth)
+    let token = req.cookies?.token;
+    
+    // Fallback to Authorization header for backward compatibility
+    if (!token) {
+      token = req.header('Authorization')?.replace('Bearer ', '');
+    }
     
     if (token) {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);

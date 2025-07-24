@@ -186,13 +186,18 @@ exports.deleteEquipment = async (req, res) => {
       return res.status(404).json({ error: 'Equipment not found' });
     }
     
-    // Check if the equipment belongs to the current user
+    // Check if the equipment belongs to the current user OR if user is admin
     console.log('Equipment owner ID:', equipment.ownerId);
     console.log('Current user ID:', req.user.id);
+    console.log('User role:', req.user.role);
     console.log('Owner match:', equipment.ownerId === req.user.id);
+    console.log('Is admin:', req.user.role === 'admin');
     
-    if (equipment.ownerId !== req.user.id) {
-      console.log('Unauthorized delete attempt');
+    const isOwner = equipment.ownerId === req.user.id;
+    const isAdmin = req.user.role === 'admin';
+    
+    if (!isOwner && !isAdmin) {
+      console.log('Unauthorized delete attempt - not owner or admin');
       return res.status(403).json({ error: 'Unauthorized to delete this equipment' });
     }
     

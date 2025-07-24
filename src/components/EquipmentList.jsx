@@ -18,8 +18,10 @@ import {
 import EquipmentBookingModal from './EquipmentBookingModal';
 import { Input } from '@/components/ui/input';
 import { getBackendUrl } from '@/lib/utils';
+import { useUser } from '../contexts/UserContext';
 
 const EquipmentList = () => {
+  const { user } = useUser();
   const [equipment, setEquipment] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -39,7 +41,9 @@ const EquipmentList = () => {
           url += `?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`;
         }
         const response = await fetch(url, {
-          credentials: 'include',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
         });
         if (!response.ok) throw new Error('Failed to fetch equipment');
         const data = await response.json();
@@ -50,8 +54,11 @@ const EquipmentList = () => {
         setLoading(false);
       }
     };
-    fetchEquipment();
-  }, [refresh, dateRange]);
+    
+    if (user) {
+      fetchEquipment();
+    }
+  }, [refresh, dateRange, user]);
 
   const handleDateChange = (e) => {
     setDateRange({ ...dateRange, [e.target.name]: e.target.value });

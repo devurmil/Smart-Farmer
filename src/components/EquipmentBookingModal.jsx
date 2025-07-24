@@ -19,7 +19,7 @@ import {
 import { getBackendUrl } from '@/lib/utils';
 
 const EquipmentBookingModal = ({ equipment, onClose, onBookingSuccess, startDate: propStartDate, endDate: propEndDate, available }) => {
-  const { user, token } = useUser();
+  const { user } = useUser();
   const [form, setForm] = useState({
     startDate: propStartDate || '',
     endDate: propEndDate || '',
@@ -86,7 +86,6 @@ const EquipmentBookingModal = ({ equipment, onClose, onBookingSuccess, startDate
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
         body: JSON.stringify({
           equipmentId: equipment.id,
           ...form,

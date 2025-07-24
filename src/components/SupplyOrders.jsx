@@ -14,11 +14,15 @@ const SupplyOrders = ({ userRole }) => {
 
   useEffect(() => {
     const fetchOrders = async () => {
+      if (!user) return;
+      
       setLoading(true);
       setError('');
       try {
         const response = await fetch(`${getBackendUrl()}/api/supplies/orders`, {
-          credentials: 'include',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
         });
         if (!response.ok) throw new Error('Failed to fetch orders');
         const data = await response.json();
@@ -30,7 +34,7 @@ const SupplyOrders = ({ userRole }) => {
       }
     };
     fetchOrders();
-  }, []);
+  }, [token]);
 
   const handleStatusUpdate = async (orderId, newStatus) => {
     try {
@@ -39,14 +43,13 @@ const SupplyOrders = ({ userRole }) => {
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
         body: JSON.stringify({ status: newStatus }),
       });
 
       if (!response.ok) throw new Error('Failed to update order status');
 
       // Update local state
-      setOrders(orders.map(order => 
+      setOrders(orders.map(order =>
         order.id === orderId ? { ...order, status: newStatus } : order
       ));
     } catch (err) {

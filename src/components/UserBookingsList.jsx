@@ -11,11 +11,15 @@ const UserBookingsList = () => {
   const [error, setError] = useState('');
 
   const fetchUserBookings = async () => {
+    if (!user) return;
+    
     setLoading(true);
     setError('');
     try {
       const response = await fetch(`${getBackendUrl()}/api/booking/user`, {
-        credentials: 'include',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       });
       
       if (!response.ok) throw new Error('Failed to fetch your bookings');
@@ -66,7 +70,8 @@ const UserBookingsList = () => {
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json'
-        }
+        },
+        credentials: 'include' // Use cookie-based authentication
       });
       
       console.log('DELETE response status:', response.status);

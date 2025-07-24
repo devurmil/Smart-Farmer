@@ -42,11 +42,12 @@ const EquipmentRentalPage = () => {
   };
 
   const fetchOwnerStats = async () => {
-    if (!user?.role || user?.role !== 'owner') return;
+    if (!token || user?.role !== 'owner') return;
+    
     try {
       // Fetch owner's equipment count
       const equipmentResponse = await fetch(`${getBackendUrl()}/api/equipment/owner`, {
-        credentials: 'include',
+        headers: { 'Authorization': `Bearer ${token}` }
       });
       if (equipmentResponse.ok) {
         const equipmentData = await equipmentResponse.json();
@@ -57,7 +58,7 @@ const EquipmentRentalPage = () => {
       }
       // Fetch owner's bookings
       const bookingsResponse = await fetch(`${getBackendUrl()}/api/booking/owner`, {
-        credentials: 'include',
+        headers: { 'Authorization': `Bearer ${token}` }
       });
       if (bookingsResponse.ok) {
         const bookingsData = await bookingsResponse.json();
@@ -88,12 +89,11 @@ const EquipmentRentalPage = () => {
   };
 
   const fetchFarmerStats = async () => {
-    if (user?.role === 'owner') return;
+    if (!token || user?.role === 'owner') return;
+
     try {
       // Fetch available equipment count
-      const equipmentResponse = await fetch(`${getBackendUrl()}/api/equipment`, {
-        credentials: 'include',
-      });
+      const equipmentResponse = await fetch(`${getBackendUrl()}/api/equipment`);
       if (equipmentResponse.ok) {
         const equipmentData = await equipmentResponse.json();
         const totalEquipment = equipmentData.length; // Show total equipment count
@@ -107,7 +107,7 @@ const EquipmentRentalPage = () => {
       }
       // Fetch farmer's bookings
       const bookingsResponse = await fetch(`${getBackendUrl()}/api/booking/user`, {
-        credentials: 'include',
+        headers: { 'Authorization': `Bearer ${token}` }
       });
       if (bookingsResponse.ok) {
         const bookingsData = await bookingsResponse.json();
@@ -124,14 +124,14 @@ const EquipmentRentalPage = () => {
 
 
   React.useEffect(() => {
-    if (user?.role) {
+    if (token) {
       if (user?.role === 'owner') {
         fetchOwnerStats();
       } else if (user?.role === 'farmer') {
         fetchFarmerStats();
       }
     }
-  }, [user?.role, refreshTrigger]);
+  }, [token, user?.role, refreshTrigger]);
 
   return (
     <div className="min-h-screen bg-background">
