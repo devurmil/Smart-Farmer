@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { AlertCircle, CheckCircle, Upload, Loader2 } from 'lucide-react';
 import { getBackendUrl } from '@/lib/utils';
 
-const AddSupplyForm = ({ onSupplyAdded }) => {
+const AddSupplyForm = ({ onSupplyAdded, isAdmin = false, suppliers = [], onClose }) => {
   const { user, token } = useUser();
   const [form, setForm] = useState({ 
     name: '', 
@@ -19,7 +19,8 @@ const AddSupplyForm = ({ onSupplyAdded }) => {
     quantity: '1',
     description: '',
     brand: '',
-    expiryDate: ''
+    expiryDate: '',
+    supplierId: ''
   });
   const [image, setImage] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -47,6 +48,7 @@ const AddSupplyForm = ({ onSupplyAdded }) => {
     try {
       const formData = new FormData();
       Object.entries(form).forEach(([key, value]) => {
+        if (key === 'supplierId' && !isAdmin) return; // Only send supplierId if admin
         if (value) formData.append(key, value);
       });
       if (image) formData.append('image', image);
@@ -73,7 +75,8 @@ const AddSupplyForm = ({ onSupplyAdded }) => {
         quantity: '1',
         description: '',
         brand: '',
-        expiryDate: ''
+        expiryDate: '',
+        supplierId: ''
       });
       setImage(null);
       
@@ -85,6 +88,7 @@ const AddSupplyForm = ({ onSupplyAdded }) => {
       if (onSupplyAdded) {
         onSupplyAdded();
       }
+      if (onClose) onClose();
       
     } catch (err) {
       setError(err.message || 'Failed to add supply');
@@ -133,6 +137,24 @@ const AddSupplyForm = ({ onSupplyAdded }) => {
         )}
         
         <form onSubmit={handleSubmit} className="space-y-4">
+          {isAdmin && suppliers.length > 0 && (
+            <div className="space-y-2">
+              <Label htmlFor="supplierId">Select Supplier</Label>
+              <select
+                id="supplierId"
+                name="supplierId"
+                value={form.supplierId}
+                onChange={handleChange}
+                required
+                className="h-12 w-full px-4 text-lg border-2 border-border focus:border-primary rounded-lg bg-background text-foreground"
+              >
+                <option value="">Select Supplier</option>
+                {suppliers.map(supplier => (
+                  <option key={supplier.id} value={supplier.id}>{supplier.name} ({supplier.email})</option>
+                ))}
+              </select>
+            </div>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="name">Supply Name</Label>

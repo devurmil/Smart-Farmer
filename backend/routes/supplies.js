@@ -59,9 +59,9 @@ router.get('/', auth, async (req, res) => {
 // @access  Private
 router.post('/', auth, uploadSupplyImage.single('image'), async (req, res) => {
   try {
-    // Check if user is a supplier
-    if (req.user.role !== 'supplier') {
-      return res.status(403).json({ message: 'Only suppliers can add supplies' });
+    // Allow admin or supplier to add supplies
+    if (req.user.role !== 'supplier' && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Only suppliers or admin can add supplies' });
     }
 
     const {
@@ -73,7 +73,8 @@ router.post('/', auth, uploadSupplyImage.single('image'), async (req, res) => {
       description,
       brand,
       expiryDate,
-      location
+      location,
+      supplierId
     } = req.body;
 
     const supplyData = {
@@ -84,7 +85,7 @@ router.post('/', auth, uploadSupplyImage.single('image'), async (req, res) => {
       quantity: parseInt(quantity),
       description,
       brand,
-      supplierId: req.user.id,
+      supplierId: req.user.role === 'admin' && supplierId ? supplierId : req.user.id,
       available: true
     };
 

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useUser } from '../contexts/UserContext';
 import { getBackendUrl } from '@/lib/utils';
 import AddEquipmentForm from '../components/AddEquipmentForm';
+import AddSupplyForm from '../components/AddSupplyForm';
 
 interface User {
   id: string;
@@ -88,6 +89,9 @@ const AdminPage: React.FC = () => {
   const [suppliesError, setSuppliesError] = useState<string | null>(null);
   const [showDeleteSupply, setShowDeleteSupply] = useState(false);
   const [deleteSupplyId, setDeleteSupplyId] = useState<string | null>(null);
+  const [showEditSupply, setShowEditSupply] = useState(false);
+  const [editSupply, setEditSupply] = useState<Supply | null>(null);
+  const [showAddSupply, setShowAddSupply] = useState(false);
 
   const [showAddEquipment, setShowAddEquipment] = useState(false);
   const [owners, setOwners] = useState<User[]>([]);
@@ -216,14 +220,28 @@ const AdminPage: React.FC = () => {
     setSuppliesLoading(true);
     setSuppliesError(null);
     try {
-      const res = await fetch(`${getBackendUrl()}/api/supplies`, {
+      const res = await fetch(`${getBackendUrl()}/api/supplies?limit=1000`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
       
       // Handle the new structured response
       if (data.success) {
-        setAllSupplies(data.data || []);
+        // Fetch supplier details for each supply
+        const suppliesWithSuppliers = await Promise.all(
+          (data.data || []).map(async (supply: Supply) => {
+            try {
+              const supplierRes = await fetch(`${getBackendUrl()}/api/users/${supply.supplierId}`, {
+                headers: { Authorization: `Bearer ${token}` },
+              });
+              const supplierData = await supplierRes.json();
+              return { ...supply, supplier: supplierData.success ? supplierData.data : null };
+            } catch {
+              return { ...supply, supplier: null };
+            }
+          })
+        );
+        setAllSupplies(suppliesWithSuppliers);
       } else {
         throw new Error(data.message || 'Failed to fetch supplies');
       }
@@ -314,6 +332,48 @@ const AdminPage: React.FC = () => {
     }
   };
 
+  // Edit supply
+  const handleEditSupply = (supply: Supply) => {
+    setEditSupply(supply);
+    setShowEditSupply(true);
+  };
+
+  const submitEditSupply = async () => {
+    if (!editSupply || !editSupply.id) return;
+    setActionLoading(true);
+    setActionError(null);
+    try {
+      const res = await fetch(`${getBackendUrl()}/api/supplies/${editSupply.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: editSupply.name,
+          category: editSupply.category,
+          price: editSupply.price,
+          unit: editSupply.unit,
+          quantity: editSupply.quantity,
+          description: editSupply.description,
+          brand: editSupply.brand,
+          available: editSupply.available,
+          expiryDate: editSupply.expiryDate,
+          supplierId: editSupply.supplierId
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Failed to update supply');
+      setShowEditSupply(false);
+      setEditSupply(null);
+      fetchAllSupplies();
+    } catch (err: any) {
+      setActionError(err.message || 'Error updating supply');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   // Fetch data based on active section
   useEffect(() => {
     if (activeSection === 'equipment') {
@@ -357,9 +417,9 @@ const AdminPage: React.FC = () => {
     fetchContent();
   }, [showContent, contentUser, token]);
 
-  // Fetch owners for AddEquipmentForm
+  // Fetch users for equipment owners and supply suppliers
   useEffect(() => {
-    if (activeSection === 'equipment') {
+    if (activeSection === 'equipment' || activeSection === 'supplies') {
       fetchUsers();
     }
   }, [activeSection]);
@@ -523,7 +583,26 @@ const AdminPage: React.FC = () => {
         <>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold">Supply Management</h2>
+            <button className="bg-green-700 text-white px-4 py-2 rounded hover:bg-green-800" onClick={() => setShowAddSupply(true)}>
+              Add Supply
+            </button>
           </div>
+          {showAddSupply && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+              <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-lg relative">
+                <button className="absolute top-4 right-4 text-gray-500 hover:text-gray-700" onClick={() => setShowAddSupply(false)}>&times;</button>
+                <AddSupplyForm
+                  isAdmin={true}
+                  suppliers={users}
+                  onClose={() => setShowAddSupply(false)}
+                  onSupplyAdded={() => {
+                    setShowAddSupply(false);
+                    fetchAllSupplies();
+                  }}
+                />
+              </div>
+            </div>
+          )}
           {suppliesLoading && <div>Loading supplies...</div>}
           {suppliesError && <div className="text-red-600">{suppliesError}</div>}
           {!suppliesLoading && !suppliesError && (
@@ -563,7 +642,13 @@ const AdminPage: React.FC = () => {
                         </span>
                       </td>
                       <td className="px-4 py-2">{supply.expiryDate ? new Date(supply.expiryDate).toLocaleDateString() : '-'}</td>
-                      <td className="px-4 py-2">
+                      <td className="px-4 py-2 flex flex-wrap gap-2">
+                        <button
+                          className="text-blue-600 hover:underline"
+                          onClick={() => handleEditSupply(supply)}
+                        >
+                          Edit
+                        </button>
                         <button
                           className="text-red-600 hover:underline"
                           onClick={() => { setShowDeleteSupply(true); setDeleteSupplyId(supply.id); }}
@@ -798,6 +883,104 @@ const AdminPage: React.FC = () => {
               <button
                 className="px-4 py-2 rounded bg-green-700 text-white"
                 onClick={submitEditEquipment}
+                disabled={actionLoading}
+              >
+                {actionLoading ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Supply Modal */}
+      {showEditSupply && editSupply && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-900 p-6 rounded shadow w-full max-w-md">
+            <h3 className="text-lg font-semibold mb-4">Edit Supply</h3>
+            <div className="space-y-3">
+              <input
+                className="w-full border p-2 rounded"
+                placeholder="Supply Name"
+                value={editSupply.name || ''}
+                onChange={e => setEditSupply({ ...editSupply, name: e.target.value })}
+              />
+              <input
+                className="w-full border p-2 rounded"
+                placeholder="Category"
+                value={editSupply.category || ''}
+                onChange={e => setEditSupply({ ...editSupply, category: e.target.value })}
+              />
+              <input
+                className="w-full border p-2 rounded"
+                placeholder="Brand"
+                value={editSupply.brand || ''}
+                onChange={e => setEditSupply({ ...editSupply, brand: e.target.value })}
+              />
+              <input
+                className="w-full border p-2 rounded"
+                placeholder="Price"
+                type="number"
+                value={editSupply.price || ''}
+                onChange={e => setEditSupply({ ...editSupply, price: parseFloat(e.target.value) || 0 })}
+              />
+              <input
+                className="w-full border p-2 rounded"
+                placeholder="Unit (kg, liter, etc.)"
+                value={editSupply.unit || ''}
+                onChange={e => setEditSupply({ ...editSupply, unit: e.target.value })}
+              />
+              <input
+                className="w-full border p-2 rounded"
+                placeholder="Quantity"
+                type="number"
+                value={editSupply.quantity || ''}
+                onChange={e => setEditSupply({ ...editSupply, quantity: parseInt(e.target.value) || 0 })}
+              />
+              <input
+                className="w-full border p-2 rounded"
+                placeholder="Expiry Date"
+                type="date"
+                value={editSupply.expiryDate ? editSupply.expiryDate.split('T')[0] : ''}
+                onChange={e => setEditSupply({ ...editSupply, expiryDate: e.target.value })}
+              />
+              <textarea
+                className="w-full border p-2 rounded"
+                placeholder="Description"
+                value={editSupply.description || ''}
+                onChange={e => setEditSupply({ ...editSupply, description: e.target.value })}
+                rows={3}
+              />
+              <select
+                className="w-full border p-2 rounded"
+                value={editSupply.supplierId || ''}
+                onChange={e => setEditSupply({ ...editSupply, supplierId: e.target.value })}
+              >
+                <option value="">Select Supplier</option>
+                {users.filter(user => user.role === 'supplier').map(supplier => (
+                  <option key={supplier.id} value={supplier.id}>{supplier.name}</option>
+                ))}
+              </select>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="supplyAvailable"
+                  checked={editSupply.available || false}
+                  onChange={e => setEditSupply({ ...editSupply, available: e.target.checked })}
+                />
+                <label htmlFor="supplyAvailable">Available for order</label>
+              </div>
+            </div>
+            {actionError && <div className="text-red-600 mt-2">{actionError}</div>}
+            <div className="flex justify-end gap-2 mt-4">
+              <button
+                className="px-4 py-2 rounded bg-gray-200"
+                onClick={() => { setShowEditSupply(false); setEditSupply(null); }}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 rounded bg-green-700 text-white"
+                onClick={submitEditSupply}
                 disabled={actionLoading}
               >
                 {actionLoading ? 'Saving...' : 'Save Changes'}
