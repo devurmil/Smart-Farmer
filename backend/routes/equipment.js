@@ -35,7 +35,7 @@ router.get('/', authMiddleware, async (req, res) => {
       // Owners can only see their own equipment
       whereClause = { ownerId: req.user.id };
     } else {
-      // Farmers and other roles see all equipment
+      // Farmers, suppliers, and all other roles see all equipment
       whereClause = {};
     }
 
