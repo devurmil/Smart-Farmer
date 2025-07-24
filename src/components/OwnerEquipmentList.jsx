@@ -80,21 +80,23 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
     }
   }, [token, refreshTrigger]);
 
-  // Fetch bookings for all equipment after equipment is loaded
-  useEffect(() => {
-    if (equipment.length > 0) {
-      equipment.forEach((item) => {
-        if (!bookingData[item.id]) {
-          fetchBookings(item.id);
-        }
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [equipment]);
+  // Remove this useEffect that fetches bookings for all equipment after equipment is loaded
+  // useEffect(() => {
+  //   if (equipment.length > 0) {
+  //     equipment.forEach((item) => {
+  //       if (!bookingData[item.id]) {
+  //         fetchBookings(item.id);
+  //       }
+  //     });
+  //   }
+  // }, [equipment]);
 
   const handleView = (item) => {
     setSelectedEquipment(item);
     setIsViewOpen(true);
+    if (!bookingData[item.id]) {
+      fetchBookings(item.id);
+    }
   };
 
   const handleEdit = (item) => {

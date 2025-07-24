@@ -71,7 +71,7 @@ interface Supply {
 const emptyUser: UserForm = { name: '', email: '', phone: '', role: 'farmer', password: '' };
 
 const AdminPage: React.FC = () => {
-  const { token } = useUser();
+  const { user } = useUser(); // Remove token, only use user
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -123,10 +123,9 @@ const AdminPage: React.FC = () => {
   const fetchUsers = async () => {
     setLoading(true);
     setError(null);
-    console.log('JWT token:', token); // Debug log
     try {
       const res = await fetch(`${getBackendUrl()}/api/users`, {
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       });
       const data = await res.json();
       if (!data.success) throw new Error(data.message || 'Failed to fetch users');
@@ -140,12 +139,12 @@ const AdminPage: React.FC = () => {
 
   // Load all data on component mount
   useEffect(() => {
-    if (token) {
+    if (user) {
       fetchUsers();
       fetchAllEquipment();
       fetchAllSupplies();
     }
-  }, [token]);
+  }, [user]);
 
   // Delete user
   const handleDelete = async (id: string) => {
@@ -154,7 +153,7 @@ const AdminPage: React.FC = () => {
     try {
       const res = await fetch(`${getBackendUrl()}/api/users/${id}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       });
       const data = await res.json();
       if (!data.success) throw new Error(data.message || 'Failed to delete user');
@@ -182,8 +181,8 @@ const AdminPage: React.FC = () => {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify(editUser),
       });
       const data = await res.json();
@@ -207,8 +206,8 @@ const AdminPage: React.FC = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify(addUser),
       });
       const data = await res.json();
@@ -229,7 +228,7 @@ const AdminPage: React.FC = () => {
     setEquipmentError(null);
     try {
       const res = await fetch(`${getBackendUrl()}/api/equipment?limit=1000`, {
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       });
       const data = await res.json();
       
@@ -252,7 +251,7 @@ const AdminPage: React.FC = () => {
     setSuppliesError(null);
     try {
       const res = await fetch(`${getBackendUrl()}/api/supplies?limit=1000`, {
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       });
       const data = await res.json();
       
@@ -263,7 +262,7 @@ const AdminPage: React.FC = () => {
           (data.data || []).map(async (supply: Supply) => {
             try {
               const supplierRes = await fetch(`${getBackendUrl()}/api/users/${supply.supplierId}`, {
-                headers: { Authorization: `Bearer ${token}` },
+                credentials: 'include',
               });
               const supplierData = await supplierRes.json();
               return { ...supply, supplier: supplierData.success ? supplierData.data : null };
@@ -298,8 +297,8 @@ const AdminPage: React.FC = () => {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify({
           name: editEquipment.name,
           type: editEquipment.type,
@@ -328,7 +327,7 @@ const AdminPage: React.FC = () => {
     try {
       const res = await fetch(`${getBackendUrl()}/api/equipment/${id}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Failed to delete equipment');
@@ -349,7 +348,7 @@ const AdminPage: React.FC = () => {
     try {
       const res = await fetch(`${getBackendUrl()}/api/supplies/${id}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       });
       const data = await res.json();
       if (!data.success) throw new Error(data.message || 'Failed to delete supply');
@@ -378,8 +377,8 @@ const AdminPage: React.FC = () => {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify({
           name: editSupply.name,
           category: editSupply.category,
@@ -415,19 +414,19 @@ const AdminPage: React.FC = () => {
       try {
         // Fetch farms
         const farmsRes = await fetch(`${getBackendUrl()}/api/farms?user_id=${contentUser.id}`, {
-          headers: { Authorization: `Bearer ${token}` },
+          credentials: 'include',
         });
         const farmsData = await farmsRes.json();
         setFarms(farmsData.data?.farms || []);
         // Fetch equipment
         const equipRes = await fetch(`${getBackendUrl()}/api/equipment?user_id=${contentUser.id}`, {
-          headers: { Authorization: `Bearer ${token}` },
+          credentials: 'include',
         });
         const equipData = await equipRes.json();
         setEquipment(equipData.data?.equipment || []);
         // Fetch supplies
         const supplyRes = await fetch(`${getBackendUrl()}/api/supplies?user_id=${contentUser.id}`, {
-          headers: { Authorization: `Bearer ${token}` },
+          credentials: 'include',
         });
         const supplyData = await supplyRes.json();
         setSupplies(supplyData.data?.supplies || []);
@@ -438,7 +437,7 @@ const AdminPage: React.FC = () => {
       }
     };
     fetchContent();
-  }, [showContent, contentUser, token]);
+  }, [showContent, contentUser]);
 
   // Statistics calculations
   const totalUsers = users.length;
