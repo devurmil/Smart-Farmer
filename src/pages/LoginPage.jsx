@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useUser } from '../contexts/UserContext';
 import axios from 'axios';
 import { Container, Box, Typography, TextField, Button, Alert } from '@mui/material';
 
@@ -8,7 +8,7 @@ const LoginPage = () => {
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login } = useUser();
   const navigate = useNavigate();
   const [showAdblockAlert, setShowAdblockAlert] = useState(true);
 

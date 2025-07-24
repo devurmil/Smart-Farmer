@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useUser } from '../contexts/UserContext';
 import axios from 'axios';
 import { Container, Box, Typography, TextField, Button, MenuItem, Alert } from '@mui/material';
 
@@ -14,7 +14,7 @@ const SignupPage = () => {
   const [form, setForm] = useState({ name: '', email: '', password: '', phone: '', role: 'farmer' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signup } = useAuth();
+  const { login } = useUser();
   const navigate = useNavigate();
   const [showAdblockAlert, setShowAdblockAlert] = useState(true);
 
@@ -28,7 +28,7 @@ const SignupPage = () => {
     setError('');
     try {
       const res = await axios.post('/api/auth/register', form);
-      signup(res.data.data.user, res.data.data.token);
+      login(res.data.data.user);
       navigate('/equipment-rental');
     } catch (err) {
       setError(err.response?.data?.message || 'Signup failed');

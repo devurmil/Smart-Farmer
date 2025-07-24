@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useUser } from '../contexts/UserContext';
 import axios from 'axios';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Alert, CircularProgress, Box } from '@mui/material';
 import { DateRangePicker } from '@mui/x-date-pickers-pro/DateRangePicker';
@@ -7,7 +7,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 
 const BookingCalendar = ({ open, onClose, equipmentId, onBooked }) => {
-  const { token } = useAuth();
+  const { user } = useUser();
   const [bookings, setBookings] = useState([]);
   const [dateRange, setDateRange] = useState([null, null]);
   const [loading, setLoading] = useState(false);
