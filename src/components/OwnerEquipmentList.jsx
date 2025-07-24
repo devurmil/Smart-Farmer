@@ -44,6 +44,7 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
         url = `${getBackendUrl()}/api/equipment/owner?page=${pageNum}&limit=${limit}&t=${Date.now()}`;
       } else {
         setEquipment([]);
+        setTotal(0);
         setLoading(false);
         return;
       }
@@ -53,7 +54,7 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
       if (!response.ok) throw new Error('Failed to fetch equipment');
       const data = await response.json();
       if (data.success) {
-        setEquipment(data.data || []);
+        setEquipment(Array.isArray(data.data) ? data.data : []);
         setTotal(data.total || 0);
       } else {
         setEquipment([]);
@@ -61,10 +62,15 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
       }
     } catch (err) {
       setError('Failed to fetch your equipment');
+      setEquipment([]);
+      setTotal(0);
     } finally {
       setLoading(false);
     }
   };
+
+  // Debug logging for state
+  console.log('EQUIPMENT:', equipment, 'LOADING:', loading, 'ERROR:', error);
 
   // Fetch bookings for each equipment
   const fetchBookings = async (equipmentId) => {
