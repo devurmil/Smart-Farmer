@@ -3,6 +3,7 @@ const { User } = require('../models');
 const { auth } = require('../middleware/auth');
 const bcrypt = require('bcryptjs');
 const router = express.Router();
+const { Equipment, Supply } = require('../models');
 
 // Only allow admin (by role) to access this route
 const isAdmin = (req) => req.user.role === 'admin';
@@ -14,7 +15,13 @@ router.get('/', auth, async (req, res) => {
       return res.status(403).json({ success: false, message: 'Access denied. Admins only.' });
     }
     const users = await User.findAll({ attributes: { exclude: ['password'] }, order: [['created_at', 'DESC']] });
-    res.json({ success: true, data: { users } });
+    // For each user, add equipmentCount and supplyCount
+    const usersWithDetails = await Promise.all(users.map(async user => {
+      const equipment = await Equipment.findAll({ where: { ownerId: user.id } });
+      const supplies = await Supply.findAll({ where: { supplierId: user.id } });
+      return { ...user.toJSON(), equipment, supplies };
+    }));
+    res.json({ success: true, data: { users: usersWithDetails } });
   } catch (error) {
     console.error('Get all users error:', error);
     res.status(500).json({ success: false, message: 'Server error while fetching users' });

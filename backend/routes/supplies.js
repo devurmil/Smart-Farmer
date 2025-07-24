@@ -5,6 +5,7 @@ const path = require('path');
 const { Supply, SupplyOrder, User } = require('../models');
 const { auth } = require('../middleware/auth');
 const { uploadSupplyImage } = require('../middleware/upload');
+const supplyController = require('../controllers/supplyController');
 const router = express.Router();
 
 // @route   GET /api/supplies
@@ -133,50 +134,20 @@ router.get('/my-supplies', auth, async (req, res) => {
   }
 });
 
-// @route   PUT /api/supplies/:id
-// @desc    Update a supply
-// @access  Private
+// Update supply by ID (admin or owner)
 router.put('/:id', auth, uploadSupplyImage.single('image'), async (req, res) => {
   try {
-    const supply = await Supply.findByPk(req.params.id);
-    
-    if (!supply) {
-      return res.status(404).json({ message: 'Supply not found' });
-    }
-
-    if (supply.supplierId !== req.user.id) {
-      return res.status(403).json({ message: 'Not authorized to update this supply' });
-    }
-
     const updateData = { ...req.body };
-    
     if (req.file && req.file.path) {
       updateData.imageUrl = req.file.path;
     }
-
-    if (updateData.price) {
-      updateData.price = parseFloat(updateData.price);
-    }
-
-    if (updateData.quantity) {
-      updateData.quantity = parseInt(updateData.quantity);
-    }
-
-    if (updateData.expiryDate) {
-      updateData.expiryDate = new Date(updateData.expiryDate);
-    }
-
-    if (updateData.location) {
-      updateData.location = JSON.parse(updateData.location);
-    }
-
-    await supply.update(updateData);
-
-    res.json({
-      success: true,
-      message: 'Supply updated successfully',
-      data: supply
-    });
+    if (updateData.price) updateData.price = parseFloat(updateData.price);
+    if (updateData.quantity) updateData.quantity = parseInt(updateData.quantity);
+    if (updateData.expiryDate) updateData.expiryDate = new Date(updateData.expiryDate);
+    if (updateData.location) updateData.location = JSON.parse(updateData.location);
+    const result = await supplyController.updateSupply(req.params.id, req.user, updateData);
+    if (result.error) return res.status(result.status).json({ message: result.error });
+    res.json({ success: true, message: 'Supply updated successfully', data: result.supply });
   } catch (error) {
     console.error('Error updating supply:', error);
     res.status(500).json({ message: 'Server error' });

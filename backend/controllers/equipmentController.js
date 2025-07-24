@@ -1,4 +1,4 @@
-const { Equipment } = require('../models');
+const { Equipment, User } = require('../models');
 const { Booking } = require('../models');
 const path = require('path');
 
@@ -33,7 +33,8 @@ exports.getAllEquipment = async (offset = 0, limit = 10, whereClause = {}) => {
       where: whereClause,
       offset: parseInt(offset),
       limit: parseInt(limit),
-      order: [['createdAt', 'DESC']]
+      order: [['createdAt', 'DESC']],
+      include: [{ model: User, as: 'owner', attributes: ['id', 'name', 'email', 'phone'] }]
     });
     return equipment;
   } catch (err) {
@@ -124,8 +125,8 @@ exports.updateEquipment = async (req, res) => {
       return res.status(404).json({ error: 'Equipment not found' });
     }
     
-    // Check if the equipment belongs to the current user
-    if (equipment.ownerId !== req.user.id) {
+    // Check if the equipment belongs to the current user or user is admin
+    if (equipment.ownerId !== req.user.id && req.user.role !== 'admin') {
       return res.status(403).json({ error: 'Unauthorized to update this equipment' });
     }
     
