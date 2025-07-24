@@ -120,7 +120,7 @@ exports.getEquipmentById = async (req, res) => {
 // Update equipment by ID
 exports.updateEquipment = async (req, res) => {
   try {
-    const { name, type, price, description } = req.body;
+    const { name, type, price, description, available, ownerId } = req.body;
     const equipment = await Equipment.findByPk(req.params.id);
     
     if (!equipment) {
@@ -132,14 +132,23 @@ exports.updateEquipment = async (req, res) => {
       return res.status(403).json({ error: 'Unauthorized to update this equipment' });
     }
     
-    await equipment.update({
+    // Prepare update data
+    const updateData = {
       name,
       type,
       price,
       description
-    });
+    };
     
-    res.json(equipment);
+    // Only admin can change availability and owner
+    if (req.user.role === 'admin') {
+      if (available !== undefined) updateData.available = available;
+      if (ownerId) updateData.ownerId = ownerId;
+    }
+    
+    await equipment.update(updateData);
+    
+    res.json({ success: true, data: equipment });
   } catch (err) {
     console.error('Update equipment error:', err);
     res.status(500).json({ error: 'Failed to update equipment.' });

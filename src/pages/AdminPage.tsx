@@ -79,6 +79,8 @@ const AdminPage: React.FC = () => {
   const [equipmentError, setEquipmentError] = useState<string | null>(null);
   const [showDeleteEquipment, setShowDeleteEquipment] = useState(false);
   const [deleteEquipmentId, setDeleteEquipmentId] = useState<string | null>(null);
+  const [showEditEquipment, setShowEditEquipment] = useState(false);
+  const [editEquipment, setEditEquipment] = useState<Equipment | null>(null);
 
   // Supply management state
   const [allSupplies, setAllSupplies] = useState<Supply[]>([]);
@@ -191,28 +193,17 @@ const AdminPage: React.FC = () => {
     setEquipmentLoading(true);
     setEquipmentError(null);
     try {
-      const res = await fetch(`${getBackendUrl()}/api/equipment`, {
+      const res = await fetch(`${getBackendUrl()}/api/equipment?limit=1000`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      if (!data.success) throw new Error(data.message || 'Failed to fetch equipment');
       
-      // Fetch owner details for each equipment
-      const equipmentWithOwners = await Promise.all(
-        data.data.map(async (eq: Equipment) => {
-          try {
-            const ownerRes = await fetch(`${getBackendUrl()}/api/users/${eq.ownerId}`, {
-              headers: { Authorization: `Bearer ${token}` },
-            });
-            const ownerData = await ownerRes.json();
-            return { ...eq, owner: ownerData.success ? ownerData.data : null };
-          } catch {
-            return { ...eq, owner: null };
-          }
-        })
-      );
+      if (!data.success) {
+        throw new Error(data.message || 'Failed to fetch equipment');
+      }
       
-      setAllEquipment(equipmentWithOwners);
+      // The equipment data already includes owner information from the backend
+      setAllEquipment(data.data || []);
     } catch (err: any) {
       setEquipmentError(err.message || 'Error fetching equipment');
     } finally {
@@ -240,6 +231,44 @@ const AdminPage: React.FC = () => {
       setSuppliesError(err.message || 'Error fetching supplies');
     } finally {
       setSuppliesLoading(false);
+    }
+  };
+
+  // Edit equipment
+  const handleEditEquipment = (equipment: Equipment) => {
+    setEditEquipment(equipment);
+    setShowEditEquipment(true);
+  };
+
+  const submitEditEquipment = async () => {
+    if (!editEquipment || !editEquipment.id) return;
+    setActionLoading(true);
+    setActionError(null);
+    try {
+      const res = await fetch(`${getBackendUrl()}/api/equipment/${editEquipment.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: editEquipment.name,
+          type: editEquipment.type,
+          price: editEquipment.price,
+          description: editEquipment.description,
+          available: editEquipment.available,
+          ownerId: editEquipment.ownerId
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Failed to update equipment');
+      setShowEditEquipment(false);
+      setEditEquipment(null);
+      fetchAllEquipment();
+    } catch (err: any) {
+      setActionError(err.message || 'Error updating equipment');
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -466,7 +495,13 @@ const AdminPage: React.FC = () => {
                         </span>
                       </td>
                       <td className="px-4 py-2">{equipment.createdAt ? new Date(equipment.createdAt).toLocaleDateString() : '-'}</td>
-                      <td className="px-4 py-2">
+                      <td className="px-4 py-2 flex flex-wrap gap-2">
+                        <button
+                          className="text-blue-600 hover:underline"
+                          onClick={() => handleEditEquipment(equipment)}
+                        >
+                          Edit
+                        </button>
                         <button
                           className="text-red-600 hover:underline"
                           onClick={() => { setShowDeleteEquipment(true); setDeleteEquipmentId(equipment.id); }}
@@ -699,8 +734,80 @@ const AdminPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Edit Equipment Modal */}
+      {showEditEquipment && editEquipment && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-900 p-6 rounded shadow w-full max-w-md">
+            <h3 className="text-lg font-semibold mb-4">Edit Equipment</h3>
+            <div className="space-y-3">
+              <input
+                className="w-full border p-2 rounded"
+                placeholder="Equipment Name"
+                value={editEquipment.name || ''}
+                onChange={e => setEditEquipment({ ...editEquipment, name: e.target.value })}
+              />
+              <input
+                className="w-full border p-2 rounded"
+                placeholder="Type"
+                value={editEquipment.type || ''}
+                onChange={e => setEditEquipment({ ...editEquipment, type: e.target.value })}
+              />
+              <input
+                className="w-full border p-2 rounded"
+                placeholder="Price"
+                type="number"
+                value={editEquipment.price || ''}
+                onChange={e => setEditEquipment({ ...editEquipment, price: parseFloat(e.target.value) || 0 })}
+              />
+              <textarea
+                className="w-full border p-2 rounded"
+                placeholder="Description"
+                value={editEquipment.description || ''}
+                onChange={e => setEditEquipment({ ...editEquipment, description: e.target.value })}
+                rows={3}
+              />
+              <select
+                className="w-full border p-2 rounded"
+                value={editEquipment.ownerId || ''}
+                onChange={e => setEditEquipment({ ...editEquipment, ownerId: e.target.value })}
+              >
+                <option value="">Select Owner</option>
+                {users.filter(user => user.role === 'owner').map(owner => (
+                  <option key={owner.id} value={owner.id}>{owner.name}</option>
+                ))}
+              </select>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="available"
+                  checked={editEquipment.available || false}
+                  onChange={e => setEditEquipment({ ...editEquipment, available: e.target.checked })}
+                />
+                <label htmlFor="available">Available for rent</label>
+              </div>
+            </div>
+            {actionError && <div className="text-red-600 mt-2">{actionError}</div>}
+            <div className="flex justify-end gap-2 mt-4">
+              <button
+                className="px-4 py-2 rounded bg-gray-200"
+                onClick={() => { setShowEditEquipment(false); setEditEquipment(null); }}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 rounded bg-green-700 text-white"
+                onClick={submitEditEquipment}
+                disabled={actionLoading}
+              >
+                {actionLoading ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
-export default AdminPage; 
+export default AdminPage;
