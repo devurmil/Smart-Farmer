@@ -20,10 +20,14 @@ const SupplyList = () => {
       setLoading(true);
       setError('');
       try {
-        const response = await fetch(`${getBackendUrl()}/api/supplies`);
+        const response = await fetch(`${getBackendUrl()}/api/supplies`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
         if (!response.ok) throw new Error('Failed to fetch supplies');
         const data = await response.json();
-        setSupplies(data);
+        setSupplies(data.data || data);
       } catch (err) {
         setError('Failed to fetch supplies');
       } finally {
@@ -31,7 +35,7 @@ const SupplyList = () => {
       }
     };
     fetchSupplies();
-  }, []);
+  }, [token]);
 
   const handleOrderClose = () => setOpenOrderModal(null);
 
