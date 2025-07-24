@@ -49,11 +49,11 @@ router.post('/register', validate(registerSchema), async (req, res) => {
 
     // Generate token
     const token = generateToken(user.id);
-    // Set HTTP-only cookie
+    // Set HTTP-only cookie for cross-site
     res.cookie('token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: true, // Always true for cross-site (Vercel)
+      sameSite: 'none', // Required for cross-site cookies
       maxAge: 7 * 24 * 60 * 60 * 1000 // 1 week
     });
 
