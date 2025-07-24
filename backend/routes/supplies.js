@@ -24,9 +24,12 @@ router.get('/', auth, async (req, res) => {
         whereClause = { supplierId: user_id };
       }
       // If no user_id specified for admin, fetch all supplies (empty whereClause)
-    } else {
-      // Non-admin users can only see their own supplies
+    } else if (req.user.role === 'supplier') {
+      // Suppliers can only see their own supplies
       whereClause = { supplierId: req.user.id };
+    } else {
+      // Farmers and other roles see all supplies
+      whereClause = {};
     }
 
     const supplies = await Supply.findAll({

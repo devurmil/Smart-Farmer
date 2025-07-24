@@ -3,6 +3,27 @@ import { useUser } from '../contexts/UserContext';
 import { getBackendUrl } from '@/lib/utils';
 import AddEquipmentForm from '../components/AddEquipmentForm';
 import AddSupplyForm from '../components/AddSupplyForm';
+import {
+  Users,
+  Wrench,
+  Package,
+  Plus,
+  Edit,
+  Trash2,
+  Eye,
+  TrendingUp,
+  Activity,
+  BarChart3,
+  Settings,
+  Search,
+  Filter,
+  Calendar,
+  DollarSign,
+  ShoppingCart,
+  UserCheck,
+  AlertTriangle,
+  CheckCircle
+} from 'lucide-react';
 
 interface User {
   id: string;
@@ -71,10 +92,7 @@ const AdminPage: React.FC = () => {
   const [contentLoading, setContentLoading] = useState(false);
   const [contentError, setContentError] = useState<string | null>(null);
 
-  // Admin sections state
-  const [activeSection, setActiveSection] = useState<'users' | 'equipment' | 'supplies'>('users');
-  
-  // Equipment management state
+  // All data loaded at once
   const [allEquipment, setAllEquipment] = useState<Equipment[]>([]);
   const [equipmentLoading, setEquipmentLoading] = useState(false);
   const [equipmentError, setEquipmentError] = useState<string | null>(null);
@@ -96,6 +114,12 @@ const AdminPage: React.FC = () => {
   const [showAddEquipment, setShowAddEquipment] = useState(false);
   const [owners, setOwners] = useState<User[]>([]);
 
+  // Search and filter states
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterRole, setFilterRole] = useState('');
+  const [equipmentFilter, setEquipmentFilter] = useState('');
+  const [supplyFilter, setSupplyFilter] = useState('');
+
   const fetchUsers = async () => {
     setLoading(true);
     setError(null);
@@ -114,7 +138,14 @@ const AdminPage: React.FC = () => {
     }
   };
 
-  useEffect(() => { fetchUsers(); }, [token]);
+  // Load all data on component mount
+  useEffect(() => {
+    if (token) {
+      fetchUsers();
+      fetchAllEquipment();
+      fetchAllSupplies();
+    }
+  }, [token]);
 
   // Delete user
   const handleDelete = async (id: string) => {
@@ -374,14 +405,6 @@ const AdminPage: React.FC = () => {
     }
   };
 
-  // Fetch data based on active section
-  useEffect(() => {
-    if (activeSection === 'equipment') {
-      fetchAllEquipment();
-    } else if (activeSection === 'supplies') {
-      fetchAllSupplies();
-    }
-  }, [activeSection, token]);
 
   // Fetch user content when modal opens
   useEffect(() => {
@@ -417,334 +440,622 @@ const AdminPage: React.FC = () => {
     fetchContent();
   }, [showContent, contentUser, token]);
 
-  // Fetch users for equipment owners and supply suppliers
-  useEffect(() => {
-    if (activeSection === 'equipment' || activeSection === 'supplies') {
-      fetchUsers();
-    }
-  }, [activeSection]);
+  // Statistics calculations
+  const totalUsers = users.length;
+  const totalEquipment = allEquipment.length;
+  const totalSupplies = allSupplies.length;
+  const activeUsers = users.filter(user => user.role !== undefined).length;
+  const availableEquipment = allEquipment.filter(eq => eq.available).length;
+  const availableSupplies = allSupplies.filter(supply => supply.available).length;
+
+  // Filtered data based on search and filters
+  const filteredUsers = users.filter(user => {
+    const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         user.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesRole = !filterRole || user.role === filterRole;
+    return matchesSearch && matchesRole;
+  });
+
+  const filteredEquipment = allEquipment.filter(equipment => {
+    const matchesSearch = equipment.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         equipment.type.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesFilter = !equipmentFilter || equipment.type === equipmentFilter;
+    return matchesSearch && matchesFilter;
+  });
+
+  const filteredSupplies = allSupplies.filter(supply => {
+    const matchesSearch = supply.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         supply.category.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesFilter = !supplyFilter || supply.category === supplyFilter;
+    return matchesSearch && matchesFilter;
+  });
 
   return (
-    <div className="main-bg min-h-screen p-8">
-      <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
-      
-      {/* Navigation Tabs */}
-      <div className="flex space-x-4 mb-6">
-        <button
-          className={`px-4 py-2 rounded ${activeSection === 'users' ? 'bg-green-700 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
-          onClick={() => setActiveSection('users')}
-        >
-          User Management
-        </button>
-        <button
-          className={`px-4 py-2 rounded ${activeSection === 'equipment' ? 'bg-green-700 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
-          onClick={() => setActiveSection('equipment')}
-        >
-          Equipment Management
-        </button>
-        <button
-          className={`px-4 py-2 rounded ${activeSection === 'supplies' ? 'bg-green-700 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
-          onClick={() => setActiveSection('supplies')}
-        >
-          Supply Management
-        </button>
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-purple-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-6">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-gradient-to-r from-green-500 to-blue-600 rounded-lg">
+                <Settings className="h-8 w-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+                <p className="text-sm text-gray-500">Manage your Smart Farm platform</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* User Management Section */}
-      {activeSection === 'users' && (
-        <>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold">User List</h2>
-            <button className="bg-green-700 text-white px-4 py-2 rounded hover:bg-green-800" onClick={() => setShowAdd(true)}>
-              Add User
-            </button>
-          </div>
-          {loading && <div>Loading users...</div>}
-          {error && <div className="text-red-600">{error}</div>}
-          {!loading && !error && (
-            <div className="overflow-x-auto">
-              <table className="min-w-full bg-white dark:bg-gray-900 rounded shadow">
-                <thead>
-                  <tr>
-                    <th className="px-4 py-2 border-b">Name</th>
-                    <th className="px-4 py-2 border-b">Email</th>
-                    <th className="px-4 py-2 border-b">Phone</th>
-                    <th className="px-4 py-2 border-b">Role</th>
-                    <th className="px-4 py-2 border-b">Created</th>
-                    <th className="px-4 py-2 border-b">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {users.map((user) => (
-                    <tr key={user.id} className="border-b hover:bg-gray-100 dark:hover:bg-gray-800">
-                      <td className="px-4 py-2">{user.name}</td>
-                      <td className="px-4 py-2">{user.email}</td>
-                      <td className="px-4 py-2">{user.phone || '-'}</td>
-                      <td className="px-4 py-2">{user.role || '-'}</td>
-                      <td className="px-4 py-2">{user.created_at ? new Date(user.created_at).toLocaleDateString() : '-'}</td>
-                      <td className="px-4 py-2 flex flex-wrap gap-2">
-                        <button className="text-blue-600 hover:underline mr-2" onClick={() => handleEdit(user)}>Edit</button>
-                        <button className="text-red-600 hover:underline mr-2" onClick={() => { setShowDelete(true); setDeleteUserId(user.id); }}>Delete</button>
-                        <button className="text-green-700 hover:underline" onClick={() => { setShowContent(true); setContentUser(user); }}>View Content</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </>
-      )}
-
-      {/* Equipment Management Section */}
-      {activeSection === 'equipment' && (
-        <>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold">Equipment Management</h2>
-            <button className="bg-green-700 text-white px-4 py-2 rounded hover:bg-green-800" onClick={() => setShowAddEquipment(true)}>
-              Add Equipment
-            </button>
-          </div>
-          {showAddEquipment && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-              <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-lg relative">
-                <button className="absolute top-4 right-4 text-gray-500 hover:text-gray-700" onClick={() => setShowAddEquipment(false)}>&times;</button>
-                <AddEquipmentForm
-                  isAdmin={true}
-                  owners={users}
-                  onClose={() => setShowAddEquipment(false)}
-                  onEquipmentAdded={fetchAllEquipment}
-                />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total Users</p>
+                <p className="text-2xl font-bold text-gray-900">{totalUsers}</p>
+                <p className="text-xs text-green-600">+{activeUsers} active</p>
+              </div>
+              <div className="p-3 bg-blue-100 rounded-full">
+                <Users className="h-6 w-6 text-blue-600" />
               </div>
             </div>
-          )}
-          {equipmentLoading && <div>Loading equipment...</div>}
-          {equipmentError && <div className="text-red-600">{equipmentError}</div>}
-          {!equipmentLoading && !equipmentError && (
-            <div className="overflow-x-auto">
-              <table className="min-w-full bg-white dark:bg-gray-900 rounded shadow">
-                <thead>
-                  <tr>
-                    <th className="px-4 py-2 border-b">Image</th>
-                    <th className="px-4 py-2 border-b">Name</th>
-                    <th className="px-4 py-2 border-b">Type</th>
-                    <th className="px-4 py-2 border-b">Price</th>
-                    <th className="px-4 py-2 border-b">Owner</th>
-                    <th className="px-4 py-2 border-b">Available</th>
-                    <th className="px-4 py-2 border-b">Created</th>
-                    <th className="px-4 py-2 border-b">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {allEquipment.map((equipment) => (
-                    <tr key={equipment.id} className="border-b hover:bg-gray-100 dark:hover:bg-gray-800">
-                      <td className="px-4 py-2">
-                        {equipment.imageUrl ? (
-                          <img src={equipment.imageUrl} alt={equipment.name} className="w-12 h-12 object-cover rounded" />
-                        ) : (
-                          <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center text-xs">No Image</div>
-                        )}
-                      </td>
-                      <td className="px-4 py-2">{equipment.name}</td>
-                      <td className="px-4 py-2">{equipment.type}</td>
-                      <td className="px-4 py-2">₹{equipment.price}</td>
-                      <td className="px-4 py-2">{equipment.owner?.name || 'Unknown'}</td>
-                      <td className="px-4 py-2">
-                        <span className={`px-2 py-1 rounded text-xs ${equipment.available ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                          {equipment.available ? 'Available' : 'Unavailable'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-2">{equipment.createdAt ? new Date(equipment.createdAt).toLocaleDateString() : '-'}</td>
-                      <td className="px-4 py-2 flex flex-wrap gap-2">
-                        <button
-                          className="text-blue-600 hover:underline"
-                          onClick={() => handleEditEquipment(equipment)}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          className="text-red-600 hover:underline"
-                          onClick={() => { setShowDeleteEquipment(true); setDeleteEquipmentId(equipment.id); }}
-                        >
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </>
-      )}
-
-      {/* Supply Management Section */}
-      {activeSection === 'supplies' && (
-        <>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold">Supply Management</h2>
-            <button className="bg-green-700 text-white px-4 py-2 rounded hover:bg-green-800" onClick={() => setShowAddSupply(true)}>
-              Add Supply
-            </button>
           </div>
-          {showAddSupply && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-              <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-lg relative">
-                <button className="absolute top-4 right-4 text-gray-500 hover:text-gray-700" onClick={() => setShowAddSupply(false)}>&times;</button>
-                <AddSupplyForm
-                  isAdmin={true}
-                  suppliers={users}
-                  onClose={() => setShowAddSupply(false)}
-                  onSupplyAdded={() => {
-                    setShowAddSupply(false);
-                    fetchAllSupplies();
-                  }}
-                />
+
+          <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Equipment</p>
+                <p className="text-2xl font-bold text-gray-900">{totalEquipment}</p>
+                <p className="text-xs text-green-600">{availableEquipment} available</p>
+              </div>
+              <div className="p-3 bg-green-100 rounded-full">
+                <Wrench className="h-6 w-6 text-green-600" />
               </div>
             </div>
-          )}
-          {suppliesLoading && <div>Loading supplies...</div>}
-          {suppliesError && <div className="text-red-600">{suppliesError}</div>}
-          {!suppliesLoading && !suppliesError && (
-            <div className="overflow-x-auto">
-              <table className="min-w-full bg-white dark:bg-gray-900 rounded shadow">
-                <thead>
-                  <tr>
-                    <th className="px-4 py-2 border-b">Image</th>
-                    <th className="px-4 py-2 border-b">Name</th>
-                    <th className="px-4 py-2 border-b">Category</th>
-                    <th className="px-4 py-2 border-b">Price</th>
-                    <th className="px-4 py-2 border-b">Quantity</th>
-                    <th className="px-4 py-2 border-b">Supplier</th>
-                    <th className="px-4 py-2 border-b">Available</th>
-                    <th className="px-4 py-2 border-b">Expiry</th>
-                    <th className="px-4 py-2 border-b">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {allSupplies.map((supply) => (
-                    <tr key={supply.id} className="border-b hover:bg-gray-100 dark:hover:bg-gray-800">
-                      <td className="px-4 py-2">
-                        {supply.imageUrl ? (
-                          <img src={supply.imageUrl} alt={supply.name} className="w-12 h-12 object-cover rounded" />
-                        ) : (
-                          <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center text-xs">No Image</div>
-                        )}
-                      </td>
-                      <td className="px-4 py-2">{supply.name}</td>
-                      <td className="px-4 py-2">{supply.category}</td>
-                      <td className="px-4 py-2">₹{supply.price}/{supply.unit}</td>
-                      <td className="px-4 py-2">{supply.quantity} {supply.unit}</td>
-                      <td className="px-4 py-2">{supply.supplier?.name || 'Unknown'}</td>
-                      <td className="px-4 py-2">
-                        <span className={`px-2 py-1 rounded text-xs ${supply.available ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                          {supply.available ? 'Available' : 'Unavailable'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-2">{supply.expiryDate ? new Date(supply.expiryDate).toLocaleDateString() : '-'}</td>
-                      <td className="px-4 py-2 flex flex-wrap gap-2">
-                        <button
-                          className="text-blue-600 hover:underline"
-                          onClick={() => handleEditSupply(supply)}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          className="text-red-600 hover:underline"
-                          onClick={() => { setShowDeleteSupply(true); setDeleteSupplyId(supply.id); }}
-                        >
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-purple-500">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Supplies</p>
+                <p className="text-2xl font-bold text-gray-900">{totalSupplies}</p>
+                <p className="text-xs text-green-600">{availableSupplies} available</p>
+              </div>
+              <div className="p-3 bg-purple-100 rounded-full">
+                <Package className="h-6 w-6 text-purple-600" />
+              </div>
             </div>
-          )}
-        </>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-orange-500">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total Revenue</p>
+                <p className="text-2xl font-bold text-gray-900">₹{(allEquipment.reduce((sum, eq) => sum + eq.price, 0) + allSupplies.reduce((sum, supply) => sum + supply.price, 0)).toLocaleString()}</p>
+                <p className="text-xs text-green-600">+12% from last month</p>
+              </div>
+              <div className="p-3 bg-orange-100 rounded-full">
+                <TrendingUp className="h-6 w-6 text-orange-600" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Users Management */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+              <div className="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Users className="h-6 w-6 text-white" />
+                    <h2 className="text-lg font-semibold text-white">User Management</h2>
+                  </div>
+                  <button
+                    onClick={() => setShowAdd(true)}
+                    className="bg-white/20 hover:bg-white/30 text-white px-3 py-1 rounded-lg text-sm flex items-center space-x-2 transition-all"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span>Add User</span>
+                  </button>
+                </div>
+              </div>
+              <div className="p-4">
+                <div className="mb-4">
+                  <select
+                    value={filterRole}
+                    onChange={(e) => setFilterRole(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="">All Roles</option>
+                    <option value="farmer">Farmer</option>
+                    <option value="owner">Owner</option>
+                    <option value="supplier">Supplier</option>
+                  </select>
+                </div>
+                <div className="space-y-3 max-h-96 overflow-y-auto">
+                  {loading ? (
+                    <div className="text-center py-4">
+                      <Activity className="h-6 w-6 animate-spin mx-auto text-gray-400" />
+                      <p className="text-sm text-gray-500 mt-2">Loading users...</p>
+                    </div>
+                  ) : error ? (
+                    <div className="text-center py-4">
+                      <AlertTriangle className="h-6 w-6 mx-auto text-red-500" />
+                      <p className="text-sm text-red-500 mt-2">{error}</p>
+                    </div>
+                  ) : (
+                    filteredUsers.map((user) => (
+                      <div key={user.id} className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <h3 className="font-medium text-gray-900">{user.name}</h3>
+                            <p className="text-sm text-gray-500">{user.email}</p>
+                            <div className="flex items-center space-x-2 mt-1">
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                user.role === 'farmer' ? 'bg-green-100 text-green-800' :
+                                user.role === 'owner' ? 'bg-blue-100 text-blue-800' :
+                                user.role === 'supplier' ? 'bg-purple-100 text-purple-800' :
+                                'bg-gray-100 text-gray-800'
+                              }`}>
+                                {user.role || 'User'}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex space-x-1">
+                            <button
+                              onClick={() => handleEdit(user)}
+                              className="p-1 text-blue-600 hover:bg-blue-100 rounded"
+                              title="Edit"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => { setShowContent(true); setContentUser(user); }}
+                              className="p-1 text-green-600 hover:bg-green-100 rounded"
+                              title="View Content"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => { setShowDelete(true); setDeleteUserId(user.id); }}
+                              className="p-1 text-red-600 hover:bg-red-100 rounded"
+                              title="Delete"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Equipment Management */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+              <div className="bg-gradient-to-r from-green-500 to-green-600 px-6 py-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Wrench className="h-6 w-6 text-white" />
+                    <h2 className="text-lg font-semibold text-white">Equipment Management</h2>
+                  </div>
+                  <button
+                    onClick={() => setShowAddEquipment(true)}
+                    className="bg-white/20 hover:bg-white/30 text-white px-3 py-1 rounded-lg text-sm flex items-center space-x-2 transition-all"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span>Add Equipment</span>
+                  </button>
+                </div>
+              </div>
+              <div className="p-4">
+                <div className="mb-4">
+                  <select
+                    value={equipmentFilter}
+                    onChange={(e) => setEquipmentFilter(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  >
+                    <option value="">All Types</option>
+                    <option value="Tractor">Tractor</option>
+                    <option value="Harvester">Harvester</option>
+                    <option value="Planter">Planter</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                <div className="space-y-3 max-h-96 overflow-y-auto">
+                  {equipmentLoading ? (
+                    <div className="text-center py-4">
+                      <Activity className="h-6 w-6 animate-spin mx-auto text-gray-400" />
+                      <p className="text-sm text-gray-500 mt-2">Loading equipment...</p>
+                    </div>
+                  ) : equipmentError ? (
+                    <div className="text-center py-4">
+                      <AlertTriangle className="h-6 w-6 mx-auto text-red-500" />
+                      <p className="text-sm text-red-500 mt-2">{equipmentError}</p>
+                    </div>
+                  ) : (
+                    filteredEquipment.map((equipment) => (
+                      <div key={equipment.id} className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors">
+                        <div className="flex items-center space-x-3">
+                          <div className="flex-shrink-0">
+                            {equipment.imageUrl ? (
+                              <img src={equipment.imageUrl} alt={equipment.name} className="w-12 h-12 object-cover rounded-lg" />
+                            ) : (
+                              <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
+                                <Wrench className="h-6 w-6 text-gray-400" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-medium text-gray-900 truncate">{equipment.name}</h3>
+                            <p className="text-sm text-gray-500">{equipment.type}</p>
+                            <div className="flex items-center justify-between mt-1">
+                              <span className="text-sm font-medium text-green-600">₹{equipment.price}/day</span>
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                equipment.available ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                              }`}>
+                                {equipment.available ? 'Available' : 'Unavailable'}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex space-x-1">
+                            <button
+                              onClick={() => handleEditEquipment(equipment)}
+                              className="p-1 text-blue-600 hover:bg-blue-100 rounded"
+                              title="Edit"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => { setShowDeleteEquipment(true); setDeleteEquipmentId(equipment.id); }}
+                              className="p-1 text-red-600 hover:bg-red-100 rounded"
+                              title="Delete"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Supply Management */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+              <div className="bg-gradient-to-r from-purple-500 to-purple-600 px-6 py-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Package className="h-6 w-6 text-white" />
+                    <h2 className="text-lg font-semibold text-white">Supply Management</h2>
+                  </div>
+                  <button
+                    onClick={() => setShowAddSupply(true)}
+                    className="bg-white/20 hover:bg-white/30 text-white px-3 py-1 rounded-lg text-sm flex items-center space-x-2 transition-all"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span>Add Supply</span>
+                  </button>
+                </div>
+              </div>
+              <div className="p-4">
+                <div className="mb-4">
+                  <select
+                    value={supplyFilter}
+                    onChange={(e) => setSupplyFilter(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  >
+                    <option value="">All Categories</option>
+                    <option value="seeds">Seeds</option>
+                    <option value="fertilizers">Fertilizers</option>
+                    <option value="pesticides">Pesticides</option>
+                    <option value="tools">Tools</option>
+                  </select>
+                </div>
+                <div className="space-y-3 max-h-96 overflow-y-auto">
+                  {suppliesLoading ? (
+                    <div className="text-center py-4">
+                      <Activity className="h-6 w-6 animate-spin mx-auto text-gray-400" />
+                      <p className="text-sm text-gray-500 mt-2">Loading supplies...</p>
+                    </div>
+                  ) : suppliesError ? (
+                    <div className="text-center py-4">
+                      <AlertTriangle className="h-6 w-6 mx-auto text-red-500" />
+                      <p className="text-sm text-red-500 mt-2">{suppliesError}</p>
+                    </div>
+                  ) : (
+                    filteredSupplies.map((supply) => (
+                      <div key={supply.id} className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors">
+                        <div className="flex items-center space-x-3">
+                          <div className="flex-shrink-0">
+                            {supply.imageUrl ? (
+                              <img src={supply.imageUrl} alt={supply.name} className="w-12 h-12 object-cover rounded-lg" />
+                            ) : (
+                              <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
+                                <Package className="h-6 w-6 text-gray-400" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-medium text-gray-900 truncate">{supply.name}</h3>
+                            <p className="text-sm text-gray-500 capitalize">{supply.category}</p>
+                            <div className="flex items-center justify-between mt-1">
+                              <span className="text-sm font-medium text-purple-600">₹{supply.price}/{supply.unit}</span>
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                supply.available ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                              }`}>
+                                {supply.available ? 'Available' : 'Unavailable'}
+                              </span>
+                            </div>
+                            <p className="text-xs text-gray-400 mt-1">Qty: {supply.quantity} {supply.unit}</p>
+                          </div>
+                          <div className="flex space-x-1">
+                            <button
+                              onClick={() => handleEditSupply(supply)}
+                              className="p-1 text-blue-600 hover:bg-blue-100 rounded"
+                              title="Edit"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => { setShowDeleteSupply(true); setDeleteSupplyId(supply.id); }}
+                              className="p-1 text-red-600 hover:bg-red-100 rounded"
+                              title="Delete"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Modals */}
+      {/* Add Equipment Modal */}
+      {showAddEquipment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto relative">
+            <button
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-full p-2 transition-all"
+              onClick={() => setShowAddEquipment(false)}
+            >
+              <Plus className="h-5 w-5 rotate-45" />
+            </button>
+            <AddEquipmentForm
+              isAdmin={true}
+              owners={users.filter(user => user.role === 'owner')}
+              onClose={() => setShowAddEquipment(false)}
+              onEquipmentAdded={fetchAllEquipment}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Add Supply Modal */}
+      {showAddSupply && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto relative">
+            <button
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-full p-2 transition-all"
+              onClick={() => setShowAddSupply(false)}
+            >
+              <Plus className="h-5 w-5 rotate-45" />
+            </button>
+            <AddSupplyForm
+              isAdmin={true}
+              suppliers={users.filter(user => user.role === 'supplier')}
+              onClose={() => setShowAddSupply(false)}
+              onSupplyAdded={() => {
+                setShowAddSupply(false);
+                fetchAllSupplies();
+              }}
+            />
+          </div>
+        </div>
       )}
 
       {/* User Content Modal */}
       {showContent && contentUser && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-900 p-6 rounded shadow w-full max-w-2xl overflow-y-auto max-h-[90vh]">
-            <h3 className="text-lg font-semibold mb-4">User Content: {contentUser.name}</h3>
-            {contentLoading && <div>Loading content...</div>}
-            {contentError && <div className="text-red-600 mb-2">{contentError}</div>}
-            {!contentLoading && !contentError && (
-              <>
-                <div className="mb-4">
-                  <h4 className="font-semibold mb-2">Farms</h4>
-                  {farms.length === 0 ? (
-                    <div className="bg-gray-100 dark:bg-gray-800 rounded p-2 mb-2">No farms found.</div>
-                  ) : (
-                    <ul className="bg-gray-100 dark:bg-gray-800 rounded p-2 mb-2">
-                      {farms.map((farm: any) => (
-                        <li key={farm.id} className="mb-1">
-                          <span className="font-medium">{farm.name}</span> - {farm.location?.address || 'No address'}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-                <div className="mb-4">
-                  <h4 className="font-semibold mb-2">Equipment</h4>
-                  {equipment.length === 0 ? (
-                    <div className="bg-gray-100 dark:bg-gray-800 rounded p-2 mb-2">No equipment found.</div>
-                  ) : (
-                    <ul className="bg-gray-100 dark:bg-gray-800 rounded p-2 mb-2">
-                      {equipment.map((eq: any) => (
-                        <li key={eq.id} className="mb-1">
-                          <span className="font-medium">{eq.name || eq.type || 'Equipment'}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-                <div className="mb-4">
-                  <h4 className="font-semibold mb-2">Supply List</h4>
-                  {supplies.length === 0 ? (
-                    <div className="bg-gray-100 dark:bg-gray-800 rounded p-2 mb-2">No supplies found.</div>
-                  ) : (
-                    <ul className="bg-gray-100 dark:bg-gray-800 rounded p-2 mb-2">
-                      {supplies.map((supply: any) => (
-                        <li key={supply.id} className="mb-1">
-                          <span className="font-medium">{supply.name || supply.type || 'Supply'}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              </>
-            )}
-            <div className="flex justify-end gap-2 mt-4">
-              <button className="px-4 py-2 rounded bg-gray-200" onClick={() => { setShowContent(false); setContentUser(null); }}>Close</button>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-4xl max-h-[90vh] overflow-y-auto relative">
+            <button
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-full p-2 transition-all"
+              onClick={() => { setShowContent(false); setContentUser(null); }}
+            >
+              <Plus className="h-5 w-5 rotate-45" />
+            </button>
+            <div className="mb-6">
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">User Content: {contentUser.name}</h3>
+              <p className="text-gray-500">{contentUser.email}</p>
             </div>
+            {contentLoading ? (
+              <div className="text-center py-8">
+                <Activity className="h-8 w-8 animate-spin mx-auto text-gray-400" />
+                <p className="text-gray-500 mt-4">Loading content...</p>
+              </div>
+            ) : contentError ? (
+              <div className="text-center py-8">
+                <AlertTriangle className="h-8 w-8 mx-auto text-red-500" />
+                <p className="text-red-500 mt-4">{contentError}</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-blue-50 rounded-lg p-6">
+                  <h4 className="font-semibold text-blue-900 mb-4 flex items-center">
+                    <Calendar className="h-5 w-5 mr-2" />
+                    Farms ({farms.length})
+                  </h4>
+                  {farms.length === 0 ? (
+                    <div className="text-center py-4">
+                      <p className="text-blue-600">No farms found</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {farms.map((farm: any) => (
+                        <div key={farm.id} className="bg-white rounded p-3">
+                          <p className="font-medium text-gray-900">{farm.name}</p>
+                          <p className="text-sm text-gray-500">{farm.location?.address || 'No address'}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="bg-green-50 rounded-lg p-6">
+                  <h4 className="font-semibold text-green-900 mb-4 flex items-center">
+                    <Wrench className="h-5 w-5 mr-2" />
+                    Equipment ({equipment.length})
+                  </h4>
+                  {equipment.length === 0 ? (
+                    <div className="text-center py-4">
+                      <p className="text-green-600">No equipment found</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {equipment.map((eq: any) => (
+                        <div key={eq.id} className="bg-white rounded p-3">
+                          <p className="font-medium text-gray-900">{eq.name || eq.type || 'Equipment'}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="bg-purple-50 rounded-lg p-6">
+                  <h4 className="font-semibold text-purple-900 mb-4 flex items-center">
+                    <Package className="h-5 w-5 mr-2" />
+                    Supplies ({supplies.length})
+                  </h4>
+                  {supplies.length === 0 ? (
+                    <div className="text-center py-4">
+                      <p className="text-purple-600">No supplies found</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {supplies.map((supply: any) => (
+                        <div key={supply.id} className="bg-white rounded p-3">
+                          <p className="font-medium text-gray-900">{supply.name || supply.type || 'Supply'}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
 
       {/* Edit User Modal */}
       {showEdit && editUser && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-900 p-6 rounded shadow w-full max-w-md">
-            <h3 className="text-lg font-semibold mb-4">Edit User</h3>
-            <div className="space-y-3">
-              <input className="w-full border p-2 rounded" placeholder="Name" value={editUser.name || ''} onChange={e => setEditUser({ ...editUser, name: e.target.value })} />
-              <input className="w-full border p-2 rounded" placeholder="Email" value={editUser.email || ''} onChange={e => setEditUser({ ...editUser, email: e.target.value })} />
-              <input className="w-full border p-2 rounded" placeholder="Phone" value={editUser.phone || ''} onChange={e => setEditUser({ ...editUser, phone: e.target.value })} />
-              <input className="w-full border p-2 rounded" placeholder="Password (leave blank to keep)" type="password" onChange={e => setEditUser({ ...editUser, password: e.target.value })} />
-              <select className="w-full border p-2 rounded" value={editUser.role || 'farmer'} onChange={e => setEditUser({ ...editUser, role: e.target.value })}>
-                <option value="farmer">Farmer</option>
-                <option value="owner">Owner</option>
-                <option value="supplier">Supplier</option>
-              </select>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md relative">
+            <button
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-full p-2 transition-all"
+              onClick={() => { setShowEdit(false); setEditUser(null); }}
+            >
+              <Plus className="h-5 w-5 rotate-45" />
+            </button>
+            <h3 className="text-xl font-bold text-gray-900 mb-6">Edit User</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
+                <input
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Full Name"
+                  value={editUser.name || ''}
+                  onChange={e => setEditUser({ ...editUser, name: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                <input
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Email Address"
+                  value={editUser.email || ''}
+                  onChange={e => setEditUser({ ...editUser, email: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                <input
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Phone Number"
+                  value={editUser.phone || ''}
+                  onChange={e => setEditUser({ ...editUser, phone: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                <input
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Leave blank to keep current password"
+                  type="password"
+                  onChange={e => setEditUser({ ...editUser, password: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Role</label>
+                <select
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  value={editUser.role || 'farmer'}
+                  onChange={e => setEditUser({ ...editUser, role: e.target.value })}
+                >
+                  <option value="farmer">Farmer</option>
+                  <option value="owner">Owner</option>
+                  <option value="supplier">Supplier</option>
+                </select>
+              </div>
             </div>
-            {actionError && <div className="text-red-600 mt-2">{actionError}</div>}
-            <div className="flex justify-end gap-2 mt-4">
-              <button className="px-4 py-2 rounded bg-gray-200" onClick={() => { setShowEdit(false); setEditUser(null); }}>Cancel</button>
-              <button className="px-4 py-2 rounded bg-green-700 text-white" onClick={submitEdit} disabled={actionLoading}>{actionLoading ? 'Saving...' : 'Save'}</button>
+            {actionError && (
+              <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-red-700 text-sm">{actionError}</p>
+              </div>
+            )}
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                onClick={() => { setShowEdit(false); setEditUser(null); }}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                onClick={submitEdit}
+                disabled={actionLoading}
+              >
+                {actionLoading ? 'Saving...' : 'Save Changes'}
+              </button>
             </div>
           </div>
         </div>
@@ -752,69 +1063,188 @@ const AdminPage: React.FC = () => {
 
       {/* Add User Modal */}
       {showAdd && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-900 p-6 rounded shadow w-full max-w-md">
-            <h3 className="text-lg font-semibold mb-4">Add User</h3>
-            <div className="space-y-3">
-              <input className="w-full border p-2 rounded" placeholder="Name" value={addUser.name || ''} onChange={e => setAddUser({ ...addUser, name: e.target.value })} />
-              <input className="w-full border p-2 rounded" placeholder="Email" value={addUser.email || ''} onChange={e => setAddUser({ ...addUser, email: e.target.value })} />
-              <input className="w-full border p-2 rounded" placeholder="Phone" value={addUser.phone || ''} onChange={e => setAddUser({ ...addUser, phone: e.target.value })} />
-              <input className="w-full border p-2 rounded" placeholder="Password" type="password" value={addUser.password || ''} onChange={e => setAddUser({ ...addUser, password: e.target.value })} />
-              <select className="w-full border p-2 rounded" value={addUser.role || 'farmer'} onChange={e => setAddUser({ ...addUser, role: e.target.value })}>
-                <option value="farmer">Farmer</option>
-                <option value="owner">Owner</option>
-                <option value="supplier">Supplier</option>
-              </select>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md relative">
+            <button
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-full p-2 transition-all"
+              onClick={() => { setShowAdd(false); setAddUser({ ...emptyUser }); }}
+            >
+              <Plus className="h-5 w-5 rotate-45" />
+            </button>
+            <h3 className="text-xl font-bold text-gray-900 mb-6">Add New User</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
+                <input
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  placeholder="Full Name"
+                  value={addUser.name || ''}
+                  onChange={e => setAddUser({ ...addUser, name: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                <input
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  placeholder="Email Address"
+                  value={addUser.email || ''}
+                  onChange={e => setAddUser({ ...addUser, email: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                <input
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  placeholder="Phone Number"
+                  value={addUser.phone || ''}
+                  onChange={e => setAddUser({ ...addUser, phone: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                <input
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  placeholder="Password"
+                  type="password"
+                  value={addUser.password || ''}
+                  onChange={e => setAddUser({ ...addUser, password: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Role</label>
+                <select
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  value={addUser.role || 'farmer'}
+                  onChange={e => setAddUser({ ...addUser, role: e.target.value })}
+                >
+                  <option value="farmer">Farmer</option>
+                  <option value="owner">Owner</option>
+                  <option value="supplier">Supplier</option>
+                </select>
+              </div>
             </div>
-            {actionError && <div className="text-red-600 mt-2">{actionError}</div>}
-            <div className="flex justify-end gap-2 mt-4">
-              <button className="px-4 py-2 rounded bg-gray-200" onClick={() => { setShowAdd(false); setAddUser({ ...emptyUser }); }}>Cancel</button>
-              <button className="px-4 py-2 rounded bg-green-700 text-white" onClick={submitAdd} disabled={actionLoading}>{actionLoading ? 'Adding...' : 'Add'}</button>
+            {actionError && (
+              <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-red-700 text-sm">{actionError}</p>
+              </div>
+            )}
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                onClick={() => { setShowAdd(false); setAddUser({ ...emptyUser }); }}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+                onClick={submitAdd}
+                disabled={actionLoading}
+              >
+                {actionLoading ? 'Adding...' : 'Add User'}
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Delete User Confirmation */}
+      {/* Delete Confirmation Modals */}
       {showDelete && deleteUserId && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-900 p-6 rounded shadow w-full max-w-sm">
-            <h3 className="text-lg font-semibold mb-4">Delete User</h3>
-            <p>Are you sure you want to delete this user?</p>
-            {actionError && <div className="text-red-600 mt-2">{actionError}</div>}
-            <div className="flex justify-end gap-2 mt-4">
-              <button className="px-4 py-2 rounded bg-gray-200" onClick={() => { setShowDelete(false); setDeleteUserId(null); }}>Cancel</button>
-              <button className="px-4 py-2 rounded bg-red-600 text-white" onClick={() => handleDelete(deleteUserId)} disabled={actionLoading}>{actionLoading ? 'Deleting...' : 'Delete'}</button>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-sm relative">
+            <div className="text-center">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                <AlertTriangle className="h-6 w-6 text-red-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete User</h3>
+              <p className="text-gray-600 mb-6">Are you sure you want to delete this user? This action cannot be undone.</p>
+              {actionError && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-red-700 text-sm">{actionError}</p>
+                </div>
+              )}
+              <div className="flex justify-center gap-3">
+                <button
+                  className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                  onClick={() => { setShowDelete(false); setDeleteUserId(null); }}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+                  onClick={() => handleDelete(deleteUserId)}
+                  disabled={actionLoading}
+                >
+                  {actionLoading ? 'Deleting...' : 'Delete'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Delete Equipment Confirmation */}
       {showDeleteEquipment && deleteEquipmentId && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-900 p-6 rounded shadow w-full max-w-sm">
-            <h3 className="text-lg font-semibold mb-4">Delete Equipment</h3>
-            <p>Are you sure you want to delete this equipment?</p>
-            {actionError && <div className="text-red-600 mt-2">{actionError}</div>}
-            <div className="flex justify-end gap-2 mt-4">
-              <button className="px-4 py-2 rounded bg-gray-200" onClick={() => { setShowDeleteEquipment(false); setDeleteEquipmentId(null); }}>Cancel</button>
-              <button className="px-4 py-2 rounded bg-red-600 text-white" onClick={() => handleDeleteEquipment(deleteEquipmentId)} disabled={actionLoading}>{actionLoading ? 'Deleting...' : 'Delete'}</button>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-sm relative">
+            <div className="text-center">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                <AlertTriangle className="h-6 w-6 text-red-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete Equipment</h3>
+              <p className="text-gray-600 mb-6">Are you sure you want to delete this equipment? This action cannot be undone.</p>
+              {actionError && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-red-700 text-sm">{actionError}</p>
+                </div>
+              )}
+              <div className="flex justify-center gap-3">
+                <button
+                  className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                  onClick={() => { setShowDeleteEquipment(false); setDeleteEquipmentId(null); }}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+                  onClick={() => handleDeleteEquipment(deleteEquipmentId)}
+                  disabled={actionLoading}
+                >
+                  {actionLoading ? 'Deleting...' : 'Delete'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Delete Supply Confirmation */}
       {showDeleteSupply && deleteSupplyId && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-900 p-6 rounded shadow w-full max-w-sm">
-            <h3 className="text-lg font-semibold mb-4">Delete Supply</h3>
-            <p>Are you sure you want to delete this supply?</p>
-            {actionError && <div className="text-red-600 mt-2">{actionError}</div>}
-            <div className="flex justify-end gap-2 mt-4">
-              <button className="px-4 py-2 rounded bg-gray-200" onClick={() => { setShowDeleteSupply(false); setDeleteSupplyId(null); }}>Cancel</button>
-              <button className="px-4 py-2 rounded bg-red-600 text-white" onClick={() => handleDeleteSupply(deleteSupplyId)} disabled={actionLoading}>{actionLoading ? 'Deleting...' : 'Delete'}</button>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-sm relative">
+            <div className="text-center">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                <AlertTriangle className="h-6 w-6 text-red-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete Supply</h3>
+              <p className="text-gray-600 mb-6">Are you sure you want to delete this supply? This action cannot be undone.</p>
+              {actionError && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-red-700 text-sm">{actionError}</p>
+                </div>
+              )}
+              <div className="flex justify-center gap-3">
+                <button
+                  className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                  onClick={() => { setShowDeleteSupply(false); setDeleteSupplyId(null); }}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+                  onClick={() => handleDeleteSupply(deleteSupplyId)}
+                  disabled={actionLoading}
+                >
+                  {actionLoading ? 'Deleting...' : 'Delete'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -822,66 +1252,92 @@ const AdminPage: React.FC = () => {
 
       {/* Edit Equipment Modal */}
       {showEditEquipment && editEquipment && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-900 p-6 rounded shadow w-full max-w-md">
-            <h3 className="text-lg font-semibold mb-4">Edit Equipment</h3>
-            <div className="space-y-3">
-              <input
-                className="w-full border p-2 rounded"
-                placeholder="Equipment Name"
-                value={editEquipment.name || ''}
-                onChange={e => setEditEquipment({ ...editEquipment, name: e.target.value })}
-              />
-              <input
-                className="w-full border p-2 rounded"
-                placeholder="Type"
-                value={editEquipment.type || ''}
-                onChange={e => setEditEquipment({ ...editEquipment, type: e.target.value })}
-              />
-              <input
-                className="w-full border p-2 rounded"
-                placeholder="Price"
-                type="number"
-                value={editEquipment.price || ''}
-                onChange={e => setEditEquipment({ ...editEquipment, price: parseFloat(e.target.value) || 0 })}
-              />
-              <textarea
-                className="w-full border p-2 rounded"
-                placeholder="Description"
-                value={editEquipment.description || ''}
-                onChange={e => setEditEquipment({ ...editEquipment, description: e.target.value })}
-                rows={3}
-              />
-              <select
-                className="w-full border p-2 rounded"
-                value={editEquipment.ownerId || ''}
-                onChange={e => setEditEquipment({ ...editEquipment, ownerId: e.target.value })}
-              >
-                <option value="">Select Owner</option>
-                {users.filter(user => user.role === 'owner').map(owner => (
-                  <option key={owner.id} value={owner.id}>{owner.name}</option>
-                ))}
-              </select>
-              <div className="flex items-center gap-2">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md max-h-[90vh] overflow-y-auto relative">
+            <button
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-full p-2 transition-all"
+              onClick={() => { setShowEditEquipment(false); setEditEquipment(null); }}
+            >
+              <Plus className="h-5 w-5 rotate-45" />
+            </button>
+            <h3 className="text-xl font-bold text-gray-900 mb-6">Edit Equipment</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Equipment Name</label>
+                <input
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  placeholder="Equipment Name"
+                  value={editEquipment.name || ''}
+                  onChange={e => setEditEquipment({ ...editEquipment, name: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                <input
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  placeholder="Type"
+                  value={editEquipment.type || ''}
+                  onChange={e => setEditEquipment({ ...editEquipment, type: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Price (₹/day)</label>
+                <input
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  placeholder="Price"
+                  type="number"
+                  value={editEquipment.price || ''}
+                  onChange={e => setEditEquipment({ ...editEquipment, price: parseFloat(e.target.value) || 0 })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                <textarea
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  placeholder="Description"
+                  value={editEquipment.description || ''}
+                  onChange={e => setEditEquipment({ ...editEquipment, description: e.target.value })}
+                  rows={3}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Owner</label>
+                <select
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  value={editEquipment.ownerId || ''}
+                  onChange={e => setEditEquipment({ ...editEquipment, ownerId: e.target.value })}
+                >
+                  <option value="">Select Owner</option>
+                  {users.filter(user => user.role === 'owner').map(owner => (
+                    <option key={owner.id} value={owner.id}>{owner.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-center space-x-3">
                 <input
                   type="checkbox"
-                  id="available"
+                  id="equipmentAvailable"
                   checked={editEquipment.available || false}
                   onChange={e => setEditEquipment({ ...editEquipment, available: e.target.checked })}
+                  className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
                 />
-                <label htmlFor="available">Available for rent</label>
+                <label htmlFor="equipmentAvailable" className="text-sm font-medium text-gray-700">Available for rent</label>
               </div>
             </div>
-            {actionError && <div className="text-red-600 mt-2">{actionError}</div>}
-            <div className="flex justify-end gap-2 mt-4">
+            {actionError && (
+              <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-red-700 text-sm">{actionError}</p>
+              </div>
+            )}
+            <div className="flex justify-end gap-3 mt-6">
               <button
-                className="px-4 py-2 rounded bg-gray-200"
+                className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
                 onClick={() => { setShowEditEquipment(false); setEditEquipment(null); }}
               >
                 Cancel
               </button>
               <button
-                className="px-4 py-2 rounded bg-green-700 text-white"
+                className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
                 onClick={submitEditEquipment}
                 disabled={actionLoading}
               >
@@ -894,92 +1350,131 @@ const AdminPage: React.FC = () => {
 
       {/* Edit Supply Modal */}
       {showEditSupply && editSupply && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-900 p-6 rounded shadow w-full max-w-md">
-            <h3 className="text-lg font-semibold mb-4">Edit Supply</h3>
-            <div className="space-y-3">
-              <input
-                className="w-full border p-2 rounded"
-                placeholder="Supply Name"
-                value={editSupply.name || ''}
-                onChange={e => setEditSupply({ ...editSupply, name: e.target.value })}
-              />
-              <input
-                className="w-full border p-2 rounded"
-                placeholder="Category"
-                value={editSupply.category || ''}
-                onChange={e => setEditSupply({ ...editSupply, category: e.target.value })}
-              />
-              <input
-                className="w-full border p-2 rounded"
-                placeholder="Brand"
-                value={editSupply.brand || ''}
-                onChange={e => setEditSupply({ ...editSupply, brand: e.target.value })}
-              />
-              <input
-                className="w-full border p-2 rounded"
-                placeholder="Price"
-                type="number"
-                value={editSupply.price || ''}
-                onChange={e => setEditSupply({ ...editSupply, price: parseFloat(e.target.value) || 0 })}
-              />
-              <input
-                className="w-full border p-2 rounded"
-                placeholder="Unit (kg, liter, etc.)"
-                value={editSupply.unit || ''}
-                onChange={e => setEditSupply({ ...editSupply, unit: e.target.value })}
-              />
-              <input
-                className="w-full border p-2 rounded"
-                placeholder="Quantity"
-                type="number"
-                value={editSupply.quantity || ''}
-                onChange={e => setEditSupply({ ...editSupply, quantity: parseInt(e.target.value) || 0 })}
-              />
-              <input
-                className="w-full border p-2 rounded"
-                placeholder="Expiry Date"
-                type="date"
-                value={editSupply.expiryDate ? editSupply.expiryDate.split('T')[0] : ''}
-                onChange={e => setEditSupply({ ...editSupply, expiryDate: e.target.value })}
-              />
-              <textarea
-                className="w-full border p-2 rounded"
-                placeholder="Description"
-                value={editSupply.description || ''}
-                onChange={e => setEditSupply({ ...editSupply, description: e.target.value })}
-                rows={3}
-              />
-              <select
-                className="w-full border p-2 rounded"
-                value={editSupply.supplierId || ''}
-                onChange={e => setEditSupply({ ...editSupply, supplierId: e.target.value })}
-              >
-                <option value="">Select Supplier</option>
-                {users.filter(user => user.role === 'supplier').map(supplier => (
-                  <option key={supplier.id} value={supplier.id}>{supplier.name}</option>
-                ))}
-              </select>
-              <div className="flex items-center gap-2">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md max-h-[90vh] overflow-y-auto relative">
+            <button
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-full p-2 transition-all"
+              onClick={() => { setShowEditSupply(false); setEditSupply(null); }}
+            >
+              <Plus className="h-5 w-5 rotate-45" />
+            </button>
+            <h3 className="text-xl font-bold text-gray-900 mb-6">Edit Supply</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Supply Name</label>
+                <input
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="Supply Name"
+                  value={editSupply.name || ''}
+                  onChange={e => setEditSupply({ ...editSupply, name: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                <input
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="Category"
+                  value={editSupply.category || ''}
+                  onChange={e => setEditSupply({ ...editSupply, category: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Brand</label>
+                <input
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="Brand"
+                  value={editSupply.brand || ''}
+                  onChange={e => setEditSupply({ ...editSupply, brand: e.target.value })}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Price (₹)</label>
+                  <input
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    placeholder="Price"
+                    type="number"
+                    value={editSupply.price || ''}
+                    onChange={e => setEditSupply({ ...editSupply, price: parseFloat(e.target.value) || 0 })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Unit</label>
+                  <input
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    placeholder="Unit"
+                    value={editSupply.unit || ''}
+                    onChange={e => setEditSupply({ ...editSupply, unit: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Quantity</label>
+                <input
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="Quantity"
+                  type="number"
+                  value={editSupply.quantity || ''}
+                  onChange={e => setEditSupply({ ...editSupply, quantity: parseInt(e.target.value) || 0 })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Expiry Date</label>
+                <input
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  type="date"
+                  value={editSupply.expiryDate ? editSupply.expiryDate.split('T')[0] : ''}
+                  onChange={e => setEditSupply({ ...editSupply, expiryDate: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                <textarea
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="Description"
+                  value={editSupply.description || ''}
+                  onChange={e => setEditSupply({ ...editSupply, description: e.target.value })}
+                  rows={3}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Supplier</label>
+                <select
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  value={editSupply.supplierId || ''}
+                  onChange={e => setEditSupply({ ...editSupply, supplierId: e.target.value })}
+                >
+                  <option value="">Select Supplier</option>
+                  {users.filter(user => user.role === 'supplier').map(supplier => (
+                    <option key={supplier.id} value={supplier.id}>{supplier.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-center space-x-3">
                 <input
                   type="checkbox"
                   id="supplyAvailable"
                   checked={editSupply.available || false}
                   onChange={e => setEditSupply({ ...editSupply, available: e.target.checked })}
+                  className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
                 />
-                <label htmlFor="supplyAvailable">Available for order</label>
+                <label htmlFor="supplyAvailable" className="text-sm font-medium text-gray-700">Available for order</label>
               </div>
             </div>
-            {actionError && <div className="text-red-600 mt-2">{actionError}</div>}
-            <div className="flex justify-end gap-2 mt-4">
+            {actionError && (
+              <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-red-700 text-sm">{actionError}</p>
+              </div>
+            )}
+            <div className="flex justify-end gap-3 mt-6">
               <button
-                className="px-4 py-2 rounded bg-gray-200"
+                className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
                 onClick={() => { setShowEditSupply(false); setEditSupply(null); }}
               >
                 Cancel
               </button>
               <button
-                className="px-4 py-2 rounded bg-green-700 text-white"
+                className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
                 onClick={submitEditSupply}
                 disabled={actionLoading}
               >

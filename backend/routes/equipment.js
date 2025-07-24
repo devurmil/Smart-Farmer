@@ -31,9 +31,12 @@ router.get('/', authMiddleware, async (req, res) => {
         whereClause = { ownerId: user_id };
       }
       // If no user_id specified for admin, fetch all equipment (empty whereClause)
-    } else {
-      // Non-admin users can only see their own equipment
+    } else if (req.user.role === 'owner') {
+      // Owners can only see their own equipment
       whereClause = { ownerId: req.user.id };
+    } else {
+      // Farmers and other roles see all equipment
+      whereClause = {};
     }
 
     const equipment = await equipmentController.getAllEquipment(offset, limit, whereClause);
