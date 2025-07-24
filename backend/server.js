@@ -51,11 +51,18 @@ const corsOptions = {
       'http://localhost:3000',
       'http://localhost:5173',
       'http://localhost:5174',
-      'http://localhost:8080'  // Add this line
+      'http://localhost:8080',
+      'http://localhost:4173', // Vite preview port
+      'http://localhost:3001'  // Alternative dev port
     ].filter(Boolean);
     
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
+    
+    // In development, allow all localhost origins
+    if (process.env.NODE_ENV === 'development' && origin && origin.includes('localhost')) {
+      return callback(null, true);
+    }
     
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);

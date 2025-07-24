@@ -16,7 +16,7 @@ router.get('/', auth, async (req, res) => {
     let targetUserId = req.user.id;
     if (
       user_id &&
-      req.user.email === process.env.ADMIN_MAIL
+      req.user.role === 'admin'
     ) {
       targetUserId = user_id;
     }

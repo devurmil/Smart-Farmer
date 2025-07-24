@@ -64,7 +64,8 @@ const Signup = () => {
       return;
     }
     try {
-      const res = await fetch(`${getBackendUrl()}/api/auth/request-otp`, {
+      const backendUrl = await getBackendUrl();
+      const res = await fetch(`${backendUrl}/api/auth/request-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: formData.email, name: formData.fullName })
@@ -92,7 +93,8 @@ const Signup = () => {
       return;
     }
     try {
-      const res = await fetch(`${getBackendUrl()}/api/auth/verify-otp`, {
+      const backendUrl = await getBackendUrl();
+      const res = await fetch(`${backendUrl}/api/auth/verify-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

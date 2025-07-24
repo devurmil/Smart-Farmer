@@ -31,7 +31,8 @@ const ResetPassword = () => {
     }
     setIsLoading(true);
     try {
-      const res = await fetch(`${getBackendUrl()}/api/auth/reset-password`, {
+      const backendUrl = await getBackendUrl();
+      const res = await fetch(`${backendUrl}/api/auth/reset-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, password }),

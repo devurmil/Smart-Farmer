@@ -26,8 +26,33 @@ async function isEquipmentAvailable(equipmentId, startDate, endDate) {
   return !overlapping;
 }
 
-// Get all equipment (date-based availability)
-exports.getAllEquipment = async (req, res) => {
+// Get all equipment (for route usage)
+exports.getAllEquipment = async (offset = 0, limit = 10, whereClause = {}) => {
+  try {
+    const equipment = await Equipment.findAll({
+      where: whereClause,
+      offset: parseInt(offset),
+      limit: parseInt(limit),
+      order: [['createdAt', 'DESC']]
+    });
+    return equipment;
+  } catch (err) {
+    throw new Error('Failed to fetch equipment');
+  }
+};
+
+// Get equipment count
+exports.getEquipmentCount = async (whereClause = {}) => {
+  try {
+    const count = await Equipment.count({ where: whereClause });
+    return count;
+  } catch (err) {
+    throw new Error('Failed to count equipment');
+  }
+};
+
+// Get all equipment with date-based availability (for direct route access)
+exports.getAllEquipmentRoute = async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
     const equipmentList = await Equipment.findAll();

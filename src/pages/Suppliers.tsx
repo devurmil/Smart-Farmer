@@ -19,7 +19,8 @@ const Suppliers: React.FC = () => {
   useEffect(() => {
     const fetchSuppliers = async () => {
       try {
-        const res = await fetch(`${getBackendUrl()}/api/supplies/suppliers`);
+        const backendUrl = await getBackendUrl();
+        const res = await fetch(`${backendUrl}/api/supplies/suppliers`);
         const data = await res.json();
         if (data.success) {
           setSuppliers(data.data);

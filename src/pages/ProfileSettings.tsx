@@ -149,7 +149,8 @@ const ProfileSettings = () => {
         formData.append('profilePicture', form.newProfilePicture);
       }
       
-      const res = await fetch(`${getBackendUrl()}/api/auth/user/profile`, {
+      const backendUrl = await getBackendUrl();
+      const res = await fetch(`${backendUrl}/api/auth/user/profile`, {
         method: 'PUT',
         headers: { 
           Authorization: `Bearer ${localStorage.getItem('smartFarmToken') || ''}` 
@@ -198,7 +199,8 @@ const ProfileSettings = () => {
     setIsDeleting(true);
     
     try {
-      const res = await fetch(`${getBackendUrl()}/api/auth/user/profile`, {
+      const backendUrl = await getBackendUrl();
+      const res = await fetch(`${backendUrl}/api/auth/user/profile`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',

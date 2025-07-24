@@ -18,7 +18,8 @@ const ForgotPassword = () => {
     setSuccess('');
     setError('');
     try {
-      const res = await fetch(`${getBackendUrl()}/api/auth/forgot-password`, {
+      const backendUrl = await getBackendUrl();
+      const res = await fetch(`${backendUrl}/api/auth/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),

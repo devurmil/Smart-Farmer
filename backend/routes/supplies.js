@@ -15,16 +15,18 @@ router.get('/', auth, async (req, res) => {
     const { page = 1, limit = 10, user_id } = req.query;
     const offset = (page - 1) * limit;
 
-    // Admin can fetch for any user, others only for themselves
-    let targetUserId = req.user.id;
-    if (
-      user_id &&
-      req.user.email === process.env.ADMIN_MAIL
-    ) {
-      targetUserId = user_id;
+    let whereClause = {};
+    
+    // Admin can fetch all supplies or for specific user
+    if (req.user.role === 'admin') {
+      if (user_id) {
+        whereClause = { supplierId: user_id };
+      }
+      // If no user_id specified for admin, fetch all supplies (empty whereClause)
+    } else {
+      // Non-admin users can only see their own supplies
+      whereClause = { supplierId: req.user.id };
     }
-
-    const whereClause = { supplierId: targetUserId };
 
     const supplies = await Supply.findAll({
       where: whereClause,
@@ -38,10 +40,16 @@ router.get('/', auth, async (req, res) => {
       order: [['createdAt', 'DESC']]
     });
 
-    res.json(supplies);
+    res.json({
+      success: true,
+      data: supplies,
+      total: supplies.length,
+      page,
+      limit,
+    });
   } catch (error) {
     console.error('Error fetching supplies:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 });
 
@@ -183,11 +191,15 @@ router.delete('/:id', auth, async (req, res) => {
     const supply = await Supply.findByPk(req.params.id);
     
     if (!supply) {
-      return res.status(404).json({ message: 'Supply not found' });
+      return res.status(404).json({ success: false, message: 'Supply not found' });
     }
 
-    if (supply.supplierId !== req.user.id) {
-      return res.status(403).json({ message: 'Not authorized to delete this supply' });
+    // Check if the supply belongs to the current user OR if user is admin
+    const isOwner = supply.supplierId === req.user.id;
+    const isAdmin = req.user.role === 'admin';
+
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ success: false, message: 'Not authorized to delete this supply' });
     }
 
     await supply.destroy();
@@ -198,7 +210,7 @@ router.delete('/:id', auth, async (req, res) => {
     });
   } catch (error) {
     console.error('Error deleting supply:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 });
 

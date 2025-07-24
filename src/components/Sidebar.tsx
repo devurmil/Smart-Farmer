@@ -1,7 +1,7 @@
 import { Calculator, Camera, DollarSign, Tractor, Newspaper, Store, BarChart3, Menu, Settings, Package } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { useAuth } from "../context/AuthContext";
+import { useUser } from "../contexts/UserContext";
 
 interface SidebarProps {
   collapsed: boolean;
@@ -22,7 +22,7 @@ const navigationItems = [
 const Sidebar = ({ collapsed, onToggleCollapse }: SidebarProps) => {
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user } = useUser();
   const isAdmin = user && user.email && user.email === import.meta.env.VITE_ADMIN_MAIL;
 
   return (

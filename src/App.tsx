@@ -26,6 +26,7 @@ import ProfileSettings from "./pages/ProfileSettings";
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import SettingsPage from './pages/SettingsPage';
+import AdminPage from './pages/AdminPage';
 
 const queryClient = new QueryClient();
 
@@ -96,6 +97,7 @@ const AppContent = () => {
             <Route path="/suppliers" element={<ProtectedRoute><Suppliers /></ProtectedRoute>} />
             <Route path="/profile-settings" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+            <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
             <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
             <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
             {/* Catch-all route */}

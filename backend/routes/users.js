@@ -4,8 +4,8 @@ const { auth } = require('../middleware/auth');
 const bcrypt = require('bcryptjs');
 const router = express.Router();
 
-// Only allow admin (by email) to access this route
-const isAdmin = (req) => req.user.email === process.env.ADMIN_MAIL;
+// Only allow admin (by role) to access this route
+const isAdmin = (req) => req.user.role === 'admin';
 
 // GET all users
 router.get('/', auth, async (req, res) => {
