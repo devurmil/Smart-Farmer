@@ -49,6 +49,7 @@ const corsOptions = {
   origin: function (origin, callback) {
     const allowedOrigins = [
       process.env.FRONTEND_URL,
+      'https://smart-farmer-three.vercel.app', // Added Vercel frontend URL
       'http://localhost:3000',
       'http://localhost:5173',
       'http://localhost:5174',
