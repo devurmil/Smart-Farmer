@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { getBackendUrl } from '@/lib/utils';
 
 const OwnerEquipmentList = ({ refreshTrigger }) => {
-  const { user, token } = useUser();
+  const { user } = useUser();
   const [equipment, setEquipment] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -90,11 +90,11 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
   };
 
   useEffect(() => {
-    if (token) {
+    if (user) {
       fetchEquipment(1);
       setPage(1);
     }
-  }, [token, refreshTrigger]);
+  }, [user, refreshTrigger]);
 
   // Remove this useEffect that fetches bookings for all equipment after equipment is loaded
   // useEffect(() => {
