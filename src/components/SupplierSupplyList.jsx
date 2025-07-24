@@ -16,45 +16,33 @@ const SupplierSupplyList = ({ refreshTrigger }) => {
       setLoading(true);
       setError('');
       try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`${getBackendUrl()}/api/supplies`, {
+        let url;
+        if (user?.role === 'admin') {
+          url = `${getBackendUrl()}/api/supplies`;
+        } else if (user?.role === 'supplier') {
+          url = `${getBackendUrl()}/api/supplies/my-supplies`;
+        } else {
+          // Not allowed
+          setSupplies([]);
+          setLoading(false);
+          return;
+        }
+        const response = await fetch(url, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
         });
         if (!response.ok) throw new Error('Failed to fetch supplies');
         const data = await response.json();
-        setSupplies(data.data || data); // support both {data: ...} and array
+        setSupplies(data.data || data);
       } catch (err) {
         setError('Failed to fetch supplies');
       } finally {
         setLoading(false);
       }
     };
-    fetchSupplies();
-  }, [refreshTrigger]);
-
-  useEffect(() => {
-    const fetchMySupplies = async () => {
-      setLoading(true);
-      setError('');
-      try {
-        const response = await fetch(`${getBackendUrl()}/api/supplies/my-supplies`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-        if (!response.ok) throw new Error('Failed to fetch supplies');
-        const data = await response.json();
-        setSupplies(data);
-      } catch (err) {
-        setError('Failed to fetch supplies');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchMySupplies();
-  }, [token, refreshTrigger]);
+    if (token && user) fetchSupplies();
+  }, [token, user, refreshTrigger]);
 
   const handleDelete = async (supplyId) => {
     if (!confirm('Are you sure you want to delete this supply?')) return;

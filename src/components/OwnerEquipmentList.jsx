@@ -33,16 +33,25 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
     setLoading(true);
     setError('');
     try {
-      const response = await fetch(`${getBackendUrl()}/api/equipment/owner`, {
+      let url;
+      if (user?.role === 'admin') {
+        url = `${getBackendUrl()}/api/equipment`;
+      } else if (user?.role === 'owner') {
+        url = `${getBackendUrl()}/api/equipment/owner`;
+      } else {
+        // Not allowed
+        setEquipment([]);
+        setLoading(false);
+        return;
+      }
+      const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
-      
-      if (!response.ok) throw new Error('Failed to fetch your equipment');
-      
+      if (!response.ok) throw new Error('Failed to fetch equipment');
       const data = await response.json();
-      setEquipment(data);
+      setEquipment(data.data || data);
     } catch (err) {
       setError('Failed to fetch your equipment');
     } finally {
