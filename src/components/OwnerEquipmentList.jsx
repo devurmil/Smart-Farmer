@@ -28,8 +28,12 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [bookingData, setBookingData] = useState({});
   const [bookingLoading, setBookingLoading] = useState({});
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10);
+  const [total, setTotal] = useState(0);
 
-  const fetchEquipment = async () => {
+  const fetchEquipment = async (pageNum = page) => {
     setLoading(true);
     setError('');
     try {
@@ -37,9 +41,8 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
       if (user?.role === 'admin') {
         url = `${getBackendUrl()}/api/equipment`;
       } else if (user?.role === 'owner') {
-        url = `${getBackendUrl()}/api/equipment/owner`;
+        url = `${getBackendUrl()}/api/equipment/owner?page=${pageNum}&limit=${limit}`;
       } else {
-        // Not allowed
         setEquipment([]);
         setLoading(false);
         return;
@@ -49,7 +52,13 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
       });
       if (!response.ok) throw new Error('Failed to fetch equipment');
       const data = await response.json();
-      setEquipment(data.data || data);
+      if (data.success) {
+        setEquipment(data.data || []);
+        setTotal(data.total || 0);
+      } else {
+        setEquipment([]);
+        setTotal(0);
+      }
     } catch (err) {
       setError('Failed to fetch your equipment');
     } finally {
@@ -76,7 +85,8 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
 
   useEffect(() => {
     if (token) {
-      fetchEquipment();
+      fetchEquipment(1);
+      setPage(1);
     }
   }, [token, refreshTrigger]);
 
@@ -167,6 +177,13 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
     });
   };
 
+  // Pagination controls
+  const totalPages = Math.ceil(total / limit);
+  const handlePageChange = (newPage) => {
+    setPage(newPage);
+    fetchEquipment(newPage);
+  };
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-16">
@@ -198,7 +215,7 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
     );
   }
 
-  if (equipment.length === 0) {
+  if (equipment.length === 0 && !loading) {
     return (
       <div className="flex flex-col items-center justify-center py-16">
         <div className="p-4 bg-gray-100 rounded-full mb-4">
@@ -214,6 +231,14 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
 
   return (
     <>
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center mb-4 gap-2">
+          <Button onClick={() => handlePageChange(page - 1)} disabled={page === 1} size="sm">Prev</Button>
+          <span className="text-sm">Page {page} of {totalPages}</span>
+          <Button onClick={() => handlePageChange(page + 1)} disabled={page === totalPages} size="sm">Next</Button>
+        </div>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {equipment.map((item) => (
           <Card key={item.id} className="overflow-hidden">
@@ -414,6 +439,14 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
           </Card>
         ))}
       </div>
+      {/* Pagination Controls (bottom) */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center mt-4 gap-2">
+          <Button onClick={() => handlePageChange(page - 1)} disabled={page === 1} size="sm">Prev</Button>
+          <span className="text-sm">Page {page} of {totalPages}</span>
+          <Button onClick={() => handlePageChange(page + 1)} disabled={page === totalPages} size="sm">Next</Button>
+        </div>
+      )}
       
       {/* View Dialog */}
       {selectedEquipment && (

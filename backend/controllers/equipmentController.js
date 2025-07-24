@@ -71,11 +71,28 @@ exports.getAllEquipmentRoute = async (req, res) => {
   }
 };
 
-// Get equipment by owner
+// Get equipment by owner (with pagination)
 exports.getOwnerEquipment = async (req, res) => {
   try {
-    const equipment = await Equipment.findAll({ where: { ownerId: req.user.id } });
-    res.json(equipment);
+    const { page = 1, limit = 10 } = req.query;
+    const offset = (page - 1) * limit;
+    // Fetch equipment with owner info
+    const equipment = await Equipment.findAll({
+      where: { ownerId: req.user.id },
+      offset: parseInt(offset),
+      limit: parseInt(limit),
+      order: [['createdAt', 'DESC']],
+      include: [{ model: User, as: 'owner', attributes: ['id', 'name', 'email', 'phone'] }]
+    });
+    // Get total count for pagination
+    const totalCount = await Equipment.count({ where: { ownerId: req.user.id } });
+    res.json({
+      success: true,
+      data: equipment,
+      total: totalCount,
+      page: parseInt(page),
+      limit: parseInt(limit),
+    });
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch owner equipment.' });
   }
