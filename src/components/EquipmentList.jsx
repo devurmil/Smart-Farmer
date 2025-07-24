@@ -38,7 +38,12 @@ const EquipmentList = () => {
         if (dateRange.startDate && dateRange.endDate) {
           url += `?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`;
         }
-        const response = await fetch(url);
+        const token = localStorage.getItem('token');
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
         if (!response.ok) throw new Error('Failed to fetch equipment');
         const data = await response.json();
         setEquipment(data);

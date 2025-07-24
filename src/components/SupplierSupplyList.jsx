@@ -12,6 +12,29 @@ const SupplierSupplyList = ({ refreshTrigger }) => {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    const fetchSupplies = async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${getBackendUrl()}/api/supplies`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+        if (!response.ok) throw new Error('Failed to fetch supplies');
+        const data = await response.json();
+        setSupplies(data.data || data); // support both {data: ...} and array
+      } catch (err) {
+        setError('Failed to fetch supplies');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchSupplies();
+  }, [refreshTrigger]);
+
+  useEffect(() => {
     const fetchMySupplies = async () => {
       setLoading(true);
       setError('');
