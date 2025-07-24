@@ -7,7 +7,6 @@ const rateLimit = require('express-rate-limit');
 const cookieParser = require('cookie-parser');
 const path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') }); // Always load from root
-const cookieParser = require('cookie-parser');
 
 // Warn if required environment variables are missing
 const requiredEnv = [
