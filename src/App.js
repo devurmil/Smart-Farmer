@@ -5,6 +5,8 @@ import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import EquipmentRentalPage from './pages/EquipmentRentalPage';
 import CssBaseline from '@mui/material/CssBaseline';
+import Box from '@mui/material/Box';
+import CircularProgress from '@mui/material/CircularProgress';
 import { SettingsProvider, SettingsContext } from './context/SettingsContext';
 import SettingsPage from './pages/SettingsPage';
 import AdminPage from './pages/AdminPage';
@@ -24,7 +26,12 @@ function AppRoutes() {
 
   // This is the fix: a loading gate to prevent the UI flicker on refresh.
   if (isLoading) {
-    return <div>Loading...</div>; // You can replace this with a spinner component
+    // Display a centered spinner while the user session is being verified
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <CircularProgress />
+      </Box>
+    );
   }
 
   const homepage = settings?.homepage || '/';
@@ -34,7 +41,7 @@ function AppRoutes() {
       <Route path="/login" element={user ? <Navigate to={homepage} /> : <LoginPage />} />
       <Route path="/signup" element={user ? <Navigate to={homepage} /> : <SignupPage />} />
       <Route path="/equipment-rental" element={<PrivateRoute><EquipmentRentalPage /></PrivateRoute>} />
-      <Route path="/settings" element={<SettingsPage />} />
+      <Route path="/settings" element={<PrivateRoute><SettingsPage /></PrivateRoute>} />
       <Route path="/admin" element={isAdmin ? <AdminPage /> : <Navigate to="/" />} />
       {/* Redirect root to default homepage */}
       <Route path="/" element={<Navigate to={homepage} />} />
