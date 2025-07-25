@@ -7,7 +7,7 @@ import { Loader2, AlertCircle, Package, Truck, CheckCircle } from 'lucide-react'
 import { getBackendUrl } from '@/lib/utils';
 
 const SupplyOrders = ({ userRole }) => {
-  const { user } = useUser();
+  const { user, token } = useUser();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -16,11 +16,15 @@ const SupplyOrders = ({ userRole }) => {
     const fetchOrders = async () => {
       if (!user) return;
       
+      console.log('SupplyOrders - User:', user);
+      console.log('SupplyOrders - Token:', token ? 'Present' : 'Not Present');
+      
       setLoading(true);
       setError('');
       try {
         const response = await fetch(`${getBackendUrl()}/api/supplies/orders`, {
           credentials: 'include',
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
         });
         if (!response.ok) throw new Error('Failed to fetch orders');
         const data = await response.json();
@@ -32,7 +36,7 @@ const SupplyOrders = ({ userRole }) => {
       }
     };
     fetchOrders();
-  }, [user]);
+  }, [user, token]);
 
   const handleStatusUpdate = async (orderId, newStatus) => {
     try {
@@ -40,7 +44,9 @@ const SupplyOrders = ({ userRole }) => {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         },
+        credentials: 'include',
         body: JSON.stringify({ status: newStatus }),
       });
 

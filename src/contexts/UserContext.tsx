@@ -40,7 +40,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // On mount, try to get user from cookies first, then fallback to localStorage token
+  // On mount, prioritize JWT token over cookies to avoid old cookie interference
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -53,23 +53,12 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
           setToken(storedToken);
         }
         
-        // First try cookie-based authentication
-        console.log('UserContext: Trying cookie-based auth...');
-        let res = await fetch(`${backendUrl}/api/auth/me`, { credentials: 'include' });
-        console.log('UserContext: Cookie auth response status:', res.status);
-        
+        let res;
         let data;
-        try {
-          data = await res.json();
-          console.log('UserContext: Cookie auth response data:', data);
-        } catch (parseError) {
-          console.log('UserContext: Failed to parse cookie auth response as JSON');
-          data = { success: false };
-        }
         
-        // If cookie auth fails, try token from localStorage
-        if (!res.ok && storedToken) {
-          console.log('UserContext: Cookie auth failed, trying token auth...');
+        // PRIORITY 1: Try JWT token authentication first if available
+        if (storedToken) {
+          console.log('UserContext: Trying JWT token auth first...');
           res = await fetch(`${backendUrl}/api/auth/me`, {
             headers: { 'Authorization': `Bearer ${storedToken}` }
           });
@@ -80,6 +69,21 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
             console.log('UserContext: Token auth response data:', data);
           } catch (parseError) {
             console.log('UserContext: Failed to parse token auth response as JSON');
+            data = { success: false };
+          }
+        }
+        
+        // PRIORITY 2: Only try cookie auth if JWT token auth failed or no token exists
+        if ((!storedToken || !res.ok) && (!data || !data.success)) {
+          console.log('UserContext: Token auth failed/unavailable, trying cookie auth...');
+          res = await fetch(`${backendUrl}/api/auth/me`, { credentials: 'include' });
+          console.log('UserContext: Cookie auth response status:', res.status);
+          
+          try {
+            data = await res.json();
+            console.log('UserContext: Cookie auth response data:', data);
+          } catch (parseError) {
+            console.log('UserContext: Failed to parse cookie auth response as JSON');
             data = { success: false };
           }
         }
@@ -117,9 +121,19 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     setUser(null);
     setToken(null);
     localStorage.removeItem('auth_token');
-    // Also call backend to clear cookie
+    localStorage.removeItem('user_data');
+    
+    // Clear all cookies manually as fallback
+    document.cookie.split(";").forEach(function(c) {
+      document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+    });
+    
+    // Use force logout to aggressively clear all authentication
     const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
-    fetch(`${backendUrl}/api/auth/logout`, { method: 'POST', credentials: 'include' });
+    fetch(`${backendUrl}/api/auth/force-logout`, { method: 'POST', credentials: 'include' });
+    
+    console.log('Logout: Cleared all authentication data and called force-logout');
+    
     // Facebook logout if needed
     if (window.FB) {
       window.FB.logout();

@@ -10,11 +10,11 @@ import { AlertCircle, CheckCircle, Upload, Loader2 } from 'lucide-react';
 import { getBackendUrl } from '@/lib/utils';
 
 const AddSupplyForm = ({ onSupplyAdded, isAdmin = false, suppliers = [], onClose }) => {
-  const { user } = useUser();
-  const [form, setForm] = useState({ 
-    name: '', 
-    category: '', 
-    price: '', 
+  const { user, token } = useUser();
+  const [form, setForm] = useState({
+    name: '',
+    category: '',
+    price: '',
     unit: 'piece',
     quantity: '1',
     description: '',
@@ -45,6 +45,9 @@ const AddSupplyForm = ({ onSupplyAdded, isAdmin = false, suppliers = [], onClose
     setSuccess('');
     setError('');
     
+    console.log('AddSupplyForm - User:', user);
+    console.log('AddSupplyForm - Token:', token ? 'Present' : 'Not Present');
+    
     try {
       const formData = new FormData();
       Object.entries(form).forEach(([key, value]) => {
@@ -53,9 +56,15 @@ const AddSupplyForm = ({ onSupplyAdded, isAdmin = false, suppliers = [], onClose
       });
       if (image) formData.append('image', image);
       
+      const headers = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
       const response = await fetch(`${getBackendUrl()}/api/supplies`, {
         method: 'POST',
         credentials: 'include',
+        headers,
         body: formData,
       });
       

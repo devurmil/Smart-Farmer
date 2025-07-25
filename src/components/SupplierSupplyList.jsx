@@ -6,7 +6,7 @@ import { Loader2, AlertCircle, Edit, Trash2, Package } from 'lucide-react';
 import { getBackendUrl } from '@/lib/utils';
 
 const SupplierSupplyList = ({ refreshTrigger }) => {
-  const { user } = useUser();
+  const { user, token } = useUser();
   const [supplies, setSupplies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -27,8 +27,16 @@ const SupplierSupplyList = ({ refreshTrigger }) => {
           setLoading(false);
           return;
         }
+        
+        console.log('SupplierSupplyList - User:', user);
+        console.log('SupplierSupplyList - User Role:', user?.role);
+        console.log('SupplierSupplyList - User ID:', user?.id);
+        console.log('SupplierSupplyList - Token:', token ? 'Present' : 'Not Present');
+        console.log('SupplierSupplyList - URL:', url);
+        
         const response = await fetch(url, {
           credentials: 'include',
+          headers: token ? { 'Authorization': `Bearer ${user}` } : {}
         });
         if (!response.ok) throw new Error('Failed to fetch supplies');
         const data = await response.json();
@@ -40,7 +48,7 @@ const SupplierSupplyList = ({ refreshTrigger }) => {
       }
     };
     if (user) fetchSupplies();
-  }, [user, refreshTrigger]);
+  }, [user, token, refreshTrigger]);
 
   const handleDelete = async (supplyId) => {
     if (!confirm('Are you sure you want to delete this supply?')) return;
@@ -49,6 +57,7 @@ const SupplierSupplyList = ({ refreshTrigger }) => {
       const response = await fetch(`${getBackendUrl()}/api/supplies/${supplyId}`, {
         method: 'DELETE',
         credentials: 'include',
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
 
       if (!response.ok) throw new Error('Failed to delete supply');

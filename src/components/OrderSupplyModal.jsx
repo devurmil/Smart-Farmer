@@ -8,7 +8,7 @@ import { AlertCircle, CheckCircle, Loader2, X } from 'lucide-react';
 import { getBackendUrl } from '@/lib/utils';
 
 const OrderSupplyModal = ({ supply, onClose, onOrderSuccess }) => {
-  const { user } = useUser();
+  const { user, token } = useUser();
   const [form, setForm] = useState({
     quantity: '1',
     deliveryAddress: '',
@@ -29,11 +29,15 @@ const OrderSupplyModal = ({ supply, onClose, onOrderSuccess }) => {
     setSuccess('');
     setError('');
 
+    console.log('OrderSupplyModal - User:', user);
+    console.log('OrderSupplyModal - Token:', token ? 'Present' : 'Not Present');
+
     try {
       const response = await fetch(`${getBackendUrl()}/api/supplies/${supply.id}/order`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         },
         credentials: 'include',
         body: JSON.stringify(form),

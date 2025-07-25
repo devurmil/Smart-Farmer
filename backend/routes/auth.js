@@ -80,7 +80,7 @@ router.post('/register', validate(registerSchema), async (req, res) => {
 // @access  Public
 router.post('/login', validate(loginSchema), async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, rememberMe } = req.body;
 
     // Find user by email
     const user = await User.findOne({ where: { email } });
@@ -106,13 +106,19 @@ router.post('/login', validate(loginSchema), async (req, res) => {
     // Generate token
     const token = generateToken(user.id);
 
-    // Set token as HTTP-only cookie for security
-    res.cookie('token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-    });
+    // Only set cookie if rememberMe is false (for fallback browser compatibility)
+    // When rememberMe is true, rely on localStorage token instead
+    if (!rememberMe) {
+      res.cookie('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      });
+      console.log('Login: Cookie set (rememberMe disabled)');
+    } else {
+      console.log('Login: No cookie set (rememberMe enabled - using token only)');
+    }
 
     res.json({
       success: true,
@@ -300,6 +306,41 @@ router.post('/logout', auth, async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Server error during logout'
+    });
+  }
+});
+
+// @route   POST /api/auth/force-logout
+// @desc    Force logout - clear all authentication without requiring auth
+// @access  Public
+router.post('/force-logout', async (req, res) => {
+  try {
+    // Clear the authentication cookie aggressively
+    res.clearCookie('token', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+    });
+    
+    // Also try clearing with different paths
+    res.clearCookie('token', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      path: '/'
+    });
+    
+    console.log('Force logout - cookies cleared');
+    
+    res.json({
+      success: true,
+      message: 'Force logout successful - all authentication cleared'
+    });
+  } catch (error) {
+    console.error('Force logout error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error during force logout'
     });
   }
 });
