@@ -10,26 +10,20 @@ export const UserProvider = ({ children }) => {
 
   useEffect(() => {
     const validateSession = async () => {
-      // The token is now automatically added to requests by the api.js interceptor,
-      // so we just need to check if it exists in storage.
-      const token = localStorage.getItem('token');
-
-      if (token) {
-        try {
-          // IMPORTANT: You must have this endpoint on your backend.
-          // It should take a token and return the user object if valid.
-          const response = await api.get('/auth/me'); // Example endpoint
-          setUser(response.data);
-        } catch (error) {
-          // The token was invalid or expired. Clean up.
-          console.error("Session validation failed. The token might be expired.", error);
-          localStorage.removeItem('token');
-          setUser(null);
-        }
+      try {
+        // The browser will automatically send the session cookie.
+        // If the cookie is valid, this endpoint will return user data.
+        // If not, it will return an error (e.g., 401), which will be caught.
+        const response = await api.get('/auth/me');
+        setUser(response.data);
+      } catch (error) {
+        // This is an expected outcome if the user is not logged in.
+        console.log("No active session found. User is not logged in.");
+        setUser(null);
+      } finally {
+        // We set loading to false regardless of whether the user is logged in or not.
+        setIsLoading(false);
       }
-
-      // Set loading to false only after the check is complete.
-      setIsLoading(false);
     };
 
     validateSession();

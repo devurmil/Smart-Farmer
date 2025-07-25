@@ -1,216 +1,150 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const helmet = require('helmet');
-const morgan = require('morgan');
-const compression = require('compression');
-const rateLimit = require('express-rate-limit');
 const cookieParser = require('cookie-parser');
-const path = require('path');
-require('dotenv').config({ path: path.resolve(__dirname, '../.env') }); // Always load from root
-
-// Warn if required environment variables are missing
-const requiredEnv = [
-  'DB_HOST', 'DB_PORT', 'DB_NAME', 'DB_USER', 'DB_PASSWORD',
-  'JWT_SECRET', 'CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET',
-  'FRONTEND_URL'
-];
-const missingEnv = requiredEnv.filter((key) => !process.env[key]);
-if (missingEnv.length > 0) {
-  console.warn('WARNING: Missing required environment variables:', missingEnv.join(', '));
-}
-
-const { testConnection } = require('./config/database'); // or './config/database' based on your structure
-const { syncDatabase } = require('./models');     // if syncDatabase is correctly defined there
-
+const jwt = require('jsonwebtoken');
+const helmet = require('helmet');
 
 const app = express();
 
-app.set('trust proxy', 1); // trust first proxy (needed for Render, Vercel, Heroku, etc.)
+// --- 1. Security and Middleware Configuration ---
 
-// Security middleware
-app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" }
-}));
+// Use Helmet to set various security-related HTTP headers
+app.use(helmet());
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
-  max: 1000, // increased from 100 to 1000 requests per windowMs
-  message: {
-    success: false,
-    message: 'Too many requests from this IP, please try again later.'
-  }
-});
+// CORS Configuration: This is crucial for cookie-based authentication
+const allowedOrigins = [
+    process.env.FRONTEND_URL, // Your production frontend URL from .env
+    'http://localhost:5173'   // Your local development URL
+];
 
-app.use('/api/', limiter);
-
-// CORS configuration
 const corsOptions = {
-  origin: function (origin, callback) {
-    const allowedOrigins = [
-      process.env.FRONTEND_URL,
-      'https://smart-farmer-three.vercel.app', // Added Vercel frontend URL
-      'http://localhost:3000',
-      'http://localhost:5173',
-      'http://localhost:5174',
-      'http://localhost:8080',
-      'http://localhost:4173', // Vite preview port
-      'http://localhost:3001'  // Alternative dev port
-    ].filter(Boolean);
-    
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    // In development, allow all localhost origins
-    if (process.env.NODE_ENV === 'development' && origin && origin.includes('localhost')) {
-      return callback(null, true);
-    }
-    
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
-  optionsSuccessStatus: 200,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Accept', 'Authorization'],
-  exposedHeaders: ['set-cookie']
+    origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.indexOf(origin) === -1) {
+            const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+            return callback(new Error(msg), false);
+        }
+        return callback(null, true);
+    },
+    // This allows the browser to send cookies and other credentials
+    credentials: true,
 };
-
 app.use(cors(corsOptions));
 
-// Body parsing middleware
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-
-// Add cookie-parser middleware
+// Middleware to parse JSON bodies and cookies
+app.use(express.json());
 app.use(cookieParser());
 
-// Compression middleware
-app.use(compression());
+// --- 2. Authentication Middleware ---
 
-// Logging middleware
-if (process.env.NODE_ENV === 'development') {
-  app.use(morgan('dev'));
-} else {
-  app.use(morgan('combined'));
-}
+/**
+ * Middleware to protect routes. It verifies the JWT from the cookie.
+ */
+const authMiddleware = (req, res, next) => {
+    const token = req.cookies.token;
 
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.json({
-    success: true,
-    message: 'Smart Farm API is running',
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
-  });
-});
+    if (!token) {
+        return res.status(401).json({ message: 'Not authenticated: No token provided.' });
+    }
 
-// API Routes
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/farms', require('./routes/farms'));
-app.use('/api/crops', require('./routes/crops'));
-app.use('/api/disease', require('./routes/disease'));
-app.use('/api/cost-planning', require('./routes/cost-planning'));
-app.use('/api/equipment', require('./routes/equipment'));
-app.use('/api/booking', require('./routes/booking'));
-app.use('/api/supplies', require('./routes/supplies'));
-app.use('/api/users', require('./routes/users'));
-
-// Serve uploads directory for images
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-// 404 handler for API routes
-app.use('/api/*', (req, res) => {
-  res.status(404).json({
-    success: false,
-    message: 'API endpoint not found',
-    path: req.originalUrl
-  });
-});
-
-// Global error handler
-app.use((error, req, res, next) => {
-  console.error('Global error handler:', error);
-
-  // Handle specific error types
-  if (error.name === 'SequelizeValidationError') {
-    return res.status(400).json({
-      success: false,
-      message: 'Validation error',
-      errors: error.errors.map(err => ({
-        field: err.path,
-        message: err.message
-      }))
-    });
-  }
-
-  if (error.name === 'SequelizeUniqueConstraintError') {
-    return res.status(400).json({
-      success: false,
-      message: 'Duplicate entry error',
-      field: error.errors[0]?.path || 'unknown'
-    });
-  }
-
-  if (error.name === 'SequelizeForeignKeyConstraintError') {
-    return res.status(400).json({
-      success: false,
-      message: 'Invalid reference to related data'
-    });
-  }
-
-  // Default error response
-  res.status(error.status || 500).json({
-    success: false,
-    message: process.env.NODE_ENV === 'development' 
-      ? error.message 
-      : 'Internal server error',
-    ...(process.env.NODE_ENV === 'development' && { stack: error.stack })
-  });
-});
-
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('SIGTERM received. Shutting down gracefully...');
-  process.exit(0);
-});
-
-process.on('SIGINT', () => {
-  console.log('SIGINT received. Shutting down gracefully...');
-  process.exit(0);
-});
-
-// Start server
-const PORT = process.env.PORT || 5000;
-
-const startServer = async () => {
-  try {
-    // Test database connection
-    await testConnection();
-    
-    // Sync database (create tables if they don't exist)
-    await syncDatabase(false); // Set to true to force recreate tables
-    
-    // Start the server
-    app.listen(PORT, () => {
-      console.log(`
-🚀 Smart Farm API Server is running!
-📍 Port: ${PORT}
-🌍 Environment: ${process.env.NODE_ENV || 'development'}
-📊 Database: Connected
-🔗 Health Check: http://localhost:${PORT}/health
-📚 API Base URL: http://localhost:${PORT}/api
-      `);
-    });
-  } catch (error) {
-    console.error('❌ Failed to start server:', error);
-    process.exit(1);
-  }
+    try {
+        // Verify the token using the secret key
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        // Attach user data to the request object for use in other routes
+        req.user = decoded;
+        next();
+    } catch (error) {
+        // Clear the invalid cookie
+        res.cookie('token', '', { httpOnly: true, expires: new Date(0) });
+        return res.status(401).json({ message: 'Not authenticated: Invalid token.' });
+    }
 };
 
-startServer();
+// --- 3. API Routes ---
 
-module.exports = app;
+const apiRouter = express.Router();
+
+/**
+ * [POST] /api/auth/login
+ * Authenticates a user and sets a secure, HttpOnly cookie.
+ */
+apiRouter.post('/auth/login', async (req, res) => {
+    const { email, password } = req.body;
+
+    // --- !!! IMPORTANT: Replace with your actual user validation logic !!! ---
+    // Example: Find user in database and check password
+    const userIsValid = (email === 'test@example.com' && password === 'password');
+    if (!userIsValid) {
+        return res.status(401).json({ message: 'Invalid credentials' });
+    }
+    const userPayload = { id: '123', email: 'test@example.com', name: 'Test User' };
+    // --- End of placeholder logic ---
+
+    // Create a JWT
+    const token = jwt.sign(userPayload, process.env.JWT_SECRET, {
+        expiresIn: '1d', // Token expires in 1 day
+    });
+
+    // Set the token in a secure cookie
+    res.cookie('token', token, {
+        httpOnly: true, // The cookie is not accessible via client-side JavaScript
+        secure: process.env.NODE_ENV === 'production', // Only send over HTTPS in production
+        sameSite: 'strict', // Helps mitigate CSRF attacks
+        maxAge: 24 * 60 * 60 * 1000, // 1 day in milliseconds
+    });
+
+    // Send back user data (without the token)
+    res.status(200).json(userPayload);
+});
+
+/**
+ * [GET] /api/auth/me
+ * This is the endpoint your frontend calls on startup to check for an active session.
+ */
+apiRouter.get('/auth/me', authMiddleware, (req, res) => {
+    // If authMiddleware passes, req.user will be populated.
+    // We just send it back to the client.
+    res.status(200).json(req.user);
+});
+
+/**
+ * [POST] /api/auth/logout
+ * Clears the authentication cookie.
+ */
+apiRouter.post('/auth/logout', (req, res) => {
+    res.cookie('token', '', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        expires: new Date(0), // Expire the cookie immediately
+    });
+    res.status(200).json({ message: 'Logged out successfully' });
+});
+
+
+/**
+ * Example of a protected route.
+ * Only authenticated users can access this.
+ */
+apiRouter.get('/protected-data', authMiddleware, (req, res) => {
+    res.json({
+        message: `Hello ${req.user.name}! This is protected data.`,
+        user: req.user
+    });
+});
+
+// Mount the API router under the /api path
+app.use('/api', apiRouter);
+
+
+// --- 4. Server Initialization ---
+
+const PORT = process.env.PORT || 8000;
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+    if (!process.env.JWT_SECRET || !process.env.FRONTEND_URL) {
+        console.warn('WARNING: JWT_SECRET or FRONTEND_URL is not set in .env file. The application may not work as expected.');
+    }
+});
