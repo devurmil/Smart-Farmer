@@ -14,6 +14,7 @@ const diseaseRouter = require('./routes/disease');
 const bookingRouter = require('./routes/booking');
 const cropsRouter = require('./routes/crops');
 const costPlanningRouter = require('./routes/cost-planning');
+const authRouter = require('./routes/auth');
 
 const app = express();
 
@@ -78,95 +79,6 @@ const authMiddleware = (req, res, next) => {
 const apiRouter = express.Router();
 
 /**
- * [POST] /api/auth/login
- * Authenticates a user and sets a secure, HttpOnly cookie.
- */
-apiRouter.post('/auth/login', async (req, res) => {
-    const { email, password, login_method, provider_id } = req.body;
-    try {
-        // Find user by email
-        const user = await User.findOne({ where: { email } });
-        if (!user) {
-            return res.status(401).json({ message: 'Invalid credentials' });
-        }
-        // If login_method is 'email', check password
-        if ((login_method === undefined || login_method === 'email')) {
-            const valid = await user.comparePassword(password);
-            if (!valid) {
-                return res.status(401).json({ message: 'Invalid credentials' });
-            }
-        } else {
-            // For social login, check login_method matches and provider_id if needed
-            if (user.login_method !== login_method) {
-                return res.status(401).json({ message: 'Invalid social login method' });
-            }
-            // Optionally, check provider_id if you store it
-        }
-        // Prepare user payload for JWT (exclude password)
-        const userPayload = {
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            role: user.role,
-            login_method: user.login_method,
-            profile_picture: user.profile_picture,
-            phone: user.phone,
-        };
-        // Create a JWT
-        const token = jwt.sign(userPayload, process.env.JWT_SECRET, {
-            expiresIn: '1d',
-        });
-        // Set the token in a secure cookie
-        console.log('Setting JWT cookie for user:', user.email, user.id);
-        res.cookie('token', token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
-            maxAge: 24 * 60 * 60 * 1000,
-            path: '/', // Ensure cookie is set for the whole site
-        });
-        // Send back user data (without the token)
-        res.status(200).json({ user: user.toJSON() });
-    } catch (err) {
-        console.error('Login error:', err);
-        res.status(500).json({ message: 'Internal server error' });
-    }
-});
-
-/**
- * [GET] /api/auth/me
- * This is the endpoint your frontend calls on startup to check for an active session.
- */
-apiRouter.get('/auth/me', authMiddleware, async (req, res) => {
-    try {
-        const user = await User.findByPk(req.user.id);
-        if (!user) {
-            return res.status(404).json({ success: false, message: 'User not found' });
-        }
-        res.status(200).json({ success: true, data: { user: user.toJSON() } });
-    } catch (err) {
-        res.status(500).json({ success: false, message: 'Internal server error' });
-    }
-});
-
-/**
- * [POST] /api/auth/logout
- * Clears the authentication cookie.
- */
-apiRouter.post('/auth/logout', (req, res) => {
-    console.log('Clearing JWT cookie');
-    res.cookie('token', '', {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        expires: new Date(0), // Expire the cookie immediately
-        path: '/', // Ensure cookie is cleared for the whole site
-    });
-    res.status(200).json({ message: 'Logged out successfully' });
-});
-
-
-/**
  * Example of a protected route.
  * Only authenticated users can access this.
  */
@@ -179,6 +91,7 @@ apiRouter.get('/protected-data', authMiddleware, (req, res) => {
 
 // Mount the API router under the /api path
 app.use('/api', apiRouter);
+app.use('/api/auth', authRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/equipment', equipmentRouter);
 app.use('/api/supplies', suppliesRouter);
