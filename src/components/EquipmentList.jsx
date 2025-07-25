@@ -21,7 +21,7 @@ import { getBackendUrl } from '@/lib/utils';
 import { useUser } from '../contexts/UserContext';
 
 const EquipmentList = () => {
-  const { user } = useUser();
+  const { user, token } = useUser();
   const [equipment, setEquipment] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -41,9 +41,8 @@ const EquipmentList = () => {
           url += `?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`;
         }
         const response = await fetch(url, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
+          credentials: 'include',
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
         });
         if (!response.ok) throw new Error('Failed to fetch equipment');
         const data = await response.json();

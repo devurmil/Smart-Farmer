@@ -20,9 +20,7 @@ const SupplyOrders = ({ userRole }) => {
       setError('');
       try {
         const response = await fetch(`${getBackendUrl()}/api/supplies/orders`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
+          credentials: 'include',
         });
         if (!response.ok) throw new Error('Failed to fetch orders');
         const data = await response.json();
@@ -34,7 +32,7 @@ const SupplyOrders = ({ userRole }) => {
       }
     };
     fetchOrders();
-  }, [token]);
+  }, [user]);
 
   const handleStatusUpdate = async (orderId, newStatus) => {
     try {

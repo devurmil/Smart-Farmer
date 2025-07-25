@@ -32,8 +32,9 @@ const LoginPage = () => {
     setLoading(true);
     setError('');
     try {
-      const res = await axios.post('/api/auth/login', form, { withCredentials: true });
-      login(res.data.data.user);
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+      const res = await axios.post(`${backendUrl}/api/auth/login`, form, { withCredentials: true });
+      login(res.data.data.user, res.data.data.token);
       navigate('/equipment-rental');
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed');

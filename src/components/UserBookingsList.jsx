@@ -5,7 +5,7 @@ import { Loader2, AlertCircle, XCircle, CheckCircle, Clock, Calendar, X } from '
 import { getBackendUrl } from '@/lib/utils';
 
 const UserBookingsList = () => {
-  const { user } = useUser();
+  const { user, token } = useUser();
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -17,9 +17,8 @@ const UserBookingsList = () => {
     setError('');
     try {
       const response = await fetch(`${getBackendUrl()}/api/booking/user`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        credentials: 'include',
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
       
       if (!response.ok) throw new Error('Failed to fetch your bookings');
@@ -50,7 +49,8 @@ const UserBookingsList = () => {
       console.log('Testing server connectivity...');
       try {
         const testResponse = await fetch(`${getBackendUrl()}/api/booking/user`, {
-          credentials: 'include'
+          credentials: 'include',
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
         });
         console.log('Server connectivity test - Status:', testResponse.status);
         if (!testResponse.ok) {
@@ -69,9 +69,9 @@ const UserBookingsList = () => {
         method: 'DELETE',
         credentials: 'include',
         headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include' // Use cookie-based authentication
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        }
       });
       
       console.log('DELETE response status:', response.status);

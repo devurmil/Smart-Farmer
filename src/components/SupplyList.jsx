@@ -23,9 +23,7 @@ const SupplyList = () => {
       setError('');
       try {
         const response = await fetch(`${getBackendUrl()}/api/supplies`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
+          credentials: 'include'
         });
         if (!response.ok) throw new Error('Failed to fetch supplies');
         const data = await response.json();
@@ -37,7 +35,7 @@ const SupplyList = () => {
       }
     };
     fetchSupplies();
-  }, [token]);
+  }, [user]);
 
   const handleOrderClose = () => setOpenOrderModal(null);
 

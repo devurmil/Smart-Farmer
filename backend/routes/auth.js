@@ -50,11 +50,20 @@ router.post('/register', validate(registerSchema), async (req, res) => {
     // Generate token
     const token = generateToken(user.id);
 
+    // Set token as HTTP-only cookie for security
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
+
     res.status(201).json({
       success: true,
       message: 'User registered successfully',
       data: {
-        user: user.toJSON()
+        user: user.toJSON(),
+        token // Include token for cross-origin fallback
       }
     });
   } catch (error) {
@@ -97,11 +106,20 @@ router.post('/login', validate(loginSchema), async (req, res) => {
     // Generate token
     const token = generateToken(user.id);
 
+    // Set token as HTTP-only cookie for security
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
+
     res.json({
       success: true,
       message: 'Login successful',
       data: {
-        user: user.toJSON()
+        user: user.toJSON(),
+        token // Include token for cross-origin fallback
       }
     });
   } catch (error) {
@@ -157,7 +175,7 @@ router.post('/facebook', async (req, res) => {
     res.cookie('token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     });
 
@@ -165,8 +183,7 @@ router.post('/facebook', async (req, res) => {
       success: true,
       message: 'Facebook login successful',
       data: {
-        user: user.toJSON(),
-        token
+        user: user.toJSON()
       }
     });
   } catch (error) {
@@ -222,7 +239,7 @@ router.post('/google', async (req, res) => {
     res.cookie('token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     });
 
@@ -230,8 +247,7 @@ router.post('/google', async (req, res) => {
       success: true,
       message: 'Google login successful',
       data: {
-        user: user.toJSON(),
-        token
+        user: user.toJSON()
       }
     });
   } catch (error) {
@@ -264,12 +280,16 @@ router.get('/me', auth, async (req, res) => {
 });
 
 // @route   POST /api/auth/logout
-// @desc    Logout user (client-side token removal)
+// @desc    Logout user (clear authentication cookie)
 // @access  Private
 router.post('/logout', auth, async (req, res) => {
   try {
-    // In a JWT implementation, logout is typically handled client-side
-    // by removing the token. Here we can log the logout event.
+    // Clear the authentication cookie
+    res.clearCookie('token', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+    });
     
     res.json({
       success: true,
@@ -403,11 +423,11 @@ router.post('/verify-otp', async (req, res) => {
     res.cookie('token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     });
     
-    res.status(201).json({ success: true, message: 'User created and verified', data: { user: user.toJSON(), token } });
+    res.status(201).json({ success: true, message: 'User created and verified', data: { user: user.toJSON() } });
   } catch (error) {
     console.error('Verify OTP error:', error);
     res.status(500).json({ success: false, message: 'Server error during OTP verification' });

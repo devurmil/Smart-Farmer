@@ -7,7 +7,6 @@ import { getBackendUrl } from '@/lib/utils';
 import { useUser } from '../contexts/UserContext';
 
 const EditEquipmentModal = ({ equipment, onClose, onEquipmentUpdated, isAdmin = false }) => {
-  const { token } = useUser();
   const [form, setForm] = useState({
     name: equipment.name || '',
     type: equipment.type || '',

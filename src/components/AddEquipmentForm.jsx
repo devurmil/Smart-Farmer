@@ -9,7 +9,7 @@ import { AlertCircle, CheckCircle, Upload, Loader2 } from 'lucide-react';
 import { getBackendUrl } from '@/lib/utils';
 
 const AddEquipmentForm = ({ onEquipmentAdded, isAdmin = false, owners = [], onClose }) => {
-  const { user } = useUser();
+  const { user, token } = useUser();
   const [form, setForm] = useState({ name: '', type: '', price: '', description: '', ownerId: '' });
   const [image, setImage] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -40,9 +40,8 @@ const AddEquipmentForm = ({ onEquipmentAdded, isAdmin = false, owners = [], onCl
       
       const response = await fetch(`${getBackendUrl()}/api/equipment`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+        credentials: 'include',
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
         body: formData,
       });
       

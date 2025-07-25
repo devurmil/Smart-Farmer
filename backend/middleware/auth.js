@@ -3,14 +3,24 @@ const { User } = require('../models');
 
 const auth = async (req, res, next) => {
   try {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
+    // Get token from HTTP-only cookie first, then fallback to Authorization header for deployment compatibility
+    let token = req.cookies?.token;
+    
+    // Fallback to Authorization header if cookie not present (for cross-origin deployment issues)
+    if (!token) {
+      const authHeader = req.header('Authorization');
+      if (authHeader?.startsWith('Bearer ')) {
+        token = authHeader.replace('Bearer ', '');
+      }
+    }
     
     if (!token) {
       return res.status(401).json({
         success: false,
-        message: 'Access denied. No token provided.'
+        message: 'Access denied. No authentication provided.'
       });
     }
+    
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findByPk(decoded.id);
     if (!user) {
@@ -26,13 +36,13 @@ const auth = async (req, res, next) => {
     if (error.name === 'JsonWebTokenError') {
       return res.status(401).json({
         success: false,
-        message: 'Invalid token.'
+        message: 'Invalid authentication token.'
       });
     }
     if (error.name === 'TokenExpiredError') {
       return res.status(401).json({
         success: false,
-        message: 'Token expired.'
+        message: 'Authentication token expired.'
       });
     }
     
@@ -46,12 +56,15 @@ const auth = async (req, res, next) => {
 
 const optionalAuth = async (req, res, next) => {
   try {
-    // First, try to get token from cookies (new cookie-based auth)
+    // Get token from HTTP-only cookie first, then fallback to Authorization header
     let token = req.cookies?.token;
     
-    // Fallback to Authorization header for backward compatibility
+    // Fallback to Authorization header if cookie not present
     if (!token) {
-      token = req.header('Authorization')?.replace('Bearer ', '');
+      const authHeader = req.header('Authorization');
+      if (authHeader?.startsWith('Bearer ')) {
+        token = authHeader.replace('Bearer ', '');
+      }
     }
     
     if (token) {

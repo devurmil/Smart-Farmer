@@ -19,7 +19,7 @@ import {
 import { getBackendUrl } from '@/lib/utils';
 
 const EquipmentBookingModal = ({ equipment, onClose, onBookingSuccess, startDate: propStartDate, endDate: propEndDate, available }) => {
-  const { user } = useUser();
+  const { user, token } = useUser();
   const [form, setForm] = useState({
     startDate: propStartDate || '',
     endDate: propEndDate || '',
@@ -83,8 +83,10 @@ const EquipmentBookingModal = ({ equipment, onClose, onBookingSuccess, startDate
     try {
       const response = await fetch(`${getBackendUrl()}/api/booking`, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         },
         body: JSON.stringify({
           equipmentId: equipment.id,

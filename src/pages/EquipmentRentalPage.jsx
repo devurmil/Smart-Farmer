@@ -21,7 +21,7 @@ import UserBookingsList from '../components/UserBookingsList';
 import { getBackendUrl } from '@/lib/utils';
 
 const EquipmentRentalPage = () => {
-  const { user } = useUser();
+  const { user, token } = useUser();
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [ownerStats, setOwnerStats] = useState({
     totalEquipment: 0,
@@ -42,12 +42,13 @@ const EquipmentRentalPage = () => {
   };
 
   const fetchOwnerStats = async () => {
-    if (!token || user?.role !== 'owner') return;
+    if (!user || user?.role !== 'owner') return;
     
     try {
       // Fetch owner's equipment count
       const equipmentResponse = await fetch(`${getBackendUrl()}/api/equipment/owner`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include',
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
       if (equipmentResponse.ok) {
         const equipmentData = await equipmentResponse.json();
@@ -58,7 +59,8 @@ const EquipmentRentalPage = () => {
       }
       // Fetch owner's bookings
       const bookingsResponse = await fetch(`${getBackendUrl()}/api/booking/owner`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include',
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
       if (bookingsResponse.ok) {
         const bookingsData = await bookingsResponse.json();
@@ -89,7 +91,7 @@ const EquipmentRentalPage = () => {
   };
 
   const fetchFarmerStats = async () => {
-    if (!token || user?.role === 'owner') return;
+    if (!user || user?.role === 'owner') return;
 
     try {
       // Fetch available equipment count
@@ -107,7 +109,8 @@ const EquipmentRentalPage = () => {
       }
       // Fetch farmer's bookings
       const bookingsResponse = await fetch(`${getBackendUrl()}/api/booking/user`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include',
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
       if (bookingsResponse.ok) {
         const bookingsData = await bookingsResponse.json();
@@ -124,14 +127,14 @@ const EquipmentRentalPage = () => {
 
 
   React.useEffect(() => {
-    if (token) {
+    if (user) {
       if (user?.role === 'owner') {
         fetchOwnerStats();
       } else if (user?.role === 'farmer') {
         fetchFarmerStats();
       }
     }
-  }, [token, user?.role, refreshTrigger]);
+  }, [user, refreshTrigger]);
 
   return (
     <div className="min-h-screen bg-background">

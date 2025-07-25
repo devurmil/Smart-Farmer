@@ -10,7 +10,7 @@ import { AlertCircle, CheckCircle, Upload, Loader2 } from 'lucide-react';
 import { getBackendUrl } from '@/lib/utils';
 
 const AddSupplyForm = ({ onSupplyAdded, isAdmin = false, suppliers = [], onClose }) => {
-  const { user, token } = useUser();
+  const { user } = useUser();
   const [form, setForm] = useState({ 
     name: '', 
     category: '', 
