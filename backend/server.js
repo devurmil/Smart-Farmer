@@ -135,8 +135,16 @@ apiRouter.post('/auth/login', async (req, res) => {
  * [GET] /api/auth/me
  * This is the endpoint your frontend calls on startup to check for an active session.
  */
-apiRouter.get('/auth/me', authMiddleware, (req, res) => {
-    res.status(200).json({ success: true, data: { user: req.user } });
+apiRouter.get('/auth/me', authMiddleware, async (req, res) => {
+    try {
+        const user = await User.findByPk(req.user.id);
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+        res.status(200).json({ success: true, data: { user: user.toJSON() } });
+    } catch (err) {
+        res.status(500).json({ success: false, message: 'Internal server error' });
+    }
 });
 
 /**
