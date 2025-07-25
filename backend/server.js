@@ -123,6 +123,7 @@ apiRouter.post('/auth/login', async (req, res) => {
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'strict',
             maxAge: 24 * 60 * 60 * 1000,
+            path: '/', // Ensure cookie is set for the whole site
         });
         // Send back user data (without the token)
         res.status(200).json({ user: user.toJSON() });
@@ -159,6 +160,7 @@ apiRouter.post('/auth/logout', (req, res) => {
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
         expires: new Date(0), // Expire the cookie immediately
+        path: '/', // Ensure cookie is cleared for the whole site
     });
     res.status(200).json({ message: 'Logged out successfully' });
 });
