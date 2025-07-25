@@ -4,6 +4,8 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const jwt = require('jsonwebtoken');
 const helmet = require('helmet');
+const User = require('./models/User');
+const models = require('./models');
 
 const app = express();
 
@@ -72,32 +74,53 @@ const apiRouter = express.Router();
  * Authenticates a user and sets a secure, HttpOnly cookie.
  */
 apiRouter.post('/auth/login', async (req, res) => {
-    const { email, password } = req.body;
-
-    // --- !!! IMPORTANT: Replace with your actual user validation logic !!! ---
-    // Example: Find user in database and check password
-    const userIsValid = (email === 'test@example.com' && password === 'password');
-    if (!userIsValid) {
-        return res.status(401).json({ message: 'Invalid credentials' });
+    const { email, password, login_method, provider_id } = req.body;
+    try {
+        // Find user by email
+        const user = await User.findOne({ where: { email } });
+        if (!user) {
+            return res.status(401).json({ message: 'Invalid credentials' });
+        }
+        // If login_method is 'email', check password
+        if ((login_method === undefined || login_method === 'email')) {
+            const valid = await user.comparePassword(password);
+            if (!valid) {
+                return res.status(401).json({ message: 'Invalid credentials' });
+            }
+        } else {
+            // For social login, check login_method matches and provider_id if needed
+            if (user.login_method !== login_method) {
+                return res.status(401).json({ message: 'Invalid social login method' });
+            }
+            // Optionally, check provider_id if you store it
+        }
+        // Prepare user payload for JWT (exclude password)
+        const userPayload = {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            login_method: user.login_method,
+            profile_picture: user.profile_picture,
+            phone: user.phone,
+        };
+        // Create a JWT
+        const token = jwt.sign(userPayload, process.env.JWT_SECRET, {
+            expiresIn: '1d',
+        });
+        // Set the token in a secure cookie
+        res.cookie('token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            maxAge: 24 * 60 * 60 * 1000,
+        });
+        // Send back user data (without the token)
+        res.status(200).json({ user: user.toJSON() });
+    } catch (err) {
+        console.error('Login error:', err);
+        res.status(500).json({ message: 'Internal server error' });
     }
-    const userPayload = { id: '123', email: 'test@example.com', name: 'Test User' };
-    // --- End of placeholder logic ---
-
-    // Create a JWT
-    const token = jwt.sign(userPayload, process.env.JWT_SECRET, {
-        expiresIn: '1d', // Token expires in 1 day
-    });
-
-    // Set the token in a secure cookie
-    res.cookie('token', token, {
-        httpOnly: true, // The cookie is not accessible via client-side JavaScript
-        secure: process.env.NODE_ENV === 'production', // Only send over HTTPS in production
-        sameSite: 'strict', // Helps mitigate CSRF attacks
-        maxAge: 24 * 60 * 60 * 1000, // 1 day in milliseconds
-    });
-
-    // Send back user data (without the token)
-    res.status(200).json({ user: userPayload });
 });
 
 /**
@@ -143,7 +166,12 @@ app.use('/api', apiRouter);
 // --- 4. Server Initialization ---
 
 const PORT = process.env.PORT || 8000;
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
+    try {
+        await models.syncDatabase();
+    } catch (err) {
+        console.error('Database sync failed:', err);
+    }
     console.log(`Server is running on port ${PORT}`);
     if (!process.env.JWT_SECRET || !process.env.FRONTEND_URL) {
         console.warn('WARNING: JWT_SECRET or FRONTEND_URL is not set in .env file. The application may not work as expected.');
