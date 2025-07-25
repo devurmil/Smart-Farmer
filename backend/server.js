@@ -15,11 +15,13 @@ app.use(helmet());
 // CORS Configuration: This is crucial for cookie-based authentication
 const allowedOrigins = [
     process.env.FRONTEND_URL, // Your production frontend URL from .env
-    'http://localhost:5173'   // Your local development URL
+    'http://localhost:5173',  // Your local development URL
+    'https://smart-farmer-cyyz.onrender.com' // <-- Add your deployed frontend URL here
 ];
 
 const corsOptions = {
     origin: (origin, callback) => {
+        console.log('CORS request from origin:', origin); // <-- Log the origin for debugging
         // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin) return callback(null, true);
         if (allowedOrigins.indexOf(origin) === -1) {
