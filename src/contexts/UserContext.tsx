@@ -123,16 +123,11 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     localStorage.removeItem('auth_token');
     localStorage.removeItem('user_data');
     
-    // Clear all cookies manually as fallback
-    document.cookie.split(";").forEach(function(c) {
-      document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
-    });
-    
-    // Use force logout to aggressively clear all authentication
+    // Use backend logout to clear authentication cookie
     const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
-    fetch(`${backendUrl}/api/auth/force-logout`, { method: 'POST', credentials: 'include' });
+    fetch(`${backendUrl}/api/auth/logout`, { method: 'POST', credentials: 'include' });
     
-    console.log('Logout: Cleared all authentication data and called force-logout');
+    console.log('Logout: Cleared all authentication data and called backend logout');
     
     // Facebook logout if needed
     if (window.FB) {

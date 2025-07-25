@@ -117,6 +117,7 @@ apiRouter.post('/auth/login', async (req, res) => {
             expiresIn: '1d',
         });
         // Set the token in a secure cookie
+        console.log('Setting JWT cookie for user:', user.email, user.id);
         res.cookie('token', token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
@@ -152,6 +153,7 @@ apiRouter.get('/auth/me', authMiddleware, async (req, res) => {
  * Clears the authentication cookie.
  */
 apiRouter.post('/auth/logout', (req, res) => {
+    console.log('Clearing JWT cookie');
     res.cookie('token', '', {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
