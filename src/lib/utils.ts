@@ -10,8 +10,6 @@ export const getBackendUrl = (): string => {
   if (import.meta.env.VITE_BACKEND_URL) {
     return import.meta.env.VITE_BACKEND_URL;
   }
-  
-  // For development, use production backend to maintain consistent auth
-  // Users can override this by setting VITE_BACKEND_URL=http://localhost:5000 in .env
-  return 'https://smart-farmer-cyyz.onrender.com';
+  // For development, use relative path so Vite proxy works
+  return '';
 };
