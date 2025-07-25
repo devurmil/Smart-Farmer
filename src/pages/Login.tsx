@@ -39,15 +39,16 @@ const Login = () => {
 
       const data = await response.json();
 
-      if (response.ok) {
+      if (response.ok && data && data.user) {
         // Success - user logged in
         console.log('Login successful:', data);
-        login(data.data.user);
+        login(data.user);
         navigate('/');
       } else {
-        // Error from backend
-        console.error('Login failed:', data.message);
-        alert(`Login failed: ${data.message}`);
+        // Error from backend or unexpected response
+        const errorMsg = data && data.message ? data.message : 'Login failed: Unexpected response from server';
+        console.error('Login failed:', errorMsg);
+        alert(errorMsg);
       }
     } catch (error) {
       console.error('Login error:', error);

@@ -128,9 +128,7 @@ apiRouter.post('/auth/login', async (req, res) => {
  * This is the endpoint your frontend calls on startup to check for an active session.
  */
 apiRouter.get('/auth/me', authMiddleware, (req, res) => {
-    // If authMiddleware passes, req.user will be populated.
-    // We just send it back to the client.
-    res.status(200).json(req.user);
+    res.status(200).json({ success: true, data: { user: req.user } });
 });
 
 /**
