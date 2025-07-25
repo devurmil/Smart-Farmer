@@ -5,32 +5,40 @@ import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import EquipmentRentalPage from './pages/EquipmentRentalPage';
 import CssBaseline from '@mui/material/CssBaseline';
-import { SettingsProvider } from './context/SettingsContext';
+import { SettingsProvider, SettingsContext } from './context/SettingsContext';
 import SettingsPage from './pages/SettingsPage';
 import AdminPage from './pages/AdminPage';
 
 function PrivateRoute({ children }) {
-  const { isAuthenticated, isLoading } = useUser();
-  if (isLoading) return <div>Loading...</div>;
-  return isAuthenticated ? children : <Navigate to="/login" />;
+  // Renaming `isAuthenticated` to `user` for clarity.
+  // The main loading state is now handled by `AppRoutes`.
+  const { isAuthenticated: user } = useUser();
+  return user ? children : <Navigate to="/login" />;
 }
 
 function AppRoutes() {
-  const { isAuthenticated, isLoading } = useUser();
+  // Renaming `isAuthenticated` to `user` for clarity and adding the loading gate.
+  const { isAuthenticated: user, isLoading } = useUser();
   // Use settings for homepage redirection
-  const { settings } = React.useContext(require('./context/SettingsContext'));
+  const { settings } = React.useContext(SettingsContext);
+
+  // This is the fix: a loading gate to prevent the UI flicker on refresh.
+  if (isLoading) {
+    return <div>Loading...</div>; // You can replace this with a spinner component
+  }
+
   const homepage = settings?.homepage || '/';
-  const isAdmin = isAuthenticated && isAuthenticated.email && isAuthenticated.email === import.meta.env.VITE_ADMIN_MAIL;
+  const isAdmin = user && user.email && user.email === import.meta.env.VITE_ADMIN_MAIL;
   return (
     <Routes>
-      <Route path="/login" element={isAuthenticated ? <Navigate to={homepage} /> : <LoginPage />} />
-      <Route path="/signup" element={isAuthenticated ? <Navigate to={homepage} /> : <SignupPage />} />
+      <Route path="/login" element={user ? <Navigate to={homepage} /> : <LoginPage />} />
+      <Route path="/signup" element={user ? <Navigate to={homepage} /> : <SignupPage />} />
       <Route path="/equipment-rental" element={<PrivateRoute><EquipmentRentalPage /></PrivateRoute>} />
       <Route path="/settings" element={<SettingsPage />} />
       <Route path="/admin" element={isAdmin ? <AdminPage /> : <Navigate to="/" />} />
       {/* Redirect root to default homepage */}
       <Route path="/" element={<Navigate to={homepage} />} />
-      <Route path="*" element={<Navigate to={isAuthenticated ? homepage : "/login"} />} />
+      <Route path="*" element={<Navigate to={user ? homepage : "/login"} />} />
     </Routes>
   );
 }
