@@ -72,7 +72,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const logout = () => {
     setUser(null);
     // Use backend logout to clear authentication cookie
-    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://smart-farmer-cyyz.onrender.com';
     fetch(`${backendUrl}/api/auth/logout`, { method: 'POST', credentials: 'include' });
     // Facebook logout if needed
     if (window.FB) {

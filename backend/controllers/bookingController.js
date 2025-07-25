@@ -120,8 +120,15 @@ exports.getUserBookings = async (req, res) => {
 // Get all bookings for the logged-in owner
 exports.getOwnerBookings = async (req, res) => {
   try {
-    const bookings = await Booking.findAll({ where: { ownerId: req.user.id } });
-    res.json(bookings);
+    const bookings = await Booking.findAll({
+      where: { ownerId: req.user.id },
+      include: [
+        { model: Equipment, as: 'equipment', attributes: ['id', 'name', 'type', 'price', 'description'] },
+        { model: User, as: 'user', attributes: ['id', 'name', 'email'] }
+      ],
+      order: [['createdAt', 'DESC']]
+    });
+    res.json({ success: true, data: bookings });
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch owner bookings.' });
   }
