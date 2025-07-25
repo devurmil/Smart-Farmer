@@ -97,7 +97,7 @@ apiRouter.post('/auth/login', async (req, res) => {
     });
 
     // Send back user data (without the token)
-    res.status(200).json(userPayload);
+    res.status(200).json({ user: userPayload });
 });
 
 /**
