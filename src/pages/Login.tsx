@@ -39,10 +39,10 @@ const Login = () => {
 
       const data = await response.json();
 
-      if (response.ok && data && data.user) {
+      if (response.ok && data && data.success && data.data && data.data.user) {
         // Success - user logged in
         console.log('Login successful:', data);
-        login(data.user);
+        login(data.data.user);
         navigate('/');
       } else {
         // Error from backend or unexpected response
