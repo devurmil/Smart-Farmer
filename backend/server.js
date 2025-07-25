@@ -6,6 +6,14 @@ const jwt = require('jsonwebtoken');
 const helmet = require('helmet');
 const User = require('./models/User');
 const models = require('./models');
+const usersRouter = require('./routes/users');
+const equipmentRouter = require('./routes/equipment');
+const suppliesRouter = require('./routes/supplies');
+const farmsRouter = require('./routes/farms');
+const diseaseRouter = require('./routes/disease');
+const bookingRouter = require('./routes/booking');
+const cropsRouter = require('./routes/crops');
+const costPlanningRouter = require('./routes/cost-planning');
 
 const app = express();
 
@@ -159,6 +167,14 @@ apiRouter.get('/protected-data', authMiddleware, (req, res) => {
 
 // Mount the API router under the /api path
 app.use('/api', apiRouter);
+app.use('/api/users', usersRouter);
+app.use('/api/equipment', equipmentRouter);
+app.use('/api/supplies', suppliesRouter);
+app.use('/api/farms', farmsRouter);
+app.use('/api/disease', diseaseRouter);
+app.use('/api/booking', bookingRouter);
+app.use('/api/crops', cropsRouter);
+app.use('/api/cost-planning', costPlanningRouter);
 
 
 // --- 4. Server Initialization ---
