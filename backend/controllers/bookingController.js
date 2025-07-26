@@ -128,13 +128,21 @@ exports.getEquipmentBookings = async (req, res) => {
 // Get all bookings for the logged-in user
 exports.getUserBookings = async (req, res) => {
   try {
+    console.log('getUserBookings called for user:', req.user.id);
+    console.log('User object:', req.user);
+    
     const bookings = await Booking.findAll({
       where: { userId: req.user.id },
       include: [{ model: Equipment, as: 'equipment', attributes: ['id', 'name', 'type', 'price', 'description'] }],
       order: [['createdAt', 'DESC']]
     });
+    
+    console.log('Found bookings:', bookings.length);
+    console.log('Bookings data:', bookings.map(b => ({ id: b.id, status: b.status, equipmentId: b.equipmentId })));
+    
     res.json(bookings);
   } catch (err) {
+    console.error('Error in getUserBookings:', err);
     res.status(500).json({ error: 'Failed to fetch user bookings.' });
   }
 };

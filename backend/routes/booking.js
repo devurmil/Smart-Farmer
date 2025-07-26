@@ -3,6 +3,19 @@ const router = express.Router();
 const bookingController = require('../controllers/bookingController');
 const { auth: authMiddleware } = require('../middleware/auth');
 
+// Test endpoint to check if booking system is working
+router.get('/test', authMiddleware, (req, res) => {
+  res.json({
+    message: 'Booking system is working',
+    user: {
+      id: req.user.id,
+      name: req.user.name,
+      email: req.user.email
+    },
+    timestamp: new Date().toISOString()
+  });
+});
+
 // SSE endpoint for real-time booking updates
 router.get('/stream', authMiddleware, (req, res) => {
   res.writeHead(200, {

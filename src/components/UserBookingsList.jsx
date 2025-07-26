@@ -11,57 +11,93 @@ const UserBookingsList = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [notification, setNotification] = useState('');
+  const [debugInfo, setDebugInfo] = useState('');
 
   const fetchUserBookings = async () => {
-    if (!user) return;
+    if (!user) {
+      console.log('No user found, skipping fetchUserBookings');
+      setDebugInfo('No user found');
+      return;
+    }
     
+    console.log('Fetching user bookings for user:', user.id);
+    setDebugInfo(`Fetching bookings for user: ${user.id}`);
     setLoading(true);
     setError('');
+    
     try {
-      const response = await fetch(`${getBackendUrl()}/api/booking/user`, {
+      const backendUrl = await getBackendUrl();
+      const url = `${backendUrl}/api/booking/user`;
+      console.log('Fetching from URL:', url);
+      console.log('Using token:', token ? 'Token present' : 'No token');
+      
+      const response = await fetch(url, {
         credentials: 'include',
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
       
-      if (!response.ok) throw new Error('Failed to fetch your bookings');
+      console.log('Response status:', response.status);
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Response not OK:', response.status, errorText);
+        throw new Error(`Failed to fetch your bookings: ${response.status} ${errorText}`);
+      }
       
       const data = await response.json();
-      setBookings(data);
+      console.log('Received bookings data:', data);
+      console.log('Number of bookings:', Array.isArray(data) ? data.length : 'Not an array');
+      
+      setBookings(Array.isArray(data) ? data : []);
+      setDebugInfo(`Found ${Array.isArray(data) ? data.length : 0} bookings`);
     } catch (err) {
-      setError('Failed to fetch your bookings');
+      console.error('Error fetching user bookings:', err);
+      setError('Failed to fetch your bookings: ' + err.message);
+      setDebugInfo(`Error: ${err.message}`);
     } finally {
       setLoading(false);
     }
   };
 
   // SSE hook for real-time updates
-  useSSE({
+  const { isConnected } = useSSE({
+    onConnected: () => {
+      console.log('SSE connected in UserBookingsList');
+      setDebugInfo(prev => prev + ' | SSE Connected');
+    },
     onBookingCreated: (data) => {
+      console.log('SSE: Booking created event received:', data);
       setNotification(data.message);
       fetchUserBookings(); // Refresh the list
       setTimeout(() => setNotification(''), 5000);
     },
     onBookingApproved: (data) => {
+      console.log('SSE: Booking approved event received:', data);
       setNotification(data.message);
       fetchUserBookings(); // Refresh the list
       setTimeout(() => setNotification(''), 5000);
     },
     onBookingRejected: (data) => {
+      console.log('SSE: Booking rejected event received:', data);
       setNotification(data.message);
       fetchUserBookings(); // Refresh the list
       setTimeout(() => setNotification(''), 5000);
     },
     onBookingCompleted: (data) => {
+      console.log('SSE: Booking completed event received:', data);
       setNotification(data.message);
       fetchUserBookings(); // Refresh the list
       setTimeout(() => setNotification(''), 5000);
     },
     onBookingCancelled: (data) => {
+      console.log('SSE: Booking cancelled event received:', data);
       setNotification(data.message);
       fetchUserBookings(); // Refresh the list
       setTimeout(() => setNotification(''), 5000);
     },
     onBookingUpdated: (data) => {
+      console.log('SSE: Booking updated event received:', data);
       setNotification(data.message);
       fetchUserBookings(); // Refresh the list
       setTimeout(() => setNotification(''), 5000);
@@ -69,8 +105,17 @@ const UserBookingsList = () => {
   });
 
   useEffect(() => {
+    console.log('UserBookingsList useEffect triggered');
+    console.log('User:', user);
+    console.log('SSE Connected:', isConnected);
+    
     if (user) {
+      console.log('User found, fetching bookings');
       fetchUserBookings();
+    } else {
+      console.log('No user, setting loading to false');
+      setLoading(false);
+      setDebugInfo('No user logged in');
     }
   }, [user]);
 
@@ -202,6 +247,47 @@ const UserBookingsList = () => {
 
   return (
     <div className="space-y-4">
+      {/* Debug Information */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+        <h3 className="font-semibold text-blue-800 mb-2">Debug Information:</h3>
+        <div className="text-sm text-blue-700 space-y-1">
+          <div><strong>User:</strong> {user ? `${user.name} (ID: ${user.id})` : 'Not logged in'}</div>
+          <div><strong>SSE Connected:</strong> {isConnected ? 'Yes' : 'No'}</div>
+          <div><strong>Loading:</strong> {loading ? 'Yes' : 'No'}</div>
+          <div><strong>Bookings Count:</strong> {bookings.length}</div>
+          <div><strong>Debug Info:</strong> {debugInfo}</div>
+          <div><strong>Error:</strong> {error || 'None'}</div>
+        </div>
+        <div className="mt-3 space-x-2">
+          <button
+            onClick={fetchUserBookings}
+            className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+          >
+            Refresh Bookings
+          </button>
+          <button
+            onClick={async () => {
+              try {
+                const backendUrl = await getBackendUrl();
+                const response = await fetch(`${backendUrl}/api/booking/test`, {
+                  credentials: 'include',
+                  headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+                });
+                const data = await response.json();
+                console.log('Test endpoint response:', data);
+                alert(`Backend test successful: ${data.message}`);
+              } catch (err) {
+                console.error('Test endpoint error:', err);
+                alert(`Backend test failed: ${err.message}`);
+              }
+            }}
+            className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700"
+          >
+            Test Backend
+          </button>
+        </div>
+      </div>
+
       {/* Real-time notification */}
       {notification && (
         <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
