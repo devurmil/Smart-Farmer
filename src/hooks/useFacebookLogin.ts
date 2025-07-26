@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '@/contexts/UserContext';
+import { getBackendUrl } from '@/lib/utils';
 
 // Facebook SDK types
 declare global {
@@ -69,7 +70,7 @@ export const useFacebookLogin = (): UseFacebookLoginReturn => {
     };
   }, []);
 
-  const facebookLogin = () => {
+  const facebookLogin = async () => {
     if (!window.FB) {
       console.error('Facebook SDK not loaded');
       return;
@@ -77,38 +78,65 @@ export const useFacebookLogin = (): UseFacebookLoginReturn => {
 
     setIsFacebookLoading(true);
     
-    window.FB.login(function (response: any) {
-      if (response.authResponse) {
-        console.log('Welcome! Fetching your info...');
-        window.FB.api('/me', { 
-          fields: 'name,email,picture.type(large)' 
-        }, function (userInfo: FacebookUserInfo) {
-          console.log('Facebook user info:', userInfo);
-          
-          // Create user object with profile picture
-          const userData = {
-            id: userInfo.id,
-            name: userInfo.name,
-            email: userInfo.email,
-            profilePicture: userInfo.picture?.data?.url,
-            loginMethod: 'facebook' as const
-          };
+    try {
+      // First, get Facebook user info
+      const userInfo = await new Promise<FacebookUserInfo>((resolve, reject) => {
+        window.FB.login(function (response: any) {
+          if (response.authResponse) {
+            console.log('Welcome! Fetching your info...');
+            window.FB.api('/me', { 
+              fields: 'name,email,picture.type(large)' 
+            }, function (userInfo: FacebookUserInfo) {
+              console.log('Facebook user info:', userInfo);
+              resolve(userInfo);
+            });
+          } else {
+            console.log('User cancelled login or did not fully authorize.');
+            reject(new Error('User cancelled login'));
+          }
+        }, { scope: 'email,public_profile' });
+      });
 
-          // Use the user context to login
-          login(userData);
-          
-          // Redirect to main page
-          setTimeout(() => {
-            setIsFacebookLoading(false);
-            console.log('Facebook login successful:', userData);
-            navigate('/');
-          }, 1000);
-        });
+      // Send user data to backend
+      const backendUrl = getBackendUrl();
+      const response = await fetch(`${backendUrl}/api/auth/facebook`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          name: userInfo.name,
+          email: userInfo.email,
+          facebookId: userInfo.id,
+          profilePicture: userInfo.picture?.data?.url
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success && data.data && data.data.user) {
+        // Success - user logged in and saved to database
+        console.log('Facebook login successful:', data);
+        login(data.data.user);
+        
+        // Redirect to main page
+        setTimeout(() => {
+          setIsFacebookLoading(false);
+          navigate('/');
+        }, 1000);
       } else {
-        console.log('User cancelled login or did not fully authorize.');
+        // Error from backend
+        const errorMsg = data.message || 'Facebook login failed';
+        console.error('Facebook login failed:', errorMsg);
+        alert(errorMsg);
         setIsFacebookLoading(false);
       }
-    }, { scope: 'email,public_profile' });
+    } catch (error) {
+      console.error('Facebook login error:', error);
+      alert('Facebook login failed. Please try again.');
+      setIsFacebookLoading(false);
+    }
   };
 
   return {

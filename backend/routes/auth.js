@@ -153,27 +153,40 @@ router.post('/facebook', async (req, res) => {
       });
     }
 
-    // Check if user exists
-    let user = await User.findOne({ where: { email } });
+    console.log('Facebook login attempt:', { name, email, facebookId, profilePicture });
+
+    // Check if user exists by email or facebook_id
+    let user = await User.findOne({ 
+      where: { 
+        [require('sequelize').Op.or]: [
+          { email: email },
+          { facebook_id: facebookId }
+        ]
+      } 
+    });
 
     if (user) {
       // Update existing user
       await user.update({
         name: name || user.name,
         profile_picture: profilePicture || user.profile_picture,
+        facebook_id: facebookId,
         login_method: 'facebook',
         last_login: new Date()
       });
+      console.log('Updated existing user:', user.id);
     } else {
       // Create new user
       user = await User.create({
         name: name || 'Facebook User',
         email,
+        facebook_id: facebookId,
         profile_picture: profilePicture,
         login_method: 'facebook',
         is_verified: true,
         last_login: new Date()
       });
+      console.log('Created new user:', user.id);
     }
 
     // Generate token
@@ -187,6 +200,8 @@ router.post('/facebook', async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       path: '/',
     });
+
+    console.log('Facebook login successful for user:', user.id);
 
     res.json({
       success: true,
