@@ -60,8 +60,7 @@ const User = sequelize.define('User', {
   },
   phone: {
     type: DataTypes.STRING(20),
-    allowNull: true,
-    unique: true
+    allowNull: true
   },
   location: {
     type: DataTypes.JSON,
