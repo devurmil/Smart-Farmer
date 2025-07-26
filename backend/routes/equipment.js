@@ -20,7 +20,7 @@ const upload = multer({ storage });
 // Public: Get all available equipment
 router.get('/', authMiddleware, async (req, res) => {
   try {
-    const { page = 1, limit = 10, user_id } = req.query;
+    const { page = 1, limit = 10, user_id, startDate, endDate } = req.query;
     const offset = (page - 1) * limit;
 
     console.log('Equipment GET request - User:', req.user.id, 'Role:', req.user.role);
@@ -50,9 +50,23 @@ router.get('/', authMiddleware, async (req, res) => {
     console.log('Equipment GET request - Found equipment count:', equipment.length);
     console.log('Equipment GET request - Total count:', totalCount);
 
+    // If date range is provided, check availability for each equipment
+    let result = equipment;
+    if (startDate && endDate) {
+      console.log('Checking availability for date range:', startDate, 'to', endDate);
+      result = await Promise.all(equipment.map(async (item) => {
+        const itemData = item.toJSON();
+        itemData.available = await equipmentController.isEquipmentAvailable(item.id, startDate, endDate);
+        return itemData;
+      }));
+    } else {
+      // Convert to plain objects if no date checking needed
+      result = equipment.map(item => item.toJSON());
+    }
+
     res.json({
       success: true,
-      data: equipment,
+      data: result,
       total: totalCount,
       page,
       limit,
@@ -71,6 +85,34 @@ router.post('/', authMiddleware, uploadEquipmentImage.single('image'), equipment
 
 // Public: Get equipment by ID
 router.get('/:id', equipmentController.getEquipmentById);
+
+// Check equipment availability for specific dates
+router.get('/:id/availability', authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { startDate, endDate } = req.query;
+    
+    if (!startDate || !endDate) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Start date and end date are required' 
+      });
+    }
+    
+    const availability = await equipmentController.getEquipmentAvailability(id, startDate, endDate);
+    
+    res.json({
+      success: true,
+      data: availability
+    });
+  } catch (error) {
+    console.error('Equipment availability check error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to check equipment availability' 
+    });
+  }
+});
 
 // Protected: Update equipment by ID
 router.put('/:id', authMiddleware, equipmentController.updateEquipment);

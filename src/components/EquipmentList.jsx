@@ -30,6 +30,7 @@ const EquipmentList = () => {
   const [dateRange, setDateRange] = useState({ startDate: '', endDate: '' });
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
+  const [showDateFilter, setShowDateFilter] = useState(false);
 
   useEffect(() => {
     const fetchEquipment = async () => {
@@ -155,7 +156,7 @@ const EquipmentList = () => {
         </div>
 
         {/* Date Range Selection */}
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid md:grid-cols-3 gap-6">
           <div>
             <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
               <Calendar className="w-4 h-4" />
@@ -184,7 +185,28 @@ const EquipmentList = () => {
               className="h-12 text-lg border-2 border-gray-200 focus:border-blue-500 rounded-lg"
             />
           </div>
+          <div className="flex items-end">
+            <Button
+              variant="outline"
+              onClick={() => setDateRange({ startDate: '', endDate: '' })}
+              className="h-12 px-6 text-lg"
+            >
+              Clear Dates
+            </Button>
+          </div>
         </div>
+        
+        {/* Date Range Status */}
+        {dateRange.startDate && dateRange.endDate && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <div className="flex items-center gap-2 text-blue-700">
+              <CheckCircle2 className="w-4 h-4" />
+              <span className="text-sm font-medium">
+                Checking availability for {dateRange.startDate} to {dateRange.endDate}
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Results Summary */}
@@ -243,9 +265,13 @@ const EquipmentList = () => {
                     : 'bg-red-100 text-red-800 border border-red-200'
                 }`}>
                   {item.available ? (
-                    <><CheckCircle2 className="w-3 h-3 inline mr-1" />Available</>
+                    <><CheckCircle2 className="w-3 h-3 inline mr-1" />
+                      {dateRange.startDate && dateRange.endDate ? 'Available' : 'Available'}
+                    </>
                   ) : (
-                    'Unavailable'
+                    <>
+                      {dateRange.startDate && dateRange.endDate ? 'Booked' : 'Unavailable'}
+                    </>
                   )}
                 </div>
               </div>
@@ -317,7 +343,10 @@ const EquipmentList = () => {
                     disabled={!item.available}
                   >
                     <Calendar className="w-4 h-4 mr-2" />
-                    {item.available ? 'Book Now' : 'Unavailable'}
+                    {item.available 
+                      ? (dateRange.startDate && dateRange.endDate ? 'Book Selected Dates' : 'Book Now')
+                      : (dateRange.startDate && dateRange.endDate ? 'Dates Unavailable' : 'Unavailable')
+                    }
                   </Button>
                 </div>
               </div>

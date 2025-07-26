@@ -51,6 +51,42 @@ exports.createBooking = async (req, res) => {
     
     console.log('Found equipment:', equipment.toJSON());
     
+    // Check for overlapping bookings
+    const overlappingBooking = await Booking.findOne({
+      where: {
+        equipmentId: equipmentId,
+        status: { [require('sequelize').Op.in]: ['pending', 'approved'] },
+        [require('sequelize').Op.or]: [
+          // Case 1: New booking starts within existing booking
+          {
+            startDate: { [require('sequelize').Op.between]: [startDate, endDate] }
+          },
+          // Case 2: New booking ends within existing booking
+          {
+            endDate: { [require('sequelize').Op.between]: [startDate, endDate] }
+          },
+          // Case 3: New booking completely encompasses existing booking
+          {
+            startDate: { [require('sequelize').Op.lte]: startDate },
+            endDate: { [require('sequelize').Op.gte]: endDate }
+          },
+          // Case 4: New booking starts before and ends after existing booking
+          {
+            startDate: { [require('sequelize').Op.lt]: startDate },
+            endDate: { [require('sequelize').Op.gt]: endDate }
+          }
+        ]
+      }
+    });
+
+    if (overlappingBooking) {
+      console.log('Overlapping booking found:', overlappingBooking.toJSON());
+      return res.status(409).json({ 
+        error: 'Equipment is already booked for the selected dates. Please choose different dates.',
+        message: 'Date conflict detected'
+      });
+    }
+    
     // Debug: Log booking data before insert
     const bookingData = {
       equipmentId: equipmentId,

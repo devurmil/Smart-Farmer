@@ -3,27 +3,46 @@ const { Booking } = require('../models');
 const path = require('path');
 
 // Helper: Check if equipment is available for a given date range
-async function isEquipmentAvailable(equipmentId, startDate, endDate) {
-  // Find any approved bookings that overlap with the requested range
-  const overlapping = await Booking.findOne({
-    where: {
-      equipmentId,
-      status: 'approved',
-      [require('sequelize').Op.or]: [
-        {
-          startDate: { [require('sequelize').Op.between]: [startDate, endDate] }
-        },
-        {
-          endDate: { [require('sequelize').Op.between]: [startDate, endDate] }
-        },
-        {
-          startDate: { [require('sequelize').Op.lte]: startDate },
-          endDate: { [require('sequelize').Op.gte]: endDate }
-        }
-      ]
-    }
-  });
-  return !overlapping;
+exports.isEquipmentAvailable = async function(equipmentId, startDate, endDate) {
+  try {
+    console.log(`Checking availability for equipment ${equipmentId} from ${startDate} to ${endDate}`);
+    
+    // Find any approved or pending bookings that overlap with the requested range
+    const overlapping = await Booking.findOne({
+      where: {
+        equipmentId,
+        status: { [require('sequelize').Op.in]: ['approved', 'pending'] },
+        [require('sequelize').Op.or]: [
+          // Case 1: Booking starts within the requested range
+          {
+            startDate: { [require('sequelize').Op.between]: [startDate, endDate] }
+          },
+          // Case 2: Booking ends within the requested range
+          {
+            endDate: { [require('sequelize').Op.between]: [startDate, endDate] }
+          },
+          // Case 3: Booking completely encompasses the requested range
+          {
+            startDate: { [require('sequelize').Op.lte]: startDate },
+            endDate: { [require('sequelize').Op.gte]: endDate }
+          },
+          // Case 4: Booking starts before and ends after the requested range
+          {
+            startDate: { [require('sequelize').Op.lt]: startDate },
+            endDate: { [require('sequelize').Op.gt]: endDate }
+          }
+        ]
+      }
+    });
+    
+    const isAvailable = !overlapping;
+    console.log(`Equipment ${equipmentId} availability: ${isAvailable ? 'Available' : 'Not Available'}`);
+    
+    return isAvailable;
+  } catch (error) {
+    console.error('Error checking equipment availability:', error);
+    return false; // Default to unavailable if there's an error
+  }
 }
 
 // Get all equipment (for route usage)
@@ -59,6 +78,27 @@ exports.getEquipmentCount = async (whereClause = {}) => {
     return count;
   } catch (err) {
     throw new Error('Failed to count equipment');
+  }
+};
+
+// Get equipment availability for a specific date range
+exports.getEquipmentAvailability = async (equipmentId, startDate, endDate) => {
+  try {
+    const isAvailable = await exports.isEquipmentAvailable(equipmentId, startDate, endDate);
+    return {
+      equipmentId,
+      startDate,
+      endDate,
+      available: isAvailable
+    };
+  } catch (err) {
+    console.error('Error getting equipment availability:', err);
+    return {
+      equipmentId,
+      startDate,
+      endDate,
+      available: false
+    };
   }
 };
 
