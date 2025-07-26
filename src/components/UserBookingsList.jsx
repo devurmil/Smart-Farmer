@@ -52,6 +52,7 @@ const UserBookingsList = () => {
   const { isConnected } = useSSE({
     onConnected: () => {
       console.log('SSE connected in UserBookingsList');
+      console.log('SSE connection status updated to: Connected');
     },
     onBookingCreated: (data) => {
       console.log('SSE: Booking created event received');
@@ -104,6 +105,11 @@ const UserBookingsList = () => {
       setLoading(false);
     }
   }, [user]);
+
+  // Monitor SSE connection status changes
+  useEffect(() => {
+    console.log('SSE connection status changed to:', isConnected);
+  }, [isConnected]);
 
   const handleCancelBooking = async (bookingId) => {
     if (!confirm('Are you sure you want to cancel this booking?')) return;

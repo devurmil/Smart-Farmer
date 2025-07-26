@@ -117,6 +117,7 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
   // SSE hook for real-time updates
   useSSE({
     onNewBooking: (data) => {
+      console.log('SSE: New booking event received:', data);
       setNotification(data.message);
       // Refresh equipment list to show new bookings
       fetchEquipment();
@@ -127,6 +128,7 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
       setTimeout(() => setNotification(''), 5000);
     },
     onBookingUpdated: (data) => {
+      console.log('SSE: Booking updated event received:', data);
       setNotification(data.message);
       // Refresh equipment list
       fetchEquipment();
@@ -137,6 +139,40 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
       setTimeout(() => setNotification(''), 5000);
     },
     onBookingCancelled: (data) => {
+      console.log('SSE: Booking cancelled event received:', data);
+      setNotification(data.message);
+      // Refresh equipment list
+      fetchEquipment();
+      // Refresh bookings for the specific equipment
+      if (data.booking && data.booking.equipmentId) {
+        fetchBookings(data.booking.equipmentId);
+      }
+      setTimeout(() => setNotification(''), 5000);
+    },
+    onBookingApproved: (data) => {
+      console.log('SSE: Booking approved event received:', data);
+      setNotification(data.message);
+      // Refresh equipment list
+      fetchEquipment();
+      // Refresh bookings for the specific equipment
+      if (data.booking && data.booking.equipmentId) {
+        fetchBookings(data.booking.equipmentId);
+      }
+      setTimeout(() => setNotification(''), 5000);
+    },
+    onBookingRejected: (data) => {
+      console.log('SSE: Booking rejected event received:', data);
+      setNotification(data.message);
+      // Refresh equipment list
+      fetchEquipment();
+      // Refresh bookings for the specific equipment
+      if (data.booking && data.booking.equipmentId) {
+        fetchBookings(data.booking.equipmentId);
+      }
+      setTimeout(() => setNotification(''), 5000);
+    },
+    onBookingCompleted: (data) => {
+      console.log('SSE: Booking completed event received:', data);
       setNotification(data.message);
       // Refresh equipment list
       fetchEquipment();
@@ -154,16 +190,16 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
     }
   }, [user, refreshTrigger]);
 
-  // Remove this useEffect that fetches bookings for all equipment after equipment is loaded
-  // useEffect(() => {
-  //   if (equipment.length > 0) {
-  //     equipment.forEach((item) => {
-  //       if (!bookingData[item.id]) {
-  //         fetchBookings(item.id);
-  //       }
-  //     });
-  //   }
-  // }, [equipment]);
+  // Fetch bookings for all equipment when equipment list loads
+  useEffect(() => {
+    if (equipment.length > 0) {
+      equipment.forEach((item) => {
+        if (!bookingData[item.id]) {
+          fetchBookings(item.id);
+        }
+      });
+    }
+  }, [equipment]);
 
   const handleView = (item) => {
     setSelectedEquipment(item);
@@ -376,9 +412,40 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
                     Available
                   </span>
                   <span className="text-xs text-gray-500">
-                    {item.bookings || 0} bookings
+                    {bookingData[item.id] ? bookingData[item.id].length : 0} bookings
                   </span>
                 </div>
+                
+                {/* Active Bookings Summary */}
+                {bookingData[item.id] && bookingData[item.id].length > 0 && (
+                  <div className="mt-2 p-2 bg-blue-50 rounded-lg">
+                    <div className="text-xs font-medium text-blue-800 mb-1">Active Bookings:</div>
+                    <div className="space-y-1">
+                      {bookingData[item.id]
+                        .filter(booking => booking.status === 'pending' || booking.status === 'approved')
+                        .slice(0, 2)
+                        .map((booking) => (
+                          <div key={booking.id} className="flex justify-between items-center text-xs">
+                            <span className="text-gray-600">
+                              {booking.startDate} - {booking.endDate}
+                            </span>
+                            <span className={`px-1 py-0.5 rounded text-xs ${
+                              booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                              booking.status === 'approved' ? 'bg-blue-100 text-blue-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {booking.status}
+                            </span>
+                          </div>
+                        ))}
+                      {bookingData[item.id].filter(booking => booking.status === 'pending' || booking.status === 'approved').length > 2 && (
+                        <div className="text-xs text-gray-500">
+                          +{bookingData[item.id].filter(booking => booking.status === 'pending' || booking.status === 'approved').length - 2} more
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 <div className="mt-4">
                   {bookingLoading[item.id] ? (
