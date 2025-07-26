@@ -41,7 +41,7 @@ const AddEquipmentForm = ({ onEquipmentAdded, isAdmin = false, owners = [], onCl
       const response = await fetch(`${getBackendUrl()}/api/equipment`, {
         method: 'POST',
         credentials: 'include',
-        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+        headers: {},
         body: formData,
       });
       

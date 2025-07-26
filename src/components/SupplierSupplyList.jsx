@@ -36,7 +36,7 @@ const SupplierSupplyList = ({ refreshTrigger }) => {
         
         const response = await fetch(url, {
           credentials: 'include',
-          headers: token ? { 'Authorization': `Bearer ${user}` } : {}
+          headers: {}
         });
         if (!response.ok) throw new Error('Failed to fetch supplies');
         const data = await response.json();
@@ -57,7 +57,7 @@ const SupplierSupplyList = ({ refreshTrigger }) => {
       const response = await fetch(`${getBackendUrl()}/api/supplies/${supplyId}`, {
         method: 'DELETE',
         credentials: 'include',
-        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+        headers: {}
       });
 
       if (!response.ok) throw new Error('Failed to delete supply');

@@ -37,7 +37,7 @@ const OrderSupplyModal = ({ supply, onClose, onOrderSuccess }) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+          {}
         },
         credentials: 'include',
         body: JSON.stringify(form),

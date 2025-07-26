@@ -48,27 +48,28 @@ const EquipmentRentalPage = () => {
       // Fetch owner's equipment count
       const equipmentResponse = await fetch(`${getBackendUrl()}/api/equipment/owner`, {
         credentials: 'include',
-        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+        headers: {}
       });
       if (equipmentResponse.ok) {
         const equipmentData = await equipmentResponse.json();
         setOwnerStats(prev => ({
           ...prev,
-          totalEquipment: equipmentData.length
+          totalEquipment: equipmentData.data ? equipmentData.data.length : 0
         }));
       }
       // Fetch owner's bookings
       const bookingsResponse = await fetch(`${getBackendUrl()}/api/booking/owner`, {
         credentials: 'include',
-        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+        headers: {}
       });
       if (bookingsResponse.ok) {
         const bookingsData = await bookingsResponse.json();
-        const activeBookings = bookingsData.filter(b => b.status === 'approved' || b.status === 'pending').length;
+        const bookings = bookingsData.data || [];
+        const activeBookings = bookings.filter(b => b.status === 'approved' || b.status === 'pending').length;
         // Calculate monthly earnings (this month's completed bookings)
         const currentMonth = new Date().getMonth();
         const currentYear = new Date().getFullYear();
-        const monthlyEarnings = bookingsData
+        const monthlyEarnings = bookings
           .filter(b => {
             const bookingDate = new Date(b.startDate);
             return b.status === 'completed' &&
@@ -110,7 +111,7 @@ const EquipmentRentalPage = () => {
       // Fetch farmer's bookings
       const bookingsResponse = await fetch(`${getBackendUrl()}/api/booking/user`, {
         credentials: 'include',
-        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+        headers: {}
       });
       if (bookingsResponse.ok) {
         const bookingsData = await bookingsResponse.json();

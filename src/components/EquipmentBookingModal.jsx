@@ -85,8 +85,7 @@ const EquipmentBookingModal = ({ equipment, onClose, onBookingSuccess, startDate
         method: 'POST',
         credentials: 'include',
         headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           equipmentId: equipment.id,

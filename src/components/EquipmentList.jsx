@@ -42,7 +42,7 @@ const EquipmentList = () => {
         }
         const response = await fetch(url, {
           credentials: 'include',
-          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+          headers: {}
         });
         if (!response.ok) throw new Error('Failed to fetch equipment');
         const data = await response.json();

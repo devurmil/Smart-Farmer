@@ -27,7 +27,7 @@ const SupplyList = () => {
       try {
         const response = await fetch(`${getBackendUrl()}/api/supplies`, {
           credentials: 'include',
-          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+          headers: {}
         });
         if (!response.ok) throw new Error('Failed to fetch supplies');
         const data = await response.json();

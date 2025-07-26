@@ -24,7 +24,7 @@ const SupplyOrders = ({ userRole }) => {
       try {
         const response = await fetch(`${getBackendUrl()}/api/supplies/orders`, {
           credentials: 'include',
-          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+          headers: {}
         });
         if (!response.ok) throw new Error('Failed to fetch orders');
         const data = await response.json();
@@ -44,7 +44,7 @@ const SupplyOrders = ({ userRole }) => {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+          {}
         },
         credentials: 'include',
         body: JSON.stringify({ status: newStatus }),

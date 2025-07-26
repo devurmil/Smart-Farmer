@@ -58,7 +58,7 @@ const AddSupplyForm = ({ onSupplyAdded, isAdmin = false, suppliers = [], onClose
       
       const headers = {};
       if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
+        // Using cookie-based authentication
       }
       
       const response = await fetch(`${getBackendUrl()}/api/supplies`, {
