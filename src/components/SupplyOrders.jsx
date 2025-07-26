@@ -43,8 +43,7 @@ const SupplyOrders = ({ userRole }) => {
       const response = await fetch(`${getBackendUrl()}/api/supplies/orders/${orderId}/status`, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json',
-          {}
+          'Content-Type': 'application/json'
         },
         credentials: 'include',
         body: JSON.stringify({ status: newStatus }),

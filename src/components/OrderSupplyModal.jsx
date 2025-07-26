@@ -36,8 +36,7 @@ const OrderSupplyModal = ({ supply, onClose, onOrderSuccess }) => {
       const response = await fetch(`${getBackendUrl()}/api/supplies/${supply.id}/order`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          {}
+          'Content-Type': 'application/json'
         },
         credentials: 'include',
         body: JSON.stringify(form),
