@@ -94,28 +94,44 @@ const EquipmentRentalPage = () => {
   const fetchFarmerStats = async () => {
     if (!user || user?.role === 'owner') return;
 
+    console.log('fetchFarmerStats called for user:', user?.id);
+
     try {
       // Fetch available equipment count
-      const equipmentResponse = await fetch(`${getBackendUrl()}/api/equipment`);
+      const equipmentUrl = `${getBackendUrl()}/api/equipment`;
+      console.log('Fetching equipment from:', equipmentUrl);
+      const equipmentResponse = await fetch(equipmentUrl, {
+        credentials: 'include'
+      });
+      console.log('Equipment response status:', equipmentResponse.status);
+      
       if (equipmentResponse.ok) {
         const equipmentData = await equipmentResponse.json();
-        const totalEquipment = equipmentData.length; // Show total equipment count
-        const avgPrice = equipmentData.length > 0 ?
-          Math.round(equipmentData.reduce((sum, e) => sum + (parseFloat(e.price) || 0), 0) / equipmentData.length) : 0;
+        console.log('Equipment data:', equipmentData);
+        const totalEquipment = Array.isArray(equipmentData) ? equipmentData.length : 0;
+        const avgPrice = totalEquipment > 0 ?
+          Math.round(equipmentData.reduce((sum, e) => sum + (parseFloat(e.price) || 0), 0) / totalEquipment) : 0;
+        console.log('Setting farmer stats - equipment:', totalEquipment, 'avgPrice:', avgPrice);
         setFarmerStats(prev => ({
           ...prev,
-          availableEquipment: totalEquipment, // Show all equipment, not just available
+          availableEquipment: totalEquipment,
           avgPrice
         }));
       }
+      
       // Fetch farmer's bookings
-      const bookingsResponse = await fetch(`${getBackendUrl()}/api/booking/user`, {
-        credentials: 'include',
-        headers: {}
+      const bookingsUrl = `${getBackendUrl()}/api/booking/user`;
+      console.log('Fetching bookings from:', bookingsUrl);
+      const bookingsResponse = await fetch(bookingsUrl, {
+        credentials: 'include'
       });
+      console.log('Bookings response status:', bookingsResponse.status);
+      
       if (bookingsResponse.ok) {
         const bookingsData = await bookingsResponse.json();
-        const myBookings = bookingsData.length;
+        console.log('Bookings data:', bookingsData);
+        const myBookings = Array.isArray(bookingsData) ? bookingsData.length : 0;
+        console.log('Setting farmer stats - myBookings:', myBookings);
         setFarmerStats(prev => ({
           ...prev,
           myBookings
@@ -127,11 +143,17 @@ const EquipmentRentalPage = () => {
   };
 
 
-  React.useEffect(() => {
+  useEffect(() => {
+    console.log('EquipmentRentalPage useEffect triggered');
+    console.log('User:', user);
+    console.log('User role:', user?.role);
+    
     if (user) {
       if (user?.role === 'owner') {
+        console.log('Fetching owner stats...');
         fetchOwnerStats();
       } else if (user?.role === 'farmer') {
+        console.log('Fetching farmer stats...');
         fetchFarmerStats();
       }
     }

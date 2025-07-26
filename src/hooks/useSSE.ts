@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { useUser } from '@/contexts/UserContext';
 import { getBackendUrl } from '@/lib/utils';
 
@@ -24,9 +24,13 @@ export const useSSE = (options: UseSSEOptions = {}) => {
   const { user } = useUser();
   const eventSourceRef = useRef<EventSource | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+  const connectingRef = useRef(false);
 
   const connect = useCallback(async () => {
-    if (!user) return;
+    if (!user || connectingRef.current || isConnected) return;
+
+    connectingRef.current = true;
 
     try {
       const backendUrl = await getBackendUrl();
@@ -35,6 +39,7 @@ export const useSSE = (options: UseSSEOptions = {}) => {
       // Close existing connection if any
       if (eventSourceRef.current) {
         eventSourceRef.current.close();
+        eventSourceRef.current = null;
       }
 
       // Create new EventSource with credentials
@@ -43,6 +48,8 @@ export const useSSE = (options: UseSSEOptions = {}) => {
 
       eventSource.onopen = () => {
         console.log('SSE connection established');
+        setIsConnected(true);
+        connectingRef.current = false;
         options.onConnected?.();
       };
 
@@ -86,7 +93,10 @@ export const useSSE = (options: UseSSEOptions = {}) => {
 
       eventSource.onerror = (error) => {
         console.error('SSE connection error:', error);
+        setIsConnected(false);
+        connectingRef.current = false;
         eventSource.close();
+        eventSourceRef.current = null;
         
         // Attempt to reconnect after 5 seconds
         if (reconnectTimeoutRef.current) {
@@ -100,8 +110,9 @@ export const useSSE = (options: UseSSEOptions = {}) => {
 
     } catch (error) {
       console.error('Error establishing SSE connection:', error);
+      connectingRef.current = false;
     }
-  }, [user, options]);
+  }, [user, options, isConnected]);
 
   const disconnect = useCallback(() => {
     if (eventSourceRef.current) {
@@ -112,19 +123,21 @@ export const useSSE = (options: UseSSEOptions = {}) => {
       clearTimeout(reconnectTimeoutRef.current);
       reconnectTimeoutRef.current = null;
     }
+    setIsConnected(false);
+    connectingRef.current = false;
   }, []);
 
   useEffect(() => {
-    if (user) {
+    if (user && !isConnected && !connectingRef.current) {
       connect();
-    } else {
+    } else if (!user) {
       disconnect();
     }
 
     return () => {
       disconnect();
     };
-  }, [user, connect, disconnect]);
+  }, [user, connect, disconnect, isConnected]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -136,6 +149,6 @@ export const useSSE = (options: UseSSEOptions = {}) => {
   return {
     connect,
     disconnect,
-    isConnected: !!eventSourceRef.current
+    isConnected
   };
 }; 
