@@ -28,13 +28,12 @@ const UserBookingsList = () => {
     try {
       const backendUrl = await getBackendUrl();
       const url = `${backendUrl}/api/booking/user`;
-      console.log('Fetching from URL:', url);
-      console.log('Using token:', token ? 'Token present' : 'No token');
+             console.log('Fetching from URL:', url);
+       console.log('Using cookie-based authentication');
       
-      const response = await fetch(url, {
-        credentials: 'include',
-        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-      });
+             const response = await fetch(url, {
+         credentials: 'include'
+       });
       
       console.log('Response status:', response.status);
       console.log('Response headers:', Object.fromEntries(response.headers.entries()));
@@ -123,37 +122,35 @@ const UserBookingsList = () => {
     if (!confirm('Are you sure you want to cancel this booking?')) return;
     
     try {
-      console.log('Canceling booking ID:', bookingId);
-      console.log('Using token:', user ? 'Token present' : 'No token');
+             console.log('Canceling booking ID:', bookingId);
+       console.log('Using cookie-based authentication');
       
-      // Test server connectivity first
-      console.log('Testing server connectivity...');
-      try {
-        const testResponse = await fetch(`${getBackendUrl()}/api/booking/user`, {
-          credentials: 'include',
-          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-        });
-        console.log('Server connectivity test - Status:', testResponse.status);
-        if (!testResponse.ok) {
-          throw new Error(`Server test failed: ${testResponse.status}`);
-        }
-      } catch (serverError) {
-        console.error('Server connectivity test failed:', serverError);
-        throw new Error('Backend server is not responding. Please make sure the server is running.');
-      }
+             // Test server connectivity first
+       console.log('Testing server connectivity...');
+       try {
+         const testResponse = await fetch(`${getBackendUrl()}/api/booking/user`, {
+           credentials: 'include'
+         });
+         console.log('Server connectivity test - Status:', testResponse.status);
+         if (!testResponse.ok) {
+           throw new Error(`Server test failed: ${testResponse.status}`);
+         }
+       } catch (serverError) {
+         console.error('Server connectivity test failed:', serverError);
+         throw new Error('Backend server is not responding. Please make sure the server is running.');
+       }
       
       // Use the delete endpoint directly
       const url = `${getBackendUrl()}/api/booking/${bookingId}`;
       console.log('Delete URL:', url);
       
-      const response = await fetch(url, {
-        method: 'DELETE',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-        }
-      });
+             const response = await fetch(url, {
+         method: 'DELETE',
+         credentials: 'include',
+         headers: {
+           'Content-Type': 'application/json'
+         }
+       });
       
       console.log('DELETE response status:', response.status);
       
@@ -265,22 +262,21 @@ const UserBookingsList = () => {
           >
             Refresh Bookings
           </button>
-          <button
-            onClick={async () => {
-              try {
-                const backendUrl = await getBackendUrl();
-                const response = await fetch(`${backendUrl}/api/booking/test`, {
-                  credentials: 'include',
-                  headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-                });
-                const data = await response.json();
-                console.log('Test endpoint response:', data);
-                alert(`Backend test successful: ${data.message}`);
-              } catch (err) {
-                console.error('Test endpoint error:', err);
-                alert(`Backend test failed: ${err.message}`);
-              }
-            }}
+                     <button
+             onClick={async () => {
+               try {
+                 const backendUrl = await getBackendUrl();
+                 const response = await fetch(`${backendUrl}/api/booking/test`, {
+                   credentials: 'include'
+                 });
+                 const data = await response.json();
+                 console.log('Test endpoint response:', data);
+                 alert(`Backend test successful: ${data.message}`);
+               } catch (err) {
+                 console.error('Test endpoint error:', err);
+                 alert(`Backend test failed: ${err.message}`);
+               }
+             }}
             className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700"
           >
             Test Backend

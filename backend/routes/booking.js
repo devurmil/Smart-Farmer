@@ -22,7 +22,8 @@ router.get('/stream', authMiddleware, (req, res) => {
     'Content-Type': 'text/event-stream',
     'Cache-Control': 'no-cache',
     'Connection': 'keep-alive',
-    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Origin': 'https://smart-farmer-three.vercel.app',
+    'Access-Control-Allow-Credentials': 'true',
     'Access-Control-Allow-Headers': 'Cache-Control'
   });
 
