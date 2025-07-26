@@ -83,6 +83,7 @@ const AdminPage: React.FC = () => {
   const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   // Content management state
   const [showContent, setShowContent] = useState(false);
   const [contentUser, setContentUser] = useState<User | null>(null);
@@ -171,11 +172,14 @@ const AdminPage: React.FC = () => {
   const handleEdit = (user: User) => {
     setEditUser(user);
     setShowEdit(true);
+    setActionError(null);
+    setActionSuccess(null);
   };
   const submitEdit = async () => {
     if (!editUser || !editUser.id) return;
     setActionLoading(true);
     setActionError(null);
+    setActionSuccess(null);
     try {
       const res = await fetch(`${getBackendUrl()}/api/users/${editUser.id}`, {
         method: 'PUT',
@@ -187,9 +191,21 @@ const AdminPage: React.FC = () => {
       });
       const data = await res.json();
       if (!data.success) throw new Error(data.message || 'Failed to update user');
-      setShowEdit(false);
-      setEditUser(null);
-      fetchUsers();
+      
+      // Show success message
+      const passwordChanged = editUser.password && editUser.password.trim() !== '';
+      const successMessage = passwordChanged 
+        ? 'User updated successfully. Password has been changed.'
+        : 'User updated successfully.';
+      setActionSuccess(successMessage);
+      
+      // Clear the form after a short delay
+      setTimeout(() => {
+        setShowEdit(false);
+        setEditUser(null);
+        setActionSuccess(null);
+        fetchUsers();
+      }, 1500);
     } catch (err: any) {
       setActionError(err.message || 'Error updating user');
     } finally {
@@ -1018,7 +1034,7 @@ const AdminPage: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
                 <input
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Leave blank to keep current password"
+                  placeholder="Enter new password (leave blank to keep current)"
                   type="password"
                   onChange={e => setEditUser({ ...editUser, password: e.target.value })}
                 />
@@ -1041,10 +1057,15 @@ const AdminPage: React.FC = () => {
                 <p className="text-red-700 text-sm">{actionError}</p>
               </div>
             )}
+            {actionSuccess && (
+              <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                <p className="text-green-700 text-sm">{actionSuccess}</p>
+              </div>
+            )}
             <div className="flex justify-end gap-3 mt-6">
               <button
                 className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-                onClick={() => { setShowEdit(false); setEditUser(null); }}
+                onClick={() => { setShowEdit(false); setEditUser(null); setActionSuccess(null); setActionError(null); }}
               >
                 Cancel
               </button>

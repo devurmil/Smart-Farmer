@@ -57,7 +57,18 @@ router.put('/:id', auth, async (req, res) => {
     if (email) user.email = email;
     if (phone) user.phone = phone;
     if (role) user.role = role;
-    if (password) user.password = await bcrypt.hash(password, 12);
+    // Only update password if a non-empty password is provided
+    // The User model's beforeUpdate hook will handle the hashing automatically
+    if (password && password.trim() !== '') {
+      // Validate password length
+      if (password.length < 6) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Password must be at least 6 characters long' 
+        });
+      }
+      user.password = password;
+    }
     await user.save();
     const updatedUser = user.toJSON();
     delete updatedUser.password;
@@ -78,12 +89,20 @@ router.post('/', auth, async (req, res) => {
     if (!name || !email || !password || !role) {
       return res.status(400).json({ success: false, message: 'Name, email, password, and role are required' });
     }
+    
+    // Validate password length
+    if (password.length < 6) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Password must be at least 6 characters long' 
+      });
+    }
     const existing = await User.findOne({ where: { email } });
     if (existing) {
       return res.status(400).json({ success: false, message: 'User with this email already exists' });
     }
-    const hashedPassword = await bcrypt.hash(password, 12);
-    const newUser = await User.create({ name, email, phone, password: hashedPassword, role });
+    // The User model's beforeCreate hook will handle the password hashing automatically
+    const newUser = await User.create({ name, email, phone, password, role });
     const userObj = newUser.toJSON();
     delete userObj.password;
     res.status(201).json({ success: true, message: 'User created successfully', data: { user: userObj } });
