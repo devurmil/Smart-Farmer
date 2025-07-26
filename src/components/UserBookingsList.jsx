@@ -3,12 +3,14 @@ import { useUser } from '../contexts/UserContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, AlertCircle, XCircle, CheckCircle, Clock, Calendar, X } from 'lucide-react';
 import { getBackendUrl } from '@/lib/utils';
+import { useSSE } from '@/hooks/useSSE';
 
 const UserBookingsList = () => {
   const { user, token } = useUser();
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [notification, setNotification] = useState('');
 
   const fetchUserBookings = async () => {
     if (!user) return;
@@ -31,6 +33,40 @@ const UserBookingsList = () => {
       setLoading(false);
     }
   };
+
+  // SSE hook for real-time updates
+  useSSE({
+    onBookingCreated: (data) => {
+      setNotification(data.message);
+      fetchUserBookings(); // Refresh the list
+      setTimeout(() => setNotification(''), 5000);
+    },
+    onBookingApproved: (data) => {
+      setNotification(data.message);
+      fetchUserBookings(); // Refresh the list
+      setTimeout(() => setNotification(''), 5000);
+    },
+    onBookingRejected: (data) => {
+      setNotification(data.message);
+      fetchUserBookings(); // Refresh the list
+      setTimeout(() => setNotification(''), 5000);
+    },
+    onBookingCompleted: (data) => {
+      setNotification(data.message);
+      fetchUserBookings(); // Refresh the list
+      setTimeout(() => setNotification(''), 5000);
+    },
+    onBookingCancelled: (data) => {
+      setNotification(data.message);
+      fetchUserBookings(); // Refresh the list
+      setTimeout(() => setNotification(''), 5000);
+    },
+    onBookingUpdated: (data) => {
+      setNotification(data.message);
+      fetchUserBookings(); // Refresh the list
+      setTimeout(() => setNotification(''), 5000);
+    }
+  });
 
   useEffect(() => {
     if (user) {
@@ -166,6 +202,16 @@ const UserBookingsList = () => {
 
   return (
     <div className="space-y-4">
+      {/* Real-time notification */}
+      {notification && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+          <div className="flex items-center">
+            <CheckCircle className="w-5 h-5 text-green-600 mr-2" />
+            <span className="text-green-800 font-medium">{notification}</span>
+          </div>
+        </div>
+      )}
+      
       {bookings.map((booking) => (
         <Card key={booking.id} className="overflow-hidden">
           <CardContent className="p-4">

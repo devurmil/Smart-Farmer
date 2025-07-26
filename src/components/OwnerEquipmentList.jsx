@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { getBackendUrl } from '@/lib/utils';
+import { useSSE } from '@/hooks/useSSE';
 
 const OwnerEquipmentList = ({ refreshTrigger }) => {
   const { user, token } = useUser();
@@ -28,6 +29,7 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [bookingData, setBookingData] = useState({});
   const [bookingLoading, setBookingLoading] = useState({});
+  const [notification, setNotification] = useState('');
   // Pagination state
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
@@ -111,6 +113,40 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
       setBookingLoading((prev) => ({ ...prev, [equipmentId]: false }));
     }
   };
+
+  // SSE hook for real-time updates
+  useSSE({
+    onNewBooking: (data) => {
+      setNotification(data.message);
+      // Refresh equipment list to show new bookings
+      fetchEquipment();
+      // Refresh bookings for the specific equipment
+      if (data.booking && data.booking.equipmentId) {
+        fetchBookings(data.booking.equipmentId);
+      }
+      setTimeout(() => setNotification(''), 5000);
+    },
+    onBookingUpdated: (data) => {
+      setNotification(data.message);
+      // Refresh equipment list
+      fetchEquipment();
+      // Refresh bookings for the specific equipment
+      if (data.booking && data.booking.equipmentId) {
+        fetchBookings(data.booking.equipmentId);
+      }
+      setTimeout(() => setNotification(''), 5000);
+    },
+    onBookingCancelled: (data) => {
+      setNotification(data.message);
+      // Refresh equipment list
+      fetchEquipment();
+      // Refresh bookings for the specific equipment
+      if (data.booking && data.booking.equipmentId) {
+        fetchBookings(data.booking.equipmentId);
+      }
+      setTimeout(() => setNotification(''), 5000);
+    }
+  });
 
   useEffect(() => {
     if (user) {
@@ -261,6 +297,16 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
 
   return (
     <>
+      {/* Real-time notification */}
+      {notification && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center">
+            <CheckCircle className="w-5 h-5 text-blue-600 mr-2" />
+            <span className="text-blue-800 font-medium">{notification}</span>
+          </div>
+        </div>
+      )}
+      
       {/* Pagination Controls */}
       {totalPages > 1 && (
         <div className="flex justify-center items-center mb-4 gap-2">

@@ -100,10 +100,10 @@ const EquipmentBookingModal = ({ equipment, onClose, onBookingSuccess, startDate
         }
         throw new Error(errorData.message || 'Failed to book equipment');
       }
-      setSuccess('Booking request sent!');
+      setSuccess('Booking request sent! The equipment owner will be notified immediately.');
       setTimeout(() => {
         onBookingSuccess();
-      }, 2000);
+      }, 3000);
     } catch (err) {
       setError(err.message || 'Failed to book equipment');
     } finally {

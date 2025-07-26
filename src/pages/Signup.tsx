@@ -109,7 +109,7 @@ const Signup = () => {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Failed to verify OTP');
       setSuccess('Signup successful! Logging you in...');
-      login(data.data.user, data.data.token);
+      login(data.data.user);
       setTimeout(() => navigate('/'), 1000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to verify OTP');

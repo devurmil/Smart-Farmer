@@ -433,20 +433,40 @@ const AdminPage: React.FC = () => {
           credentials: 'include',
         });
         const farmsData = await farmsRes.json();
+        if (!farmsData.success) {
+          console.error('Farms API error:', farmsData.message);
+        }
         setFarms(farmsData.data?.farms || []);
+        
         // Fetch equipment
         const equipRes = await fetch(`${getBackendUrl()}/api/equipment?user_id=${contentUser.id}`, {
           credentials: 'include',
         });
         const equipData = await equipRes.json();
-        setEquipment(equipData.data?.equipment || []);
+        console.log('Equipment API response:', equipData);
+        if (!equipData.success) {
+          console.error('Equipment API error:', equipData.message);
+        }
+        // Fix: equipment data is directly in equipData.data, not equipData.data.equipment
+        const equipmentData = equipData.data || [];
+        console.log('Equipment data to set:', equipmentData);
+        setEquipment(equipmentData);
+        
         // Fetch supplies
         const supplyRes = await fetch(`${getBackendUrl()}/api/supplies?user_id=${contentUser.id}`, {
           credentials: 'include',
         });
         const supplyData = await supplyRes.json();
-        setSupplies(supplyData.data?.supplies || []);
+        console.log('Supplies API response:', supplyData);
+        if (!supplyData.success) {
+          console.error('Supplies API error:', supplyData.message);
+        }
+        // Fix: supplies data is directly in supplyData.data, not supplyData.data.supplies
+        const suppliesData = supplyData.data || [];
+        console.log('Supplies data to set:', suppliesData);
+        setSupplies(suppliesData);
       } catch (err: any) {
+        console.error('Error fetching user content:', err);
         setContentError(err.message || 'Error fetching user content');
       } finally {
         setContentLoading(false);
@@ -643,7 +663,11 @@ const AdminPage: React.FC = () => {
                               <Edit className="h-4 w-4" />
                             </button>
                             <button
-                              onClick={() => { setShowContent(true); setContentUser(user); }}
+                              onClick={() => { 
+                                console.log('Opening content modal for user:', user);
+                                setShowContent(true); 
+                                setContentUser(user); 
+                              }}
                               className="p-1 text-green-600 hover:bg-green-100 rounded"
                               title="View Content"
                             >
@@ -960,6 +984,9 @@ const AdminPage: React.FC = () => {
                       {equipment.map((eq: any) => (
                         <div key={eq.id} className="bg-white rounded p-3">
                           <p className="font-medium text-gray-900">{eq.name || eq.type || 'Equipment'}</p>
+                          <p className="text-sm text-gray-500">{eq.type}</p>
+                          <p className="text-sm text-green-600">₹{eq.price}/day</p>
+                          <p className="text-xs text-gray-400">{eq.available ? 'Available' : 'Unavailable'}</p>
                         </div>
                       ))}
                     </div>
@@ -980,6 +1007,10 @@ const AdminPage: React.FC = () => {
                       {supplies.map((supply: any) => (
                         <div key={supply.id} className="bg-white rounded p-3">
                           <p className="font-medium text-gray-900">{supply.name || supply.type || 'Supply'}</p>
+                          <p className="text-sm text-gray-500 capitalize">{supply.category}</p>
+                          <p className="text-sm text-purple-600">₹{supply.price}/{supply.unit}</p>
+                          <p className="text-xs text-gray-400">Qty: {supply.quantity} {supply.unit}</p>
+                          <p className="text-xs text-gray-400">{supply.available ? 'Available' : 'Unavailable'}</p>
                         </div>
                       ))}
                     </div>

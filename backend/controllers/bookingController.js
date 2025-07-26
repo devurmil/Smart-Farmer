@@ -65,8 +65,30 @@ exports.createBooking = async (req, res) => {
     const booking = await Booking.create(bookingData);
     console.log('Created booking:', booking.toJSON());
     
-    // Notification to owner (for now, just log)
-    console.log(`NOTIFICATION: Equipment owner ${equipment.ownerId} - New booking request for equipment ${equipmentId}`);
+    // Send real-time notification to equipment owner
+    if (global.sseClients && global.sseClients.has(equipment.ownerId)) {
+      const ownerRes = global.sseClients.get(equipment.ownerId);
+      const notification = {
+        type: 'new_booking',
+        message: 'New booking request received',
+        booking: booking.toJSON(),
+        equipment: equipment.toJSON()
+      };
+      ownerRes.write(`data: ${JSON.stringify(notification)}\n\n`);
+    }
+    
+    // Send real-time notification to the user who made the booking
+    if (global.sseClients && global.sseClients.has(req.user.id)) {
+      const userRes = global.sseClients.get(req.user.id);
+      const notification = {
+        type: 'booking_created',
+        message: 'Booking request sent successfully',
+        booking: booking.toJSON(),
+        equipment: equipment.toJSON()
+      };
+      userRes.write(`data: ${JSON.stringify(notification)}\n\n`);
+    }
+    
     res.status(201).json(booking);
   } catch (err) {
     // Debug: Log the error stack and full error object
@@ -142,12 +164,38 @@ exports.approveBooking = async (req, res) => {
     if (booking.ownerId !== req.user.id) return res.status(403).json({ error: 'Not authorized.' });
     booking.status = 'approved';
     await booking.save();
+    
     // Mark equipment as unavailable
     const equipment = await Equipment.findByPk(booking.equipmentId);
     if (equipment) {
       equipment.available = false;
       await equipment.save();
     }
+    
+    // Send real-time notification to the user who made the booking
+    if (global.sseClients && global.sseClients.has(booking.userId)) {
+      const userRes = global.sseClients.get(booking.userId);
+      const notification = {
+        type: 'booking_approved',
+        message: 'Your booking has been approved!',
+        booking: booking.toJSON(),
+        equipment: equipment ? equipment.toJSON() : null
+      };
+      userRes.write(`data: ${JSON.stringify(notification)}\n\n`);
+    }
+    
+    // Send real-time notification to the owner
+    if (global.sseClients && global.sseClients.has(req.user.id)) {
+      const ownerRes = global.sseClients.get(req.user.id);
+      const notification = {
+        type: 'booking_updated',
+        message: 'Booking approved successfully',
+        booking: booking.toJSON(),
+        equipment: equipment ? equipment.toJSON() : null
+      };
+      ownerRes.write(`data: ${JSON.stringify(notification)}\n\n`);
+    }
+    
     res.json(booking);
   } catch (err) {
     res.status(500).json({ error: 'Failed to approve booking.' });
@@ -162,12 +210,38 @@ exports.completeBooking = async (req, res) => {
     if (booking.ownerId !== req.user.id) return res.status(403).json({ error: 'Not authorized.' });
     booking.status = 'completed';
     await booking.save();
+    
     // Mark equipment as available again
     const equipment = await Equipment.findByPk(booking.equipmentId);
     if (equipment) {
       equipment.available = true;
       await equipment.save();
     }
+    
+    // Send real-time notification to the user who made the booking
+    if (global.sseClients && global.sseClients.has(booking.userId)) {
+      const userRes = global.sseClients.get(booking.userId);
+      const notification = {
+        type: 'booking_completed',
+        message: 'Your booking has been completed',
+        booking: booking.toJSON(),
+        equipment: equipment ? equipment.toJSON() : null
+      };
+      userRes.write(`data: ${JSON.stringify(notification)}\n\n`);
+    }
+    
+    // Send real-time notification to the owner
+    if (global.sseClients && global.sseClients.has(req.user.id)) {
+      const ownerRes = global.sseClients.get(req.user.id);
+      const notification = {
+        type: 'booking_updated',
+        message: 'Booking completed successfully',
+        booking: booking.toJSON(),
+        equipment: equipment ? equipment.toJSON() : null
+      };
+      ownerRes.write(`data: ${JSON.stringify(notification)}\n\n`);
+    }
+    
     res.json(booking);
   } catch (err) {
     res.status(500).json({ error: 'Failed to complete booking.' });
@@ -182,6 +256,29 @@ exports.declineBooking = async (req, res) => {
     if (booking.ownerId !== req.user.id) return res.status(403).json({ error: 'Not authorized.' });
     booking.status = 'rejected';
     await booking.save();
+    
+    // Send real-time notification to the user who made the booking
+    if (global.sseClients && global.sseClients.has(booking.userId)) {
+      const userRes = global.sseClients.get(booking.userId);
+      const notification = {
+        type: 'booking_rejected',
+        message: 'Your booking has been declined',
+        booking: booking.toJSON()
+      };
+      userRes.write(`data: ${JSON.stringify(notification)}\n\n`);
+    }
+    
+    // Send real-time notification to the owner
+    if (global.sseClients && global.sseClients.has(req.user.id)) {
+      const ownerRes = global.sseClients.get(req.user.id);
+      const notification = {
+        type: 'booking_updated',
+        message: 'Booking declined successfully',
+        booking: booking.toJSON()
+      };
+      ownerRes.write(`data: ${JSON.stringify(notification)}\n\n`);
+    }
+    
     res.json({ message: 'Booking declined', booking });
   } catch (err) {
     res.status(500).json({ error: 'Failed to decline booking.' });
@@ -222,6 +319,29 @@ exports.cancelBooking = async (req, res) => {
     booking.status = 'cancelled';
     await booking.save();
     console.log('Booking cancelled successfully');
+    
+    // Send real-time notification to the equipment owner
+    if (global.sseClients && global.sseClients.has(booking.ownerId)) {
+      const ownerRes = global.sseClients.get(booking.ownerId);
+      const notification = {
+        type: 'booking_cancelled',
+        message: 'A booking has been cancelled',
+        booking: booking.toJSON()
+      };
+      ownerRes.write(`data: ${JSON.stringify(notification)}\n\n`);
+    }
+    
+    // Send real-time notification to the user who cancelled
+    if (global.sseClients && global.sseClients.has(req.user.id)) {
+      const userRes = global.sseClients.get(req.user.id);
+      const notification = {
+        type: 'booking_updated',
+        message: 'Booking cancelled successfully',
+        booking: booking.toJSON()
+      };
+      userRes.write(`data: ${JSON.stringify(notification)}\n\n`);
+    }
+    
     res.json({ message: 'Booking cancelled successfully', booking });
   } catch (err) {
     console.error('Cancel booking error:', err);

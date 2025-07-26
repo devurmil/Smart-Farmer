@@ -3,6 +3,32 @@ const router = express.Router();
 const bookingController = require('../controllers/bookingController');
 const { auth: authMiddleware } = require('../middleware/auth');
 
+// SSE endpoint for real-time booking updates
+router.get('/stream', authMiddleware, (req, res) => {
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Cache-Control'
+  });
+
+  // Send initial connection message
+  res.write(`data: ${JSON.stringify({ type: 'connected', message: 'SSE connection established' })}\n\n`);
+
+  // Store the response object for later use
+  const clientId = req.user.id;
+  if (!global.sseClients) {
+    global.sseClients = new Map();
+  }
+  global.sseClients.set(clientId, res);
+
+  // Handle client disconnect
+  req.on('close', () => {
+    global.sseClients.delete(clientId);
+  });
+});
+
 // Create a new booking (protected)
 router.post('/', authMiddleware, bookingController.createBooking);
 
