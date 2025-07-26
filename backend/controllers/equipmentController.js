@@ -29,6 +29,9 @@ async function isEquipmentAvailable(equipmentId, startDate, endDate) {
 // Get all equipment (for route usage)
 exports.getAllEquipment = async (offset = 0, limit = 10, whereClause = {}) => {
   try {
+    console.log('getAllEquipment called with whereClause:', whereClause);
+    console.log('getAllEquipment called with offset:', offset, 'limit:', limit);
+    
     const equipment = await Equipment.findAll({
       where: whereClause,
       offset: parseInt(offset),
@@ -36,8 +39,15 @@ exports.getAllEquipment = async (offset = 0, limit = 10, whereClause = {}) => {
       order: [['createdAt', 'DESC']],
       include: [{ model: User, as: 'owner', attributes: ['id', 'name', 'email', 'phone'] }]
     });
+    
+    console.log('getAllEquipment found equipment count:', equipment.length);
+    if (equipment.length > 0) {
+      console.log('getAllEquipment first equipment:', equipment[0].toJSON());
+    }
+    
     return equipment;
   } catch (err) {
+    console.error('getAllEquipment error:', err);
     throw new Error('Failed to fetch equipment');
   }
 };

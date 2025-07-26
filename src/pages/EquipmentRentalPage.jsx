@@ -108,15 +108,30 @@ const EquipmentRentalPage = () => {
       if (equipmentResponse.ok) {
         const equipmentData = await equipmentResponse.json();
         console.log('Equipment data:', equipmentData);
-        const totalEquipment = Array.isArray(equipmentData) ? equipmentData.length : 0;
+        console.log('Equipment data type:', typeof equipmentData);
+        console.log('Equipment data keys:', Object.keys(equipmentData));
+        
+        // Handle the response structure properly
+        const equipmentArray = equipmentData.success && Array.isArray(equipmentData.data) ? equipmentData.data : 
+                              Array.isArray(equipmentData) ? equipmentData : [];
+        
+        console.log('Equipment array:', equipmentArray);
+        console.log('Equipment array length:', equipmentArray.length);
+        
+        const totalEquipment = equipmentArray.length;
         const avgPrice = totalEquipment > 0 ?
-          Math.round(equipmentData.reduce((sum, e) => sum + (parseFloat(e.price) || 0), 0) / totalEquipment) : 0;
+          Math.round(equipmentArray.reduce((sum, e) => sum + (parseFloat(e.price) || 0), 0) / totalEquipment) : 0;
+        
         console.log('Setting farmer stats - equipment:', totalEquipment, 'avgPrice:', avgPrice);
         setFarmerStats(prev => ({
           ...prev,
           availableEquipment: totalEquipment,
           avgPrice
         }));
+      } else {
+        console.error('Equipment response not OK:', equipmentResponse.status);
+        const errorText = await equipmentResponse.text();
+        console.error('Equipment error response:', errorText);
       }
       
       // Fetch farmer's bookings
@@ -158,6 +173,26 @@ const EquipmentRentalPage = () => {
       }
     }
   }, [user, refreshTrigger]);
+
+  // Debug: Test equipment fetch on component mount
+  useEffect(() => {
+    if (user?.role === 'farmer') {
+      console.log('Testing equipment fetch for farmer...');
+      fetch(`${getBackendUrl()}/api/equipment`, {
+        credentials: 'include'
+      })
+      .then(response => {
+        console.log('Test equipment response status:', response.status);
+        return response.json();
+      })
+      .then(data => {
+        console.log('Test equipment data:', data);
+      })
+      .catch(error => {
+        console.error('Test equipment fetch error:', error);
+      });
+    }
+  }, [user]);
 
   return (
     <div className="min-h-screen bg-background">

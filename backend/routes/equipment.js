@@ -23,6 +23,9 @@ router.get('/', authMiddleware, async (req, res) => {
     const { page = 1, limit = 10, user_id } = req.query;
     const offset = (page - 1) * limit;
 
+    console.log('Equipment GET request - User:', req.user.id, 'Role:', req.user.role);
+    console.log('Equipment GET request - Query params:', req.query);
+
     let whereClause = {};
     
     // Admin can fetch all equipment or for specific user
@@ -39,8 +42,13 @@ router.get('/', authMiddleware, async (req, res) => {
       whereClause = {};
     }
 
+    console.log('Equipment GET request - Where clause:', whereClause);
+
     const equipment = await equipmentController.getAllEquipment(offset, limit, whereClause);
     const totalCount = await equipmentController.getEquipmentCount(whereClause);
+
+    console.log('Equipment GET request - Found equipment count:', equipment.length);
+    console.log('Equipment GET request - Total count:', totalCount);
 
     res.json({
       success: true,
@@ -50,6 +58,7 @@ router.get('/', authMiddleware, async (req, res) => {
       limit,
     });
   } catch (error) {
+    console.error('Equipment GET request error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch equipment', error: error.message });
   }
 });
