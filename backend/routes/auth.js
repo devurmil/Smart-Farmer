@@ -233,27 +233,40 @@ router.post('/google', async (req, res) => {
       });
     }
 
-    // Check if user exists
-    let user = await User.findOne({ where: { email } });
+    console.log('Google login attempt:', { name, email, googleId, profilePicture });
+
+    // Check if user exists by email or google_id
+    let user = await User.findOne({ 
+      where: { 
+        [require('sequelize').Op.or]: [
+          { email: email },
+          { google_id: googleId }
+        ]
+      } 
+    });
 
     if (user) {
       // Update existing user
       await user.update({
         name: name || user.name,
         profile_picture: profilePicture || user.profile_picture,
+        google_id: googleId,
         login_method: 'google',
         last_login: new Date()
       });
+      console.log('Updated existing user:', user.id);
     } else {
       // Create new user
       user = await User.create({
         name: name || 'Google User',
         email,
+        google_id: googleId,
         profile_picture: profilePicture,
         login_method: 'google',
         is_verified: true,
         last_login: new Date()
       });
+      console.log('Created new user:', user.id);
     }
 
     // Generate token
@@ -267,6 +280,8 @@ router.post('/google', async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       path: '/',
     });
+
+    console.log('Google login successful for user:', user.id);
 
     res.json({
       success: true,

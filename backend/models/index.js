@@ -67,8 +67,14 @@ SupplyOrder.belongsTo(User, { foreignKey: 'supplierId', as: 'seller' });
 // Sync database
 const syncDatabase = async (force = false) => {
   try {
-    await sequelize.sync({ force });
-    console.log('✅ Database synchronized successfully.');
+    if (force) {
+      await sequelize.sync({ force });
+      console.log('✅ Database synchronized successfully (force mode).');
+    } else {
+      // Use alter: true to add new columns without dropping tables
+      await sequelize.sync({ alter: true });
+      console.log('✅ Database synchronized successfully (alter mode).');
+    }
   } catch (error) {
     console.error('❌ Error synchronizing database:', error);
     throw error;
