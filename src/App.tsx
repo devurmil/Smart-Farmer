@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -27,14 +27,23 @@ import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import SettingsPage from './pages/SettingsPage';
 import AdminPage from './pages/AdminPage';
+import RoleSelectionModal from './components/RoleSelectionModal';
 
 const queryClient = new QueryClient();
 
 const AppContent = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  const [showRoleSelection, setShowRoleSelection] = useState(false);
   const { settings } = useSettings();
   const { user } = useUser();
   const isAdmin = user && user.role === 'admin';
+
+  // Check if user needs role selection
+  React.useEffect(() => {
+    if (user && user.role_selection_pending) {
+      setShowRoleSelection(true);
+    }
+  }, [user]);
 
   // Homepage Redirect Component - redirects to user's saved homepage
   const HomepageRedirect = () => {
@@ -107,6 +116,12 @@ const AppContent = () => {
           </Routes>
         </main>
       </div>
+
+      {/* Role Selection Modal */}
+      <RoleSelectionModal 
+        isOpen={showRoleSelection} 
+        onClose={() => setShowRoleSelection(false)} 
+      />
     </div>
   );
 };

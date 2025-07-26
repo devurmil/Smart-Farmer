@@ -9,6 +9,7 @@ interface User {
   profilePicture?: string;
   loginMethod: 'email' | 'facebook' | 'google';
   role?: string;
+  role_selection_pending?: boolean;
 }
 
 interface UserContextType {
@@ -86,6 +87,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         ...updates,
         profilePicture: updates.profilePicture || (updates as any).profile_picture,
         loginMethod: updates.loginMethod || (updates as any).login_method,
+        role_selection_pending: updates.role_selection_pending !== undefined ? updates.role_selection_pending : user.role_selection_pending,
       };
       const updatedUser = { ...user, ...mappedUpdates };
       setUser(updatedUser);

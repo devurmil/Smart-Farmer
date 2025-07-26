@@ -8,16 +8,25 @@ import { Eye, EyeOff, Mail, Lock, Leaf } from 'lucide-react';
 import { useFacebookLogin } from '@/hooks/useFacebookLogin';
 import { useUser } from '@/contexts/UserContext';
 import { getBackendUrl } from '@/lib/utils';
+import RoleSelectionModal from '@/components/RoleSelectionModal';
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login } = useUser();
+  const { login, user } = useUser();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showRoleSelection, setShowRoleSelection] = useState(false);
   
   const { isFacebookLoading, facebookLogin, isSDKLoaded } = useFacebookLogin();
+
+  // Check if user needs role selection
+  React.useEffect(() => {
+    if (user && user.role_selection_pending) {
+      setShowRoleSelection(true);
+    }
+  }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -247,6 +256,12 @@ const Login = () => {
           © 2024 Smart Farm India. All rights reserved.
         </div>
       </div>
+
+      {/* Role Selection Modal */}
+      <RoleSelectionModal 
+        isOpen={showRoleSelection} 
+        onClose={() => setShowRoleSelection(false)} 
+      />
     </div>
   );
 };

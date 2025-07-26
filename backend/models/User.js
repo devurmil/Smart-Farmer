@@ -73,8 +73,13 @@ const User = sequelize.define('User', {
   },
   role: {
     type: DataTypes.ENUM('farmer', 'owner', 'supplier'),
-    allowNull: false,
+    allowNull: true, // Allow null initially for social login users
     defaultValue: 'farmer',
+  },
+  role_selection_pending: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+    comment: 'Indicates if user needs to select their role (for social logins)'
   }
 }, {
   tableName: 'users',

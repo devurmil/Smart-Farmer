@@ -120,7 +120,15 @@ export const useFacebookLogin = (): UseFacebookLoginReturn => {
         console.log('Facebook login successful:', data);
         login(data.data.user);
         
-        // Redirect to main page
+        // Check if role selection is required
+        if (data.data.requiresRoleSelection) {
+          // Don't redirect - let the parent component handle role selection
+          setIsFacebookLoading(false);
+          // The parent component should show the role selection modal
+          return;
+        }
+        
+        // Redirect to main page if no role selection needed
         setTimeout(() => {
           setIsFacebookLoading(false);
           navigate('/');

@@ -8,10 +8,11 @@ import { Eye, EyeOff, Mail, Lock, User, Phone, Leaf, Loader2, CheckCircle, Alert
 import { useFacebookLogin } from '@/hooks/useFacebookLogin';
 import { useUser } from '@/contexts/UserContext';
 import { getBackendUrl } from '@/lib/utils';
+import RoleSelectionModal from '@/components/RoleSelectionModal';
 
 const Signup = () => {
   const navigate = useNavigate();
-  const { login } = useUser();
+  const { login, user } = useUser();
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -29,6 +30,14 @@ const Signup = () => {
   const [success, setSuccess] = useState('');
   const { isFacebookLoading, facebookLogin, isSDKLoaded } = useFacebookLogin();
   const [resendTimer, setResendTimer] = useState(0);
+  const [showRoleSelection, setShowRoleSelection] = useState(false);
+
+  // Check if user needs role selection
+  React.useEffect(() => {
+    if (user && user.role_selection_pending) {
+      setShowRoleSelection(true);
+    }
+  }, [user]);
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -383,6 +392,12 @@ const Signup = () => {
           </form>
         </Card>
       </div>
+
+      {/* Role Selection Modal */}
+      <RoleSelectionModal 
+        isOpen={showRoleSelection} 
+        onClose={() => setShowRoleSelection(false)} 
+      />
     </div>
   );
 };

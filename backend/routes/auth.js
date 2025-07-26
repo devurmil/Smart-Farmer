@@ -176,7 +176,7 @@ router.post('/facebook', async (req, res) => {
       });
       console.log('Updated existing user:', user.id);
     } else {
-      // Create new user
+      // Create new user with role selection pending
       user = await User.create({
         name: name || 'Facebook User',
         email,
@@ -184,9 +184,11 @@ router.post('/facebook', async (req, res) => {
         profile_picture: profilePicture,
         login_method: 'facebook',
         is_verified: true,
-        last_login: new Date()
+        last_login: new Date(),
+        role_selection_pending: true, // Mark as needing role selection
+        role: null // Set role to null initially
       });
-      console.log('Created new user:', user.id);
+      console.log('Created new user with pending role selection:', user.id);
     }
 
     // Generate token
@@ -205,9 +207,10 @@ router.post('/facebook', async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Facebook login successful',
+      message: user.role_selection_pending ? 'Facebook login successful. Please select your role.' : 'Facebook login successful',
       data: {
-        user: user.toJSON()
+        user: user.toJSON(),
+        requiresRoleSelection: user.role_selection_pending
       }
     });
   } catch (error) {
@@ -256,7 +259,7 @@ router.post('/google', async (req, res) => {
       });
       console.log('Updated existing user:', user.id);
     } else {
-      // Create new user
+      // Create new user with role selection pending
       user = await User.create({
         name: name || 'Google User',
         email,
@@ -264,9 +267,11 @@ router.post('/google', async (req, res) => {
         profile_picture: profilePicture,
         login_method: 'google',
         is_verified: true,
-        last_login: new Date()
+        last_login: new Date(),
+        role_selection_pending: true, // Mark as needing role selection
+        role: null // Set role to null initially
       });
-      console.log('Created new user:', user.id);
+      console.log('Created new user with pending role selection:', user.id);
     }
 
     // Generate token
@@ -285,9 +290,10 @@ router.post('/google', async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Google login successful',
+      message: user.role_selection_pending ? 'Google login successful. Please select your role.' : 'Google login successful',
       data: {
-        user: user.toJSON()
+        user: user.toJSON(),
+        requiresRoleSelection: user.role_selection_pending
       }
     });
   } catch (error) {
@@ -560,6 +566,59 @@ router.delete('/user/profile', authMiddleware, async (req, res) => {
   } catch (error) {
     console.error('Profile delete error:', error);
     res.status(500).json({ success: false, message: 'Server error during profile delete' });
+  }
+});
+
+// @route   POST /api/auth/select-role
+// @desc    Select role for social login users
+// @access  Private
+router.post('/select-role', authMiddleware, async (req, res) => {
+  try {
+    const { role } = req.body;
+    
+    if (!role || !['farmer', 'owner', 'supplier'].includes(role)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Valid role is required (farmer, owner, or supplier)'
+      });
+    }
+
+    const user = await User.findByPk(req.user.id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    if (!user.role_selection_pending) {
+      return res.status(400).json({
+        success: false,
+        message: 'Role selection is not pending for this user'
+      });
+    }
+
+    // Update user with selected role
+    await user.update({
+      role: role,
+      role_selection_pending: false
+    });
+
+    console.log('Role selected for user:', user.id, 'Role:', role);
+
+    res.json({
+      success: true,
+      message: 'Role selected successfully',
+      data: {
+        user: user.toJSON()
+      }
+    });
+  } catch (error) {
+    console.error('Role selection error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error during role selection'
+    });
   }
 });
 
