@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useUser } from '../contexts/UserContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, AlertCircle, Edit, Trash2, Eye, ChevronDown, CheckCircle, XCircle, Upload } from 'lucide-react';
+import { Loader2, AlertCircle, Edit, Trash2, Eye, ChevronDown, CheckCircle, XCircle, Upload, ChevronRight } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -34,6 +34,30 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [total, setTotal] = useState(0);
+  // Collapsible history state
+  const [collapsedHistory, setCollapsedHistory] = useState({});
+
+  // Helper function to separate active and historical bookings
+  const separateBookings = (bookings) => {
+    if (!Array.isArray(bookings)) return { active: [], history: [] };
+    
+    const active = bookings.filter(booking => 
+      booking.status === 'pending' || booking.status === 'approved'
+    );
+    const history = bookings.filter(booking => 
+      booking.status === 'completed' || booking.status === 'rejected'
+    );
+    
+    return { active, history };
+  };
+
+  // Toggle history collapse state
+  const toggleHistory = (equipmentId) => {
+    setCollapsedHistory(prev => ({
+      ...prev,
+      [equipmentId]: !prev[equipmentId]
+    }));
+  };
 
   const fetchEquipment = async () => {
     setLoading(true);
@@ -416,169 +440,219 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
                   </span>
                 </div>
                 
-                {/* Active Bookings Summary */}
-                {bookingData[item.id] && bookingData[item.id].length > 0 && (
-                  <div className="mt-2 p-2 bg-blue-50 rounded-lg">
-                    <div className="text-xs font-medium text-blue-800 mb-1">Active Bookings:</div>
-                    <div className="space-y-1">
-                      {bookingData[item.id]
-                        .filter(booking => booking.status === 'pending' || booking.status === 'approved')
-                        .slice(0, 2)
-                        .map((booking) => (
-                          <div key={booking.id} className="flex justify-between items-center text-xs">
-                            <span className="text-gray-600">
-                              {booking.startDate} - {booking.endDate}
-                            </span>
-                            <span className={`px-1 py-0.5 rounded text-xs ${
-                              booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                              booking.status === 'approved' ? 'bg-blue-100 text-blue-800' :
-                              'bg-gray-100 text-gray-800'
-                            }`}>
-                              {booking.status}
-                            </span>
-                          </div>
-                        ))}
-                      {bookingData[item.id].filter(booking => booking.status === 'pending' || booking.status === 'approved').length > 2 && (
-                        <div className="text-xs text-gray-500">
-                          +{bookingData[item.id].filter(booking => booking.status === 'pending' || booking.status === 'approved').length - 2} more
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
+                {/* Bookings Section */}
                 <div className="mt-4">
                   {bookingLoading[item.id] ? (
-                    <div className="flex items-center text-gray-500 text-sm"><Loader2 className="w-4 h-4 animate-spin mr-2" />Loading Bookings...</div>
-                  ) : bookingData[item.id] ? (
-                    <div className="mt-2 bg-gray-50 rounded-lg p-2">
-                      <div className="font-semibold text-sm mb-1">Bookings:</div>
-                      {bookingData[item.id].length === 0 ? (
-                        <div className="text-xs text-gray-500">No bookings yet.</div>
-                      ) : (
-                        bookingData[item.id].map((booking) => (
-                          <div key={booking.id} className="border-b last:border-b-0 py-2 space-y-2">
-                            <div className="flex justify-between items-start">
-                              <div className="flex-1">
-                                <div className="font-medium text-sm">{booking.startDate} to {booking.endDate}</div>
-                                <div className="text-xs text-gray-500">Status: {booking.status}</div>
-                              </div>
-                              <div className="flex-shrink-0">
-                                <span className={`inline-block px-2 py-1 rounded text-xs font-semibold ${
-                                  booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                  booking.status === 'approved' ? 'bg-blue-100 text-blue-800' :
-                                  booking.status === 'completed' ? 'bg-green-100 text-green-800' :
-                                  booking.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                                  'bg-gray-100 text-gray-800'}
-                                `}>
-                                  {booking.status}
-                                </span>
-                              </div>
-                            </div>
-                            
-                            {/* Action buttons row */}
-                            <div className="flex gap-1 flex-wrap">
-                              {booking.status === 'pending' && (
-                                <>
-                                  <button
-                                    className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded"
-                                    title="Approve this booking"
-                                    onClick={async () => {
-                                      await fetch(`${getBackendUrl()}/api/booking/${booking.id}/approve`, {
-                                        method: 'PATCH',
-                                        credentials: 'include',
-                                        headers: {}
-                                      });
-                                      fetchBookings(item.id);
-                                    }}
-                                  >
-                                    ✓ Approve
-                                  </button>
-                                  <button
-                                    className="px-2 py-1 bg-yellow-600 hover:bg-yellow-700 text-red text-xs rounded"
-                                    title="Decline this booking"
-                                    onClick={async () => {
-                                      await fetch(`${getBackendUrl()}/api/booking/${booking.id}/decline`, {
-                                        method: 'PATCH',
-                                        credentials: 'include',
-                                        headers: {}
-                                      });
-                                      fetchBookings(item.id);
-                                    }}
-                                  >
-                                    ✗ Decline
-                                  </button>
-                                  <button
-                                    className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded"
-                                    title="Delete this booking"
-                                    onClick={async () => {
-                                      await fetch(`${getBackendUrl()}/api/booking/${booking.id}`, {
-                                        method: 'DELETE',
-                                        credentials: 'include',
-                                        headers: {}
-                                      });
-                                      fetchBookings(item.id);
-                                    }}
-                                  >
-                                    🗑 Delete
-                                  </button>
-                                </>
-                              )}
-                              {booking.status === 'approved' && (
-                                <>
-                                  <button
-                                    className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded"
-                                    onClick={async () => {
-                                      await fetch(`${getBackendUrl()}/api/booking/${booking.id}/complete`, {
-                                        method: 'PATCH',
-                                        credentials: 'include',
-                                        headers: {}
-                                      });
-                                      fetchBookings(item.id);
-                                    }}
-                                  >
-                                    ✓ Complete
-                                  </button>
-                                  <button
-                                    className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded"
-                                    title="Delete this booking"
-                                    onClick={async () => {
-                                      await fetch(`${getBackendUrl()}/api/booking/${booking.id}`, {
-                                        method: 'DELETE',
-                                        credentials: 'include',
-                                        headers: {}
-                                      });
-                                      fetchBookings(item.id);
-                                    }}
-                                  >
-                                    🗑 Delete
-                                  </button>
-                                </>
-                              )}
-                              {booking.status === 'completed' && (
-                                <CheckCircle className="w-4 h-4 text-green-600" />
-                              )}
-                              {booking.status === 'rejected' && (
-                                <XCircle className="w-4 h-4 text-red-600" />
-                              )}
-                            </div>
-                            <div className="text-xs text-gray-600">
-                              Farmer: {booking.user?.name || booking.userId}
-                              {booking.user?.email && (
-                                <>
-                                  <br />Email: <a href={`mailto:${booking.user.email}`} className="text-blue-600 underline">{booking.user.email}</a>
-                                </>
-                              )}
-                              {booking.user?.phone && (
-                                <>
-                                  <br />Phone: <a href={`tel:${booking.user.phone}`} className="text-blue-600 underline">{booking.user.phone}</a>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                        ))
-                      )}
+                    <div className="flex items-center text-gray-500 text-sm">
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      Loading Bookings...
                     </div>
+                  ) : bookingData[item.id] ? (
+                    (() => {
+                      const { active, history } = separateBookings(bookingData[item.id]);
+                      
+                      return (
+                        <div className="space-y-3">
+                          {/* Active Bookings - Always Visible */}
+                          {active.length > 0 && (
+                            <div className="bg-blue-50 rounded-lg p-3">
+                              <div className="font-semibold text-sm text-blue-800 mb-2 flex items-center">
+                                <CheckCircle className="w-4 h-4 mr-1" />
+                                Active Bookings ({active.length})
+                              </div>
+                              <div className="space-y-2">
+                                {active.map((booking) => (
+                                  <div key={booking.id} className="bg-white rounded p-2 border border-blue-200">
+                                    <div className="flex justify-between items-start mb-2">
+                                      <div className="flex-1">
+                                        <div className="font-medium text-sm">{booking.startDate} to {booking.endDate}</div>
+                                        <div className="text-xs text-gray-500">Farmer: {booking.user?.name || booking.userId}</div>
+                                      </div>
+                                      <div className="flex-shrink-0">
+                                        <span className={`inline-block px-2 py-1 rounded text-xs font-semibold ${
+                                          booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                          booking.status === 'approved' ? 'bg-blue-100 text-blue-800' :
+                                          'bg-gray-100 text-gray-800'
+                                        }`}>
+                                          {booking.status}
+                                        </span>
+                                      </div>
+                                    </div>
+                                    
+                                    {/* Action buttons */}
+                                    <div className="flex gap-1 flex-wrap">
+                                      {booking.status === 'pending' && (
+                                        <>
+                                          <button
+                                            className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded"
+                                            title="Approve this booking"
+                                            onClick={async () => {
+                                              await fetch(`${getBackendUrl()}/api/booking/${booking.id}/approve`, {
+                                                method: 'PATCH',
+                                                credentials: 'include',
+                                                headers: {}
+                                              });
+                                              fetchBookings(item.id);
+                                            }}
+                                          >
+                                            ✓ Approve
+                                          </button>
+                                          <button
+                                            className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded"
+                                            title="Decline this booking"
+                                            onClick={async () => {
+                                              await fetch(`${getBackendUrl()}/api/booking/${booking.id}/decline`, {
+                                                method: 'PATCH',
+                                                credentials: 'include',
+                                                headers: {}
+                                              });
+                                              fetchBookings(item.id);
+                                            }}
+                                          >
+                                            ✗ Decline
+                                          </button>
+                                          <button
+                                            className="px-2 py-1 bg-gray-600 hover:bg-gray-700 text-white text-xs rounded"
+                                            title="Delete this booking"
+                                            onClick={async () => {
+                                              await fetch(`${getBackendUrl()}/api/booking/${booking.id}`, {
+                                                method: 'DELETE',
+                                                credentials: 'include',
+                                                headers: {}
+                                              });
+                                              fetchBookings(item.id);
+                                            }}
+                                          >
+                                            🗑 Delete
+                                          </button>
+                                        </>
+                                      )}
+                                      {booking.status === 'approved' && (
+                                        <>
+                                          <button
+                                            className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded"
+                                            onClick={async () => {
+                                              await fetch(`${getBackendUrl()}/api/booking/${booking.id}/complete`, {
+                                                method: 'PATCH',
+                                                credentials: 'include',
+                                                headers: {}
+                                              });
+                                              fetchBookings(item.id);
+                                            }}
+                                          >
+                                            ✓ Complete
+                                          </button>
+                                          <button
+                                            className="px-2 py-1 bg-gray-600 hover:bg-gray-700 text-white text-xs rounded"
+                                            title="Delete this booking"
+                                            onClick={async () => {
+                                              await fetch(`${getBackendUrl()}/api/booking/${booking.id}`, {
+                                                method: 'DELETE',
+                                                credentials: 'include',
+                                                headers: {}
+                                              });
+                                              fetchBookings(item.id);
+                                            }}
+                                          >
+                                            🗑 Delete
+                                          </button>
+                                        </>
+                                      )}
+                                    </div>
+                                    
+                                    {/* Contact Info */}
+                                    <div className="text-xs text-gray-600 mt-2">
+                                      {booking.user?.email && (
+                                        <div>Email: <a href={`mailto:${booking.user.email}`} className="text-blue-600 underline">{booking.user.email}</a></div>
+                                      )}
+                                      {booking.user?.phone && (
+                                        <div>Phone: <a href={`tel:${booking.user.phone}`} className="text-blue-600 underline">{booking.user.phone}</a></div>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Historical Bookings - Collapsible */}
+                          {history.length > 0 && (
+                            <div className="bg-gray-50 rounded-lg border border-gray-200">
+                              <button
+                                onClick={() => toggleHistory(item.id)}
+                                className="w-full p-3 flex items-center justify-between text-left hover:bg-gray-100 transition-colors"
+                              >
+                                <div className="flex items-center">
+                                  {collapsedHistory[item.id] ? (
+                                    <ChevronRight className="w-4 h-4 mr-2 text-gray-500" />
+                                  ) : (
+                                    <ChevronDown className="w-4 h-4 mr-2 text-gray-500" />
+                                  )}
+                                  <span className="font-semibold text-sm text-gray-700">
+                                    Booking History ({history.length})
+                                  </span>
+                                </div>
+                                <span className="text-xs text-gray-500">
+                                  {collapsedHistory[item.id] ? 'Click to expand' : 'Click to collapse'}
+                                </span>
+                              </button>
+                              
+                              {!collapsedHistory[item.id] && (
+                                <div className="p-3 border-t border-gray-200 space-y-2">
+                                  {history.map((booking) => (
+                                    <div key={booking.id} className="bg-white rounded p-2 border border-gray-200">
+                                      <div className="flex justify-between items-start mb-2">
+                                        <div className="flex-1">
+                                          <div className="font-medium text-sm">{booking.startDate} to {booking.endDate}</div>
+                                          <div className="text-xs text-gray-500">Farmer: {booking.user?.name || booking.userId}</div>
+                                        </div>
+                                        <div className="flex-shrink-0">
+                                          <span className={`inline-block px-2 py-1 rounded text-xs font-semibold ${
+                                            booking.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                            booking.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                                            'bg-gray-100 text-gray-800'
+                                          }`}>
+                                            {booking.status}
+                                          </span>
+                                        </div>
+                                      </div>
+                                      
+                                      {/* Status Icon */}
+                                      <div className="flex items-center text-xs text-gray-600">
+                                        {booking.status === 'completed' && (
+                                          <CheckCircle className="w-3 h-3 text-green-600 mr-1" />
+                                        )}
+                                        {booking.status === 'rejected' && (
+                                          <XCircle className="w-3 h-3 text-red-600 mr-1" />
+                                        )}
+                                        <span className="capitalize">{booking.status}</span>
+                                      </div>
+                                      
+                                      {/* Contact Info */}
+                                      <div className="text-xs text-gray-600 mt-2">
+                                        {booking.user?.email && (
+                                          <div>Email: <a href={`mailto:${booking.user.email}`} className="text-blue-600 underline">{booking.user.email}</a></div>
+                                        )}
+                                        {booking.user?.phone && (
+                                          <div>Phone: <a href={`tel:${booking.user.phone}`} className="text-blue-600 underline">{booking.user.phone}</a></div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* No Bookings Message */}
+                          {active.length === 0 && history.length === 0 && (
+                            <div className="text-xs text-gray-500 text-center py-2">
+                              No bookings yet.
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()
                   ) : null}
                 </div>
               </div>
