@@ -12,27 +12,32 @@ import { useToast } from "@/hooks/use-toast";
 import replicateClient from "@/lib/replicate";
 import { useUser } from "@/contexts/UserContext";
 import { getBackendUrl } from '@/lib/utils';
+import { MapContainer, TileLayer, Polygon, FeatureGroup, useMap } from 'react-leaflet';
+import { EditControl } from 'react-leaflet-draw';
+import 'leaflet/dist/leaflet.css';
+import 'leaflet-draw/dist/leaflet.draw.css';
+import L from 'leaflet';
+
+// Fix for default icon issue with Leaflet
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
 
 const FarmCalculator = () => {
   const { toast } = useToast();
   const { user } = useUser();
   const mapRef = useRef(null);
   const viewMapRef = useRef(null);
-  const [map, setMap] = useState(null);
-  const [viewMap, setViewMap] = useState(null);
-  const [polygon, setPolygon] = useState(null);
   const [coordinates, setCoordinates] = useState([]);
-  const coordinatesRef = useRef([]);
   const [area, setArea] = useState(0);
   const [unit, setUnit] = useState('acres');
   const [farmName, setFarmName] = useState('');
-  const [farmNameMarker, setFarmNameMarker] = useState(null);
-  const [viewPolygon, setViewPolygon] = useState(null);
-  const [viewFarmMarker, setViewFarmMarker] = useState(null);
   const [farmDescription, setFarmDescription] = useState('');
   const [savedFarms, setSavedFarms] = useState([]);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [drawingListener, setDrawingListener] = useState(null);
   
   // AI Features
   const [cropType, setCropType] = useState('');
@@ -42,145 +47,42 @@ const FarmCalculator = () => {
   const [aiAnalysis, setAiAnalysis] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  // Initialize Google Maps
-  useEffect(() => {
-    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-    let scriptLoaded = false;
+  const featureGroupRef = useRef();
+  const viewFeatureGroupRef = useRef();
 
-    const initMap = () => {
-      if (!window.google || !mapRef.current) {
-        return;
-      }
-      if (map) return; // Prevent re-initialization
-      
-      try {
-        const mapInstance = new window.google.maps.Map(mapRef.current, {
-          center: { lat: 28.6139, lng: 77.2090 },
-          zoom: 15,
-          mapTypeId: 'satellite'
-        });
-        
-        // Add map loaded event listener
-        window.google.maps.event.addListenerOnce(mapInstance, 'idle', () => {
-          console.log('Map fully loaded and ready');
-          // Trigger a resize to ensure proper rendering
-          window.google.maps.event.trigger(mapInstance, 'resize');
-        });
-        
-        setMap(mapInstance);
-      } catch (error) {
-        console.error('Error initializing map:', error);
-      }
-    };
+  const onCreated = e => {
+    const { layer } = e;
+    const latlngs = layer.getLatLngs()[0].map(latlng => ({ lat: latlng.lat, lng: latlng.lng }));
+    setCoordinates(latlngs);
+    const areaInSqMeters = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
+    setArea(convertArea(areaInSqMeters, unit));
+    setIsDrawing(false);
+    toast({
+      title: "Area calculated!",
+      description: `Farm area: ${convertArea(areaInSqMeters, unit).toFixed(2)} ${unit}`,
+    });
+  };
 
-    if (window.google && window.google.maps && mapRef.current) {
-      initMap();
-    } else if (!scriptLoaded) {
-      const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry,drawing`;
-      script.async = true;
-      script.defer = true;
-      script.onload = () => {
-        scriptLoaded = true;
-        initMap();
-      };
-      script.onerror = () => {
-        console.error('Failed to load Google Maps script');
-        toast({
-          title: "Map Loading Error",
-          description: "Failed to load Google Maps. Please check your internet connection and try again.",
-          variant: "destructive",
-        });
-      };
-      document.head.appendChild(script);
-    }
+  const onEdited = e => {
+    const { layers } = e;
+    layers.eachLayer(layer => {
+      const latlngs = layer.getLatLngs()[0].map(latlng => ({ lat: latlng.lat, lng: latlng.lng }));
+      setCoordinates(latlngs);
+      const areaInSqMeters = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
+      setArea(convertArea(areaInSqMeters, unit));
+    });
+  };
 
-    // Clean up
-    return () => {
-      scriptLoaded = false;
-    };
-  }, [mapRef, map]);
-
-  // Initialize View Map (separate from calculator map)
-  useEffect(() => {
-    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-
-    const initViewMap = () => {
-      if (!window.google || !window.google.maps || !viewMapRef.current) {
-        console.log('Google Maps not ready for view map, retrying...');
-        // Retry after a short delay
-        setTimeout(() => {
-          initViewMap();
-        }, 500);
-        return;
-      }
-      if (viewMap) return; // Prevent re-initialization
-      
-      try {
-        console.log('Initializing view map...');
-        const viewMapInstance = new window.google.maps.Map(viewMapRef.current, {
-          center: { lat: 28.6139, lng: 77.2090 },
-          zoom: 15,
-          mapTypeId: 'satellite'
-        });
-        
-        // Add map loaded event listener
-        window.google.maps.event.addListenerOnce(viewMapInstance, 'idle', () => {
-          console.log('View map fully loaded and ready');
-        });
-        
-        setViewMap(viewMapInstance);
-        console.log('View map initialized successfully');
-      } catch (error) {
-        console.error('Error initializing view map:', error);
-        // Retry after error
-        setTimeout(() => {
-          initViewMap();
-        }, 1000);
-      }
-    };
-
-    // Delay initialization to ensure main map loads first
-    const timer = setTimeout(() => {
-      if (window.google && window.google.maps && viewMapRef.current) {
-        initViewMap();
-      } else {
-        // If Google Maps isn't ready, wait for the main map useEffect to load it
-        const checkInterval = setInterval(() => {
-          if (window.google && window.google.maps && viewMapRef.current) {
-            initViewMap();
-            clearInterval(checkInterval);
-          }
-        }, 1000);
-        
-        // Clear interval after 10 seconds to prevent infinite checking
-        setTimeout(() => {
-          clearInterval(checkInterval);
-        }, 10000);
-      }
-    }, 1000); // Wait 1 second for main map to initialize
-
-    return () => {
-      clearTimeout(timer);
-    };
-  }, [viewMapRef, viewMap]);
+  const onDeleted = () => {
+    setCoordinates([]);
+    setArea(0);
+  };
 
   // Calculate area using coordinates
   const calculatePolygonArea = (coords) => {
     if (coords.length < 3) return 0;
-    
-    // Simple polygon area calculation (Shoelace formula)
-    let area = 0;
-    for (let i = 0; i < coords.length; i++) {
-      const j = (i + 1) % coords.length;
-      area += coords[i].lat * coords[j].lng;
-      area -= coords[j].lat * coords[i].lng;
-    }
-    area = Math.abs(area) / 2;
-    
-    // Convert to square meters (approximate)
-    const sqMeters = area * 111320 * 111320 * Math.cos(coords[0].lat * Math.PI / 180);
-    return sqMeters;
+    const latlngs = coords.map(c => new L.LatLng(c.lat, c.lng));
+    return L.GeometryUtil.geodesicArea(latlngs);
   };
 
   // Convert area units
@@ -271,108 +173,18 @@ const FarmCalculator = () => {
 
   // Start drawing mode
   const startDrawing = () => {
-    if (!map) return;
     setIsDrawing(true);
-    setCoordinates([]);
-    coordinatesRef.current = [];
-    if (polygon) {
-      polygon.setMap(null);
-    }
-    if (farmNameMarker) {
-      farmNameMarker.setMap(null);
-      setFarmNameMarker(null);
-    }
-    const newPolygon = new window.google.maps.Polygon({
-      paths: [],
-      strokeColor: '#22c55e',
-      strokeOpacity: 0.8,
-      strokeWeight: 2,
-      fillColor: '#22c55e',
-      fillOpacity: 0.35,
-      editable: true,
-      draggable: false
-    });
-    newPolygon.setMap(map);
-    setPolygon(newPolygon);
-    // Remove any previous listener
-    if (drawingListener) {
-      window.google.maps.event.removeListener(drawingListener);
-      setDrawingListener(null);
-    }
-    // Add click listener to map
-    const clickListener = map.addListener('click', (event) => {
-      const newCoords = [...coordinatesRef.current, {
-        lat: event.latLng.lat(),
-        lng: event.latLng.lng()
-      }];
-      setCoordinates(newCoords);
-      coordinatesRef.current = newCoords;
-      newPolygon.setPath(newCoords);
-      const areaInSqMeters = calculatePolygonArea(newCoords);
-      setArea(convertArea(areaInSqMeters, unit));
-    });
-    setDrawingListener(clickListener);
-  };
-
-  // When coordinates state changes, update the ref
-  React.useEffect(() => {
-    coordinatesRef.current = coordinates;
-  }, [coordinates]);
-
-  // Finish drawing mode
-  const finishDrawing = () => {
-    if (drawingListener) {
-      window.google.maps.event.removeListener(drawingListener);
-      setDrawingListener(null);
-    }
-    setIsDrawing(false);
-    // Add marker for farm name at centroid
-    if (map && coordinates.length > 0 && farmName) {
-      const centroid = getCentroid(coordinates);
-      if (centroid) {
-        const marker = new window.google.maps.Marker({
-          position: centroid,
-          map: map,
-          label: {
-            text: farmName,
-            fontWeight: 'bold',
-            fontSize: '14px',
-            color: '#22c55e',
-          },
-          icon: {
-            path: window.google.maps.SymbolPath.CIRCLE,
-            scale: 0.1,
-            fillOpacity: 0,
-            strokeOpacity: 0,
-          },
-        });
-        setFarmNameMarker(marker);
-      }
-    }
-    toast({
-      title: "Area calculated!",
-      description: `Farm area: ${Number(area || 0).toFixed(2)} ${unit}`,
-    });
   };
 
   // Clear the current drawing
   const clearDrawing = () => {
-    if (polygon) {
-      polygon.setMap(null);
-      setPolygon(null);
-    }
-    if (farmNameMarker) {
-      farmNameMarker.setMap(null);
-      setFarmNameMarker(null);
+    if (featureGroupRef.current) {
+      featureGroupRef.current.clearLayers();
     }
     setCoordinates([]);
     setArea(0);
     setIsDrawing(false);
     setAiAnalysis(null);
-    if (drawingListener) {
-      window.google.maps.event.removeListener(drawingListener);
-      setDrawingListener(null);
-    }
   };
 
   // Save farm profile
@@ -393,20 +205,8 @@ const FarmCalculator = () => {
       lng: centroid.lng,
       address: farmDescription || "No address provided"
     };
-    // Calculate area in both hectares and acres
-    // First, get area in square meters
-    const areaInSqMeters = (() => {
-      if (coordinates.length < 3) return 0;
-      let area = 0;
-      for (let i = 0; i < coordinates.length; i++) {
-        const j = (i + 1) % coordinates.length;
-        area += coordinates[i].lat * coordinates[j].lng;
-        area -= coordinates[j].lat * coordinates[i].lng;
-      }
-      area = Math.abs(area) / 2;
-      // Convert to square meters (approximate)
-      return area * 111320 * 111320 * Math.cos(coordinates[0].lat * Math.PI / 180);
-    })();
+    
+    const areaInSqMeters = calculatePolygonArea(coordinates);
     const areaHectares = areaInSqMeters / 10000;
     const areaAcres = areaInSqMeters / 4047;
     const farmPayload = {
@@ -432,9 +232,10 @@ const FarmCalculator = () => {
       setSavedFarms([...savedFarms, result.data.farm]);
       setFarmName('');
       setFarmDescription('');
+      clearDrawing();
       toast({
-        title: "Farm saved!",
-        description: `${farmName} has been saved successfully.`,
+        title: "Farm Saved!",
+        description: `${farmName} (${Number(area).toFixed(2)} ${unit}) has been saved successfully.`,
       });
     } catch (error) {
       toast({
@@ -445,322 +246,41 @@ const FarmCalculator = () => {
     }
   };
 
-  // Load a saved farm
-  const loadFarm = (farm) => {
-    console.log("Loading farm:", farm);
-    
-    // Clear any existing drawing first
-    clearDrawing();
-
-    // Validate inputs
-    if (!map) {
-      toast({
-        title: "Error",
-        description: "Map is not ready yet. Please wait and try again.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!farm.coordinates || farm.coordinates.length < 3) {
-      toast({
-        title: "Error",
-        description: "Farm has no valid coordinates to display.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    console.log("Loading farm coordinates:", farm.coordinates);
-
-    // Wait for map to be ready
-    setTimeout(() => {
-      try {
-        console.log("Creating polygon with coordinates:", farm.coordinates);
-        
-        // Create the polygon with farm coordinates - make it highly visible
-        const newPolygon = new window.google.maps.Polygon({
-          paths: farm.coordinates,
-          strokeColor: '#FF0000', // Bright red for visibility
-          strokeOpacity: 1.0,
-          strokeWeight: 4,
-          fillColor: '#FF0000',
-          fillOpacity: 0.5,
-          editable: true,
-          draggable: false
-        });
-
-        console.log("Setting polygon on map:", newPolygon);
-        
-        // Set polygon on map
-        newPolygon.setMap(map);
-        setPolygon(newPolygon);
-
-        // Create bounds and center the map
-        const bounds = new window.google.maps.LatLngBounds();
-        farm.coordinates.forEach(coord => {
-          console.log("Adding coordinate to bounds:", coord);
-          bounds.extend(new window.google.maps.LatLng(coord.lat, coord.lng));
-        });
-
-        console.log("Bounds created:", bounds.toString());
-
-        // Multiple attempts to refresh the map
-        window.google.maps.event.trigger(map, 'resize');
-        
-        // Try different approaches to fit bounds
-        if (!bounds.isEmpty()) {
+  const MapUpdater = ({ coords }) => {
+    const map = useMap();
+    useEffect(() => {
+      if (coords && coords.length > 0) {
+        const bounds = L.latLngBounds(coords.map(c => [c.lat, c.lng]));
+        if (bounds.isValid()) {
           map.fitBounds(bounds);
-          
-          // Force a second fit bounds with delay
-          setTimeout(() => {
-            map.fitBounds(bounds, 20);
-            console.log("Map zoom after fitBounds:", map.getZoom());
-            console.log("Map center after fitBounds:", map.getCenter().toString());
-          }, 200);
-          
-          // As a fallback, try manual centering
-          setTimeout(() => {
-            const center = bounds.getCenter();
-            map.setCenter(center);
-            map.setZoom(Math.max(15, map.getZoom())); // Ensure minimum zoom
-            console.log("Manual center set to:", center.toString());
-          }, 400);
         }
-
-        // Add farm name marker at centroid if farm has a name
-        if (farm.name) {
-          const centroid = getCentroid(farm.coordinates);
-          if (centroid) {
-            const marker = new window.google.maps.Marker({
-              position: centroid,
-              map: map,
-              label: {
-                text: farm.name,
-                fontWeight: 'bold',
-                fontSize: '14px',
-                color: '#22c55e',
-              },
-              icon: {
-                path: window.google.maps.SymbolPath.CIRCLE,
-                scale: 0.1,
-                fillOpacity: 0,
-                strokeOpacity: 0,
-              },
-            });
-            setFarmNameMarker(marker);
-          }
-        }
-
-        // Update state with farm data
-        setCoordinates(farm.coordinates);
-        setFarmName(farm.name || '');
-        setFarmDescription(farm.description || '');
-        
-        // Set area based on available data
-        const areaValue = farm.area_acres || farm.area_hectares || farm.area || 0;
-        const areaUnit = farm.area_acres ? 'acres' : farm.area_hectares ? 'hectares' : (farm.unit || 'acres');
-        setArea(areaValue);
-        setUnit(areaUnit);
-        
-        // Set other farm properties
-        setCropType(farm.cropType || farm.soil_type || '');
-        setSoilType(farm.soilType || farm.soil_type || '');
-        setClimate(farm.climate || '');
-        setSoilPH(farm.soilPH || '');
-        setAiAnalysis(farm.aiAnalysis || null);
-
-        console.log("Farm loaded successfully on map");
-        
-        toast({
-          title: "Farm Loaded!",
-          description: `${farm.name || 'Farm'} has been loaded on the map.`,
-        });
-
-      } catch (error) {
-        console.error("Error loading farm on map:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load farm on map. Please try again.",
-          variant: "destructive",
-        });
       }
-    }, 300); // Small delay to ensure map is ready
+    }, [coords, map]);
+    return null;
   };
 
-  // Force refresh map function
-  const forceRefreshMap = () => {
-    if (!map || !polygon) {
-      toast({
-        title: "No Data",
-        description: "No farm is currently loaded to refresh.",
-        variant: "destructive",
-      });
-      return;
+  // Load a saved farm
+  const loadFarm = (farm) => {
+    clearDrawing();
+    setFarmName(farm.name);
+    setFarmDescription(farm.description || '');
+    setCoordinates(farm.coordinates);
+    const areaInSqMeters = calculatePolygonArea(farm.coordinates);
+    setArea(convertArea(areaInSqMeters, unit));
+    
+    if (featureGroupRef.current) {
+      const polygon = L.polygon(farm.coordinates.map(c => [c.lat, c.lng]));
+      featureGroupRef.current.addLayer(polygon);
     }
-
-    setTimeout(() => {
-      try {
-        console.log("Force refreshing map...");
-        window.google.maps.event.trigger(map, 'resize');
-        
-        if (coordinates.length > 0) {
-          const bounds = new window.google.maps.LatLngBounds();
-          coordinates.forEach(coord => {
-            bounds.extend(new window.google.maps.LatLng(coord.lat, coord.lng));
-          });
-          
-          if (!bounds.isEmpty()) {
-            map.fitBounds(bounds, 50);
-            
-            setTimeout(() => {
-              map.fitBounds(bounds, 20);
-            }, 100);
-          }
-        }
-        
-        toast({
-          title: "Map Refreshed",
-          description: "The map display has been refreshed.",
-        });
-      } catch (error) {
-        console.error("Error refreshing map:", error);
-        toast({
-          title: "Refresh Failed",
-          description: "Failed to refresh map display.",
-          variant: "destructive",
-        });
-      }
-    }, 100);
   };
 
   // Load farm on the dedicated view map
   const loadFarmOnViewMap = (farm) => {
-    console.log("Loading farm on view map:", farm);
-    
-    // Clear any existing view polygon
-    if (viewPolygon) {
-      viewPolygon.setMap(null);
-      setViewPolygon(null);
+    if (viewFeatureGroupRef.current) {
+      viewFeatureGroupRef.current.clearLayers();
+      const polygon = L.polygon(farm.coordinates.map(c => [c.lat, c.lng]));
+      viewFeatureGroupRef.current.addLayer(polygon);
     }
-    if (viewFarmMarker) {
-      viewFarmMarker.setMap(null);
-      setViewFarmMarker(null);
-    }
-
-    // Validate inputs with retry mechanism
-    if (!viewMap) {
-      // Wait a bit and try again
-      toast({
-        title: "Initializing Map...",
-        description: "Please wait while the map loads, then try again.",
-      });
-      
-      // Try to initialize the map if it's not ready
-      setTimeout(() => {
-        if (window.google && window.google.maps && viewMapRef.current && !viewMap) {
-          console.log('Attempting to initialize view map...');
-          try {
-            const viewMapInstance = new window.google.maps.Map(viewMapRef.current, {
-              center: { lat: 28.6139, lng: 77.2090 },
-              zoom: 15,
-              mapTypeId: 'satellite'
-            });
-            setViewMap(viewMapInstance);
-            
-            // Try loading the farm again after map is ready
-            setTimeout(() => {
-              loadFarmOnViewMap(farm);
-            }, 500);
-          } catch (error) {
-            console.error('Failed to initialize view map:', error);
-          }
-        }
-      }, 1000);
-      return;
-    }
-
-    if (!farm.coordinates || farm.coordinates.length < 3) {
-      toast({
-        title: "Error",
-        description: "Farm has no valid coordinates to display.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    console.log("Loading farm coordinates on view map:", farm.coordinates);
-
-    setTimeout(() => {
-      try {
-        // Create the polygon with farm coordinates
-        const newPolygon = new window.google.maps.Polygon({
-          paths: farm.coordinates,
-          strokeColor: '#22c55e',
-          strokeOpacity: 0.8,
-          strokeWeight: 3,
-          fillColor: '#22c55e',
-          fillOpacity: 0.4,
-          editable: false,
-          draggable: false
-        });
-
-        // Set polygon on view map
-        newPolygon.setMap(viewMap);
-        setViewPolygon(newPolygon);
-
-        // Add farm name marker at centroid
-        if (farm.name) {
-          const centroid = getCentroid(farm.coordinates);
-          if (centroid) {
-            const marker = new window.google.maps.Marker({
-              position: centroid,
-              map: viewMap,
-              title: farm.name,
-              label: {
-                text: farm.name,
-                fontWeight: 'bold',
-                fontSize: '14px',
-                color: '#22c55e',
-              },
-              icon: {
-                path: window.google.maps.SymbolPath.CIRCLE,
-                scale: 8,
-                fillOpacity: 0.8,
-                fillColor: '#22c55e',
-                strokeColor: '#ffffff',
-                strokeWeight: 2,
-              },
-            });
-            setViewFarmMarker(marker);
-          }
-        }
-
-        // Create bounds and center the map
-        const bounds = new window.google.maps.LatLngBounds();
-        farm.coordinates.forEach(coord => {
-          bounds.extend(new window.google.maps.LatLng(coord.lat, coord.lng));
-        });
-
-        // Fit bounds on view map
-        viewMap.fitBounds(bounds, 50);
-        
-        console.log("Farm loaded successfully on view map");
-        
-        toast({
-          title: "Farm Loaded!",
-          description: `${farm.name || 'Farm'} is now displayed on the view map.`,
-        });
-
-      } catch (error) {
-        console.error("Error loading farm on view map:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load farm on view map. Please try again.",
-          variant: "destructive",
-        });
-      }
-    }, 200);
   };
 
   // Delete a saved farm
@@ -843,56 +363,6 @@ const FarmCalculator = () => {
 
   const [activeTab, setActiveTab] = useState("calculator");
 
-  useEffect(() => {
-    // When switching to calculator, trigger map resize
-    if (activeTab === "calculator" && map) {
-      setTimeout(() => {
-        window.google.maps.event.trigger(map, "resize");
-        // Optionally, re-center or fit bounds if you have coordinates
-        if (coordinates.length > 0) {
-          const bounds = new window.google.maps.LatLngBounds();
-          coordinates.forEach(coord => {
-            bounds.extend(new window.google.maps.LatLng(coord.lat, coord.lng));
-          });
-          map.fitBounds(bounds);
-        }
-      }, 200);
-    }
-    // When switching to viewer, trigger viewMap resize
-    if (activeTab === "viewer" && viewMap) {
-      setTimeout(() => {
-        window.google.maps.event.trigger(viewMap, "resize");
-        // Optionally, fit bounds for viewPolygon
-        if (viewPolygon && viewPolygon.getPath && viewPolygon.getPath().getLength() > 0) {
-          const bounds = new window.google.maps.LatLngBounds();
-          viewPolygon.getPath().forEach(coord => {
-            bounds.extend(coord);
-          });
-          viewMap.fitBounds(bounds);
-        }
-      }, 200);
-    }
-  }, [activeTab, map, viewMap, coordinates, viewPolygon]);
-
-  useEffect(() => {
-    if (activeTab === "viewer" && !viewMap && viewMapRef.current) {
-      // Re-initialize the view map if not present
-      const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-      if (window.google && window.google.maps && viewMapRef.current) {
-        try {
-          const viewMapInstance = new window.google.maps.Map(viewMapRef.current, {
-            center: { lat: 28.6139, lng: 77.2090 },
-            zoom: 15,
-            mapTypeId: 'satellite'
-          });
-          setViewMap(viewMapInstance);
-        } catch (error) {
-          console.error('Error re-initializing view map:', error);
-        }
-      }
-    }
-  }, [activeTab, viewMap, viewMapRef]);
-
   return (
     <div className="space-y-6">
       {/* Dropdown Menu for Navigation */}
@@ -924,125 +394,124 @@ const FarmCalculator = () => {
             </CardHeader>
             <CardContent>
               <div className="w-full h-96 rounded-lg border relative" style={{ minHeight: '400px', height: '400px' }}>
-                  {/* Floating Area Name Overlay */}
-                  {coordinates.length >= 3 && farmName && !isDrawing && (
-                    <div style={{ position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)', zIndex: 10 }} className="bg-white bg-opacity-80 px-4 py-1 rounded shadow text-green-700 font-bold text-lg pointer-events-none">
-                      {farmName}
-                    </div>
-                  )}
-                  <div ref={mapRef} className="absolute inset-0 rounded-lg" style={{ width: '100%', height: '400px', minHeight: '400px' }} />
-                  {/* Debug info */}
-                  {polygon && (
-                    <div className="absolute bottom-2 left-2 bg-black bg-opacity-70 text-white text-xs p-1 rounded">
-                      Polygon loaded: {coordinates.length} points
-                    </div>
-                  )}
-                </div>
-                <div className="flex flex-wrap gap-2 mt-4">
-                  <Button onClick={startDrawing} disabled={isDrawing}>
-                    {isDrawing ? 'Drawing...' : 'Start Drawing'}
-                  </Button>
-                  <Button variant="outline" onClick={clearDrawing}>
-                    Clear
-                  </Button>
-                  {/* Finish Drawing Button */}
-                  {isDrawing && coordinates.length >= 3 && (
-                    <Button variant="success" onClick={finishDrawing}>
-                      Finish Drawing
-                    </Button>
-                  )}
-                  <Button variant="outline" onClick={exportData} disabled={!area}>
-                    <Download className="h-4 w-4 mr-2" />
-                    Export
-                  </Button>
-                  {/* Refresh Map Button */}
-                  {polygon && (
-                    <Button variant="outline" onClick={forceRefreshMap} className="bg-yellow-50 border-yellow-300">
-                      🔄 Refresh Map
-                    </Button>
-                  )}
-                </div>
-                {isDrawing && (
-                  <p className="text-sm text-gray-600 mt-2">
-                    Click on the map to mark corners. Click 'Finish Drawing' when done.
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Controls Section */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Calculator className="h-5 w-5" />
-                  <span>Calculation</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="unit">Unit</Label>
-                  <select
-                    id="unit"
-                    className="w-full p-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
-                    value={unit}
-                    onChange={(e) => {
-                      setUnit(e.target.value);
-                      if (coordinates.length > 0) {
-                        const areaInSqMeters = calculatePolygonArea(coordinates);
-                        setArea(convertArea(areaInSqMeters, e.target.value));
-                      }
-                    }}
-                  >
-                    <option value="acres" className="bg-background text-foreground">Acres</option>
-                    <option value="hectares" className="bg-background text-foreground">Hectares</option>
-                    <option value="sqmeters" className="bg-background text-foreground">Square Meters</option>
-                  </select>
-                </div>
-
-                <div className="p-4 bg-green-50 rounded-lg">
-                  <h3 className="font-semibold text-green-800">Calculated Area</h3>
-                  <p className="text-2xl font-bold text-green-600">
-                    {Number(area || 0).toFixed(2)} {unit}
-                  </p>
-                  {coordinates.length > 0 && (
-                    <Badge variant="secondary" className="mt-2 bg-green-100 text-green-700">
-                      {coordinates.length} points marked
-                    </Badge>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="farmName">Farm Name</Label>
-                  <Input
-                    id="farmName"
-                    placeholder="Enter farm name..."
-                    value={farmName}
-                    onChange={(e) => setFarmName(e.target.value)}
+                <MapContainer center={[28.6139, 77.2090]} zoom={15} ref={mapRef} style={{ height: '100%', width: '100%' }}>
+                  <TileLayer
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                   />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="farmDescription">Description (Optional)</Label>
-                  <Textarea
-                    id="farmDescription"
-                    placeholder="Add farm details..."
-                    value={farmDescription}
-                    onChange={(e) => setFarmDescription(e.target.value)}
-                  />
-                </div>
-
-                <Button 
-                  onClick={saveFarm} 
-                  className="w-full"
-                  disabled={!farmName || coordinates.length < 3}
-                >
-                  <Save className="h-4 w-4 mr-2" />
-                  Save Farm Profile
+                  <FeatureGroup ref={featureGroupRef}>
+                    {isDrawing && (
+                      <EditControl
+                        position="topright"
+                        onCreated={onCreated}
+                        onEdited={onEdited}
+                        onDeleted={onDeleted}
+                        draw={{
+                          rectangle: false,
+                          circle: false,
+                          circlemarker: false,
+                          marker: false,
+                          polyline: false,
+                        }}
+                      />
+                    )}
+                  </FeatureGroup>
+                  <MapUpdater coords={coordinates} />
+                </MapContainer>
+              </div>
+              <div className="flex flex-wrap gap-2 mt-4">
+                <Button onClick={startDrawing} disabled={isDrawing}>
+                  {isDrawing ? 'Drawing...' : 'Start Drawing'}
                 </Button>
-              </CardContent>
-            </Card>
-          </div>
-        )}
+                <Button variant="outline" onClick={clearDrawing}>
+                  Clear
+                </Button>
+                <Button variant="outline" onClick={exportData} disabled={!area}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Export
+                </Button>
+              </div>
+              {isDrawing && (
+                <p className="text-sm text-gray-600 mt-2">
+                  Click 'Start Drawing' to reveal the map controls.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Controls Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Calculator className="h-5 w-5" />
+                <span>Calculation</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="unit">Unit</Label>
+                <select
+                  id="unit"
+                  className="w-full p-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
+                  value={unit}
+                  onChange={(e) => {
+                    setUnit(e.target.value);
+                    if (coordinates.length > 0) {
+                      const areaInSqMeters = calculatePolygonArea(coordinates);
+                      setArea(convertArea(areaInSqMeters, e.target.value));
+                    }
+                  }}
+                >
+                  <option value="acres" className="bg-background text-foreground">Acres</option>
+                  <option value="hectares" className="bg-background text-foreground">Hectares</option>
+                  <option value="sqmeters" className="bg-background text-foreground">Square Meters</option>
+                </select>
+              </div>
+
+              <div className="p-4 bg-green-50 rounded-lg">
+                <h3 className="font-semibold text-green-800">Calculated Area</h3>
+                <p className="text-2xl font-bold text-green-600">
+                  {Number(area || 0).toFixed(2)} {unit}
+                </p>
+                {coordinates.length > 0 && (
+                  <Badge variant="secondary" className="mt-2 bg-green-100 text-green-700">
+                    {coordinates.length} points marked
+                  </Badge>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="farmName">Farm Name</Label>
+                <Input
+                  id="farmName"
+                  placeholder="Enter farm name..."
+                  value={farmName}
+                  onChange={(e) => setFarmName(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="farmDescription">Description (Optional)</Label>
+                <Textarea
+                  id="farmDescription"
+                  placeholder="Add farm details..."
+                  value={farmDescription}
+                  onChange={(e) => setFarmDescription(e.target.value)}
+                />
+              </div>
+
+              <Button 
+                onClick={saveFarm} 
+                className="w-full"
+                disabled={!farmName || coordinates.length < 3}
+              >
+                <Save className="h-4 w-4 mr-2" />
+                Save Farm Profile
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {activeTab === "viewer" && (
         <Card>
@@ -1054,67 +523,45 @@ const FarmCalculator = () => {
           </CardHeader>
           <CardContent>
             <div className="w-full h-96 rounded-lg border relative" style={{ minHeight: '500px', height: '500px' }}>
-                {/* Farm info overlay */}
-                {viewPolygon && (
-                  <div className="absolute top-4 left-4 bg-white bg-opacity-90 px-4 py-2 rounded-lg shadow-md z-10">
-                    <h3 className="font-semibold text-green-800">Farm Loaded</h3>
-                    <p className="text-sm text-gray-600">Use the controls below to load different farms</p>
-                  </div>
-                )}
-                
-                <div ref={viewMapRef} className="absolute inset-0 rounded-lg" style={{ width: '100%', height: '500px' }} />
-                
-                {!viewMap && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg">
-                    <div className="text-center">
-                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-                      <p className="text-gray-600">Loading view map...</p>
-                    </div>
-                  </div>
-                )}
+              <MapContainer center={[28.6139, 77.2090]} zoom={15} ref={viewMapRef} style={{ height: '100%', width: '100%' }}>
+                <TileLayer
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                />
+                <FeatureGroup ref={viewFeatureGroupRef}>
+                  {/* Loaded farm will be displayed here */}
+                </FeatureGroup>
+                <MapUpdater coords={coordinates} />
+              </MapContainer>
+            </div>
+            
+            <div className="mt-4">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="font-semibold">Load Your Farms:</h4>
               </div>
               
-              <div className="mt-4">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-semibold">Load Your Farms:</h4>
-                  <div className="text-sm">
-                    Map Status: {viewMap ? (
-                      <span className="text-green-600">✅ Ready</span>
-                    ) : (
-                      <span className="text-yellow-600">⏳ Loading...</span>
-                    )}
-                  </div>
+              {savedFarms.length === 0 ? (
+                <p className="text-gray-500">No saved farms available. Create farms in the Calculator tab first.</p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                  {savedFarms.map((farm) => (
+                    <Button
+                      key={farm.id}
+                      onClick={() => loadFarmOnViewMap(farm)}
+                      variant="outline"
+                      size="sm"
+                      className="text-left justify-start"
+                    >
+                      <MapPin className="h-4 w-4 mr-2" />
+                      {farm.name}
+                    </Button>
+                  ))}
                 </div>
-                
-                {savedFarms.length === 0 ? (
-                  <p className="text-gray-500">No saved farms available. Create farms in the Calculator tab first.</p>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                    {savedFarms.map((farm) => (
-                      <Button
-                        key={farm.id}
-                        onClick={() => loadFarmOnViewMap(farm)}
-                        variant="outline"
-                        size="sm"
-                        className="text-left justify-start"
-                        disabled={!viewMap}
-                      >
-                        <MapPin className="h-4 w-4 mr-2" />
-                        {farm.name}
-                      </Button>
-                    ))}
-                  </div>
-                )}
-                
-                {!viewMap && (
-                  <div className="mt-2 p-2 bg-yellow-50 rounded text-sm text-yellow-800">
-                    ⏳ Waiting for map to load... This usually takes a few seconds.
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {activeTab === "ai-analysis" && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
