@@ -28,6 +28,7 @@ import ResetPassword from './pages/ResetPassword';
 import SettingsPage from './pages/SettingsPage';
 import AdminPage from './pages/AdminPage';
 import RoleSelectionModal from './components/RoleSelectionModal';
+import TestDrawMap from './components/TestDrawMap';
 
 const queryClient = new QueryClient();
 
@@ -111,6 +112,7 @@ const AppContent = () => {
             <Route path="/admin" element={isAdmin ? <ProtectedRoute><AdminPage /></ProtectedRoute> : <Navigate to="/" replace />} />
             <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
             <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
+            <Route path="/test-draw" element={<TestDrawMap />} />
             {/* Catch-all route */}
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { MapPin, Save, Download, Trash2, Edit2, Calculator, Brain, Sprout } from "lucide-react";
+import { MapPin, Save, Download, Trash2, Edit2, Calculator, Brain, Sprout, Search, Maximize2, Minimize2, Globe2, LocateFixed } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import replicateClient from "@/lib/replicate";
 import { useUser } from "@/contexts/UserContext";
@@ -17,6 +17,49 @@ import { EditControl } from 'react-leaflet-draw';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';
 import L from 'leaflet';
+import 'leaflet-control-geocoder';
+
+// Import CSS styles inline to avoid Vite import issues
+const geocoderStyles = `
+.leaflet-control-geocoder{border-radius:4px;background:#fff;min-width:26px;min-height:26px}.leaflet-touch .leaflet-control-geocoder{min-width:30px;min-height:30px}.leaflet-control-geocoder a,.leaflet-control-geocoder .leaflet-control-geocoder-icon{border-bottom:none;display:inline-block}.leaflet-control-geocoder .leaflet-control-geocoder-alternatives a{width:inherit;height:inherit;line-height:inherit}.leaflet-control-geocoder a:hover,.leaflet-control-geocoder .leaflet-control-geocoder-icon:hover{border-bottom:none;display:inline-block}.leaflet-control-geocoder-form{display:none;vertical-align:middle}.leaflet-control-geocoder-expanded .leaflet-control-geocoder-form{display:inline-block}.leaflet-control-geocoder-form input{font-size:120%;border:0;background-color:transparent;width:246px}.leaflet-control-geocoder-icon{border-radius:4px;width:26px;height:26px;border:none;background-color:#fff;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12.2 13l3.4 6.6c.6 1.1 2.5-.4 2-1.2l-4-6.2z'/%3E%3Ccircle cx='10.8' cy='8.9' r='3.9' fill='none' stroke='%23000' stroke-width='1.5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:center;cursor:pointer}.leaflet-touch .leaflet-control-geocoder-icon{width:30px;height:30px}.leaflet-control-geocoder-throbber .leaflet-control-geocoder-icon{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' stroke='%23000' stroke-linecap='round' stroke-width='1.6' viewBox='0 0 24 24'%3E%3Cdefs/%3E%3Cg%3E%3Cpath stroke-opacity='.1' d='M14 8.4l3-5'/%3E%3Cpath stroke-opacity='.2' d='M15.6 10l5-3'/%3E%3Cpath stroke-opacity='.3' d='M16.2 12H22'/%3E%3Cpath stroke-opacity='.4' d='M15.6 14l5 3m-6.5-1.4l2.9 5'/%3E%3Cpath stroke-opacity='.5' d='M12 16.2V22m-2-6.4l-3 5'/%3E%3Cpath stroke-opacity='.6' d='M8.4 14l-5 3'/%3E%3Cpath stroke-opacity='.7' d='M7.8 12H2'/%3E%3Cpath stroke-opacity='.8' d='M8.4 10l-5-3'/%3E%3Cpath stroke-opacity='.9' d='M10 8.4l-3-5'/%3E%3Cpath d='M12 7.8V2'/%3E%3CanimateTransform attributeName='transform' calcMode='discrete' dur='1s' repeatCount='indefinite' type='rotate' values='0 12 12;30 12 12;60 12 12;90 12 12;120 12 12;150 12 12;180 12 12;210 12 12;240 12 12;270 12 12;300 12 12;330 12 12'/%3E%3C/g%3E%3C/svg%3E")}.leaflet-control-geocoder-form-no-error{display:none}.leaflet-control-geocoder-form input:focus{outline:none}.leaflet-control-geocoder-form button{display:none}.leaflet-control-geocoder-error{margin-top:8px;margin-left:8px;display:block;color:#444}.leaflet-control-geocoder-alternatives{display:block;width:272px;list-style:none;padding:0;margin:0}.leaflet-control-geocoder-alternatives-minimized{display:none;height:0}.leaflet-control-geocoder-alternatives li{white-space:nowrap;display:block;overflow:hidden;padding:5px 8px;text-overflow:ellipsis;border-bottom:1px solid #ccc;cursor:pointer}.leaflet-control-geocoder-alternatives li a,.leaflet-control-geocoder-alternatives li a:hover{width:inherit;height:inherit;line-height:inherit;background:inherit;border-radius:inherit;text-align:left}.leaflet-control-geocoder-alternatives li:last-child{border-bottom:none}.leaflet-control-geocoder-alternatives li:hover,.leaflet-control-geocoder-selected{background-color:#f5f5f5}.leaflet-control-geocoder-address-context{color:#666}
+`;
+
+// Inject styles into the document
+if (typeof document !== 'undefined') {
+  const styleElement = document.createElement('style');
+  styleElement.textContent = geocoderStyles;
+  document.head.appendChild(styleElement);
+}
+
+// Add styles for full screen map
+const fullscreenMapStyles = `
+.fullscreen-map {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 9999 !important;
+  background: #fff !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+.fullscreen-map .leaflet-container {
+  height: 100vh !important;
+  min-height: 100vh !important;
+}
+.fullscreen-toggle-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1100;
+}
+`;
+if (typeof document !== 'undefined') {
+  const styleElement = document.createElement('style');
+  styleElement.textContent = fullscreenMapStyles;
+  document.head.appendChild(styleElement);
+}
 
 // Fix for default icon issue with Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -37,7 +80,7 @@ const FarmCalculator = () => {
   const [farmName, setFarmName] = useState('');
   const [farmDescription, setFarmDescription] = useState('');
   const [savedFarms, setSavedFarms] = useState([]);
-  const [isDrawing, setIsDrawing] = useState(false);
+  // Remove isDrawing state
   
   // AI Features
   const [cropType, setCropType] = useState('');
@@ -48,6 +91,37 @@ const FarmCalculator = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [loadedFarmInViewer, setLoadedFarmInViewer] = useState(null);
+  const [searchLocation, setSearchLocation] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [activeTab, setActiveTab] = useState("calculator");
+  const mapContainerRef = useRef(null);
+  const [isMapFullscreen, setIsMapFullscreen] = useState(false);
+  // Add state for map base layer
+  const [mapBaseLayer, setMapBaseLayer] = useState('esri'); // 'esri' or 'osm'
+  // Add state for my location marker
+  const [myLocation, setMyLocation] = useState(null);
+  // Add state to track map readiness
+  const [isMapReady, setIsMapReady] = useState(false);
+
+  // Native Fullscreen API handlers
+  useEffect(() => {
+    function handleFullscreenChange() {
+      const isFull = document.fullscreenElement === mapContainerRef.current;
+      setIsMapFullscreen(isFull);
+    }
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+  const handleToggleFullscreen = () => {
+    const el = mapContainerRef.current;
+    if (!el) return;
+    if (!document.fullscreenElement) {
+      el.requestFullscreen();
+    } else {
+      document.exitFullscreen();
+    }
+  };
 
   const featureGroupRef = useRef();
   const viewFeatureGroupRef = useRef();
@@ -58,7 +132,6 @@ const FarmCalculator = () => {
     setCoordinates(latlngs);
     const areaInSqMeters = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
     setArea(convertArea(areaInSqMeters, unit));
-    setIsDrawing(false);
     toast({
       title: "Area calculated!",
       description: `Farm area: ${convertArea(areaInSqMeters, unit).toFixed(2)} ${unit}`,
@@ -173,11 +246,6 @@ const FarmCalculator = () => {
     return { lat: x / coords.length, lng: y / coords.length };
   };
 
-  // Start drawing mode
-  const startDrawing = () => {
-    setIsDrawing(true);
-  };
-
   // Clear the current drawing
   const clearDrawing = () => {
     if (featureGroupRef.current) {
@@ -185,7 +253,6 @@ const FarmCalculator = () => {
     }
     setCoordinates([]);
     setArea(0);
-    setIsDrawing(false);
     setAiAnalysis(null);
   };
 
@@ -354,6 +421,58 @@ const FarmCalculator = () => {
     return null;
   };
 
+  // Geocoder Control Component
+  const GeocoderControl = ({ position = 'topleft' }) => {
+    const map = useMap();
+    
+    useEffect(() => {
+      if (!map) return;
+      
+      // Create geocoder control
+      const geocoder = L.Control.geocoder({
+        defaultMarkGeocode: false,
+        placeholder: 'Search for a location...',
+        geocoder: L.Control.Geocoder.nominatim({
+          geocodingQueryParams: {
+            countrycodes: 'in', // Focus on India
+            limit: 5
+          }
+        })
+      }).addTo(map);
+      
+      // Handle geocoding results
+      geocoder.on('markgeocode', (e) => {
+        const { center, bbox } = e.geocode;
+        
+        // Fly to the location
+        map.flyTo(center, 16);
+        
+        // Show a temporary marker
+        const marker = L.marker(center).addTo(map);
+        
+        // Remove marker after 3 seconds
+        setTimeout(() => {
+          map.removeLayer(marker);
+        }, 3000);
+        
+        // Show toast notification
+        toast({
+          title: "Location Found!",
+          description: `Navigated to ${e.geocode.name || 'the selected location'}`,
+        });
+      });
+      
+      // Cleanup function
+      return () => {
+        if (map && geocoder) {
+          map.removeControl(geocoder);
+        }
+      };
+    }, [map]);
+    
+    return null;
+  };
+
   // Load a saved farm
   const loadFarm = (farm) => {
     clearDrawing();
@@ -501,7 +620,79 @@ const FarmCalculator = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const [activeTab, setActiveTab] = useState("calculator");
+  // Add no-scroll CSS
+  useEffect(() => {
+    if (typeof document !== 'undefined' && !document.getElementById('no-scroll-style')) {
+      const style = document.createElement('style');
+      style.id = 'no-scroll-style';
+      style.innerHTML = `.no-scroll { overflow: hidden !important; }`;
+      document.head.appendChild(style);
+    }
+  }, []);
+
+  // Manual search function
+  const searchForLocation = async () => {
+    if (!searchLocation.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a location to search for.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSearching(true);
+    
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchLocation)}&countrycodes=in&limit=1`
+      );
+      const data = await response.json();
+      
+      if (data && data.length > 0) {
+        const location = data[0];
+        const lat = parseFloat(location.lat);
+        const lon = parseFloat(location.lon);
+        
+        // Fly to the location on both maps
+        if (mapRef.current) {
+          mapRef.current.flyTo([lat, lon], 16);
+        }
+        if (viewMapRef.current) {
+          viewMapRef.current.flyTo([lat, lon], 16);
+        }
+        
+        // Show temporary marker
+        const marker = L.marker([lat, lon]).addTo(mapRef.current || viewMapRef.current);
+        setTimeout(() => {
+          if (mapRef.current) mapRef.current.removeLayer(marker);
+          if (viewMapRef.current) viewMapRef.current.removeLayer(marker);
+        }, 5000);
+        
+        toast({
+          title: "Location Found!",
+          description: `Navigated to ${location.display_name}`,
+        });
+        
+        setSearchLocation('');
+      } else {
+        toast({
+          title: "Location Not Found",
+          description: "Could not find the specified location. Please try a different search term.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+      toast({
+        title: "Search Error",
+        description: "Failed to search for location. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSearching(false);
+    }
+  };
 
   // Clear loaded farm when switching away from viewer tab
   const handleTabChange = (newTab) => {
@@ -510,6 +701,87 @@ const FarmCalculator = () => {
     }
     setActiveTab(newTab);
   };
+
+  // Add a helper for getting the correct tile layer config
+  const getTileLayer = () => {
+    if (mapBaseLayer === 'esri') {
+      return {
+        url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+        attribution: 'Tiles © Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+      };
+    } else {
+      return {
+        url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        attribution: '&copy; OpenStreetMap contributors'
+      };
+    }
+  };
+
+  // Helper to handle geolocation for a given map ref
+  const handleFindMyLocation = (mapRefToUse) => {
+    if (!navigator.geolocation) {
+      toast({
+        title: "Geolocation Not Supported",
+        description: "Your browser does not support geolocation.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!mapRefToUse.current || typeof mapRefToUse.current.setView !== 'function') {
+      toast({
+        title: "Map Not Ready",
+        description: "The map is not ready yet. Please try again in a moment.",
+        variant: "destructive",
+      });
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude, accuracy } = position.coords;
+        setMyLocation({ lat: latitude, lng: longitude });
+        const map = mapRefToUse.current;
+        // Fly to user location
+        map.setView([latitude, longitude], 15);
+        // Add marker with popup
+        const marker = L.marker([latitude, longitude])
+          .addTo(map)
+          .bindPopup("You are here!")
+          .openPopup();
+        // Optional: Add accuracy circle
+        const circle = L.circle([latitude, longitude], {
+          radius: accuracy,
+          color: "blue",
+          fillOpacity: 0.1,
+        }).addTo(map);
+        // Remove marker and circle after 5 seconds
+        setTimeout(() => {
+          map.removeLayer(marker);
+          map.removeLayer(circle);
+        }, 5000);
+        toast({
+          title: "Location Found!",
+          description: `Centered map to your current location.`,
+        });
+      },
+      (error) => {
+        console.error(error);
+        toast({
+          title: "Location Error",
+          description: error.message || "Unable to retrieve your location.",
+          variant: "destructive",
+        });
+      }
+    );
+  };
+
+  // Auto-center map to user's location on mount (calculator map)
+  useEffect(() => {
+    if (mapRef.current) {
+      handleFindMyLocation(mapRef);
+    }
+    // Only run once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -540,37 +812,106 @@ const FarmCalculator = () => {
                 <span>Interactive Map</span>
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="w-full h-96 rounded-lg border relative" style={{ minHeight: '400px', height: '400px' }}>
-                <MapContainer center={[28.6139, 77.2090]} zoom={15} ref={mapRef} style={{ height: '100%', width: '100%' }}>
+            <CardContent style={{ position: 'relative' }}>
+              <div ref={mapContainerRef} className="w-full h-96 rounded-lg border relative" style={{ minHeight: '400px', height: '400px' }}>
+                {/* Fullscreen button - bottom right corner */}
+                <button
+                  type="button"
+                  onClick={handleToggleFullscreen}
+                  style={{ position: 'absolute', bottom: 16, right: 16, zIndex: 1200, background: '#fff', border: '1px solid #ccc', borderRadius: 6, padding: 8, display: 'flex', alignItems: 'center', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
+                  title={isMapFullscreen ? 'Exit Full Screen' : 'Full Screen'}
+                >
+                  {isMapFullscreen ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
+                </button>
+                <MapContainer
+                  center={[28.6139, 77.2090]}
+                  zoom={15}
+                  ref={mapRef}
+                  whenCreated={mapInstance => { mapRef.current = mapInstance; setIsMapReady(true); }}
+                  style={{ height: '100%', width: '100%' }}
+                >
                   <TileLayer
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    url={getTileLayer().url}
+                    attribution={getTileLayer().attribution}
                   />
                   <FeatureGroup ref={featureGroupRef}>
-                    {isDrawing && (
-                      <EditControl
-                        position="topright"
-                        onCreated={onCreated}
-                        onEdited={onEdited}
-                        onDeleted={onDeleted}
-                        draw={{
-                          rectangle: false,
-                          circle: false,
-                          circlemarker: false,
-                          marker: false,
-                          polyline: false,
-                        }}
-                      />
-                    )}
+                    <EditControl
+                      position="topright"
+                      onCreated={onCreated}
+                      onEdited={onEdited}
+                      onDeleted={onDeleted}
+                      draw={{
+                        polygon: true,
+                        rectangle: false,
+                        circle: false,
+                        circlemarker: false,
+                        marker: false,
+                        polyline: false,
+                      }}
+                    />
                   </FeatureGroup>
+                  <GeocoderControl position="topleft" />
                   <MapUpdater coords={coordinates} />
                 </MapContainer>
               </div>
+              {/* Search Location Section - compact */}
+              <div className="mb-4 p-3 bg-blue-50 rounded-lg mt-2">
+                <h4 className="font-semibold text-blue-800 mb-2 text-sm">Search Location</h4>
+                <div className="flex gap-2 items-center">
+                  <Input
+                    placeholder="Enter location (e.g., Mumbai, Maharashtra)"
+                    value={searchLocation}
+                    onChange={(e) => setSearchLocation(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && searchForLocation()}
+                    className="flex-1 h-8 text-sm px-2"
+                    style={{ minHeight: 0, fontSize: '0.95rem' }}
+                  />
+                  <Button
+                    onClick={searchForLocation}
+                    disabled={isSearching || !searchLocation.trim()}
+                    variant="outline"
+                    size="sm"
+                    className="h-8 px-2"
+                    style={{ minWidth: 0 }}
+                  >
+                    <Search className="h-4 w-4 mr-1" />
+                    {isSearching ? '...' : 'Search'}
+                  </Button>
+                </div>
+                <p className="text-xs text-blue-600 mt-1">
+                  Search for cities, villages, or landmarks to navigate to that location
+                </p>
+                {/* My Location and Map View buttons below search bar */}
+                <div className="flex gap-2 mt-3">
+                  <Button
+                    type="button"
+                    onClick={() => handleFindMyLocation(mapRef)}
+                    variant="outline"
+                    size="sm"
+                    className="h-8 px-2 flex items-center"
+                    style={{ minWidth: 0 }}
+                    title="Find My Location"
+                    disabled={!isMapReady}
+                  >
+                    <LocateFixed size={16} className="mr-1" />
+                    My Location
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => setMapBaseLayer(mapBaseLayer === 'esri' ? 'osm' : 'esri')}
+                    variant="outline"
+                    size="sm"
+                    className="h-8 px-2 flex items-center"
+                    style={{ minWidth: 0 }}
+                    title={mapBaseLayer === 'esri' ? 'Switch to Map View' : 'Switch to Satellite View'}
+                  >
+                    <Globe2 size={16} className="mr-1" />
+                    {mapBaseLayer === 'esri' ? 'Map' : 'Satellite'}
+                  </Button>
+                </div>
+              </div>
+
               <div className="flex flex-wrap gap-2 mt-4">
-                <Button onClick={startDrawing} disabled={isDrawing}>
-                  {isDrawing ? 'Drawing...' : 'Start Drawing'}
-                </Button>
                 <Button variant="outline" onClick={clearDrawing}>
                   Clear
                 </Button>
@@ -579,11 +920,6 @@ const FarmCalculator = () => {
                   Export
                 </Button>
               </div>
-              {isDrawing && (
-                <p className="text-sm text-gray-600 mt-2">
-                  Click 'Start Drawing' to reveal the map controls.
-                </p>
-              )}
             </CardContent>
           </Card>
 
@@ -658,14 +994,14 @@ const FarmCalculator = () => {
                 />
               </div>
 
-                             <Button 
-                 onClick={saveFarm} 
-                 className="w-full"
-                 disabled={!farmName || coordinates.length < 3 || isSaving}
-               >
-                 <Save className="h-4 w-4 mr-2" />
-                 {isSaving ? 'Saving...' : 'Save Farm Profile'}
-               </Button>
+              <Button 
+                onClick={saveFarm} 
+                className="w-full"
+                disabled={!farmName || coordinates.length < 3 || isSaving}
+              >
+                <Save className="h-4 w-4 mr-2" />
+                {isSaving ? 'Saving...' : 'Save Farm Profile'}
+              </Button>
             </CardContent>
           </Card>
         </div>
@@ -679,20 +1015,83 @@ const FarmCalculator = () => {
               <span>Farm Viewer - Dedicated Map for Viewing Your Farms</span>
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent style={{ position: 'relative' }}>
             <div className="w-full h-96 rounded-lg border relative" style={{ minHeight: '500px', height: '500px' }}>
-              <MapContainer center={[28.6139, 77.2090]} zoom={15} ref={viewMapRef} style={{ height: '100%', width: '100%' }}>
+              {/* My Location button - top right, left of layer switch button (viewer map) */}
+              <button
+                type="button"
+                onClick={() => handleFindMyLocation(viewMapRef)}
+                style={{ position: 'absolute', top: 12, right: 160, zIndex: 1200, background: '#fff', border: '1px solid #ccc', borderRadius: 6, padding: 4, display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+                title="Find My Location"
+              >
+                <LocateFixed size={18} />
+              </button>
+              {/* Layer switch button - top right, left of fullscreen button (viewer map) */}
+              <button
+                type="button"
+                onClick={() => setMapBaseLayer(mapBaseLayer === 'esri' ? 'osm' : 'esri')}
+                style={{ position: 'absolute', top: 12, right: 108, zIndex: 1200, background: '#fff', border: '1px solid #ccc', borderRadius: 6, padding: 4, display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+                title={mapBaseLayer === 'esri' ? 'Switch to Map View' : 'Switch to Satellite View'}
+              >
+                <Globe2 size={18} />
+                <span style={{ marginLeft: 4, fontSize: 12 }}>{mapBaseLayer === 'esri' ? 'Map' : 'Satellite'}</span>
+              </button>
+              {/* Fullscreen button - top right, left of draw controls (viewer map) */}
+              <button
+                type="button"
+                onClick={handleToggleFullscreen}
+                style={{ position: 'absolute', top: 12, right: 56, zIndex: 1200, background: '#fff', border: '1px solid #ccc', borderRadius: 6, padding: 4, display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+                title={isMapFullscreen ? 'Exit Full Screen' : 'Full Screen'}
+              >
+                {isMapFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+              </button>
+              <MapContainer
+                center={[28.6139, 77.2090]}
+                zoom={15}
+                ref={viewMapRef}
+                whenCreated={mapInstance => { viewMapRef.current = mapInstance; }}
+                style={{ height: '100%', width: '100%' }}
+              >
                 <TileLayer
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  url={getTileLayer().url}
+                  attribution={getTileLayer().attribution}
                 />
                 <FeatureGroup ref={viewFeatureGroupRef}>
                   {/* Loaded farm will be displayed here */}
                 </FeatureGroup>
+                <GeocoderControl position="topleft" />
                 <MapUpdater coords={coordinates} />
               </MapContainer>
             </div>
-            
+            {/* Search Location Section for Viewer - compact */}
+            <div className="mb-4 p-3 bg-blue-50 rounded-lg mt-2">
+              <h4 className="font-semibold text-blue-800 mb-2 text-sm">Search Location</h4>
+              <div className="flex gap-2 items-center">
+                <Input
+                  placeholder="Enter location (e.g., Mumbai, Maharashtra)"
+                  value={searchLocation}
+                  onChange={(e) => setSearchLocation(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && searchForLocation()}
+                  className="flex-1 h-8 text-sm px-2"
+                  style={{ minHeight: 0, fontSize: '0.95rem' }}
+                />
+                <Button
+                  onClick={searchForLocation}
+                  disabled={isSearching || !searchLocation.trim()}
+                  variant="outline"
+                  size="sm"
+                  className="h-8 px-2"
+                  style={{ minWidth: 0 }}
+                >
+                  <Search className="h-4 w-4 mr-1" />
+                  {isSearching ? '...' : 'Search'}
+                </Button>
+              </div>
+              <p className="text-xs text-blue-600 mt-1">
+                Search for cities, villages, or landmarks to navigate to that location
+              </p>
+            </div>
+
             <div className="mt-4">
               <div className="flex items-center justify-between mb-2">
                 <h4 className="font-semibold">Load Your Farms:</h4>
