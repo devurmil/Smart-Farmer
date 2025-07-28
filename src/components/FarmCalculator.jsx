@@ -891,7 +891,6 @@ const FarmCalculator = () => {
                     className="h-8 px-2 flex items-center"
                     style={{ minWidth: 0 }}
                     title="Find My Location"
-                    disabled={!isMapReady}
                   >
                     <LocateFixed size={16} className="mr-1" />
                     My Location
