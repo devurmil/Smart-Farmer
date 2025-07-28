@@ -46,6 +46,8 @@ const FarmCalculator = () => {
   const [soilPH, setSoilPH] = useState('');
   const [aiAnalysis, setAiAnalysis] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [loadedFarmInViewer, setLoadedFarmInViewer] = useState(null);
 
   const featureGroupRef = useRef();
   const viewFeatureGroupRef = useRef();
@@ -197,28 +199,92 @@ const FarmCalculator = () => {
       });
       return;
     }
+
+    // Validate coordinates
+    const validCoordinates = coordinates.every(coord => 
+      typeof coord.lat === 'number' && typeof coord.lng === 'number' &&
+      !isNaN(coord.lat) && !isNaN(coord.lng)
+    );
+
+    if (!validCoordinates) {
+      toast({
+        title: "Error",
+        description: "Invalid coordinates detected. Please redraw the farm area.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     // Calculate centroid for location
     const centroid = getCentroid(coordinates);
-    // Compose location object (address can be a string or empty)
+    
+    // Compose location object (address is required by validation)
     const location = {
-      lat: centroid.lat,
-      lng: centroid.lng,
-      address: farmDescription || "No address provided"
+      lat: parseFloat(centroid.lat),
+      lng: parseFloat(centroid.lng),
+      address: farmDescription || `${farmName} Farm Location`
     };
     
+    // Validate location
+    if (isNaN(location.lat) || isNaN(location.lng) || !location.address) {
+      toast({
+        title: "Error",
+        description: "Invalid location data. Please redraw the farm area.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Calculate area in square meters and convert to hectares/acres
     const areaInSqMeters = calculatePolygonArea(coordinates);
-    const areaHectares = areaInSqMeters / 10000;
-    const areaAcres = areaInSqMeters / 4047;
+    const areaHectares = parseFloat((areaInSqMeters / 10000).toFixed(2));
+    const areaAcres = parseFloat((areaInSqMeters / 4047).toFixed(2));
+    
+    // Validate area values
+    if (areaInSqMeters <= 0 || areaHectares <= 0 || areaAcres <= 0) {
+      toast({
+        title: "Error",
+        description: "Invalid area calculated. Please redraw the farm area.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    console.log('Saving farm with data:', {
+      name: farmName,
+      areaInSqMeters,
+      areaHectares,
+      areaAcres,
+      coordinates: coordinates.length,
+      location: {
+        lat: centroid.lat,
+        lng: centroid.lng,
+        address: farmDescription || `${farmName} Farm Location`
+      }
+    });
+    
+    // Ensure coordinates are properly formatted
+    const formattedCoordinates = coordinates.map(coord => ({
+      lat: parseFloat(coord.lat),
+      lng: parseFloat(coord.lng)
+    }));
+
+    // Remove undefined values to prevent validation issues
     const farmPayload = {
       name: farmName,
       location,
-      coordinates,
+      coordinates: formattedCoordinates,
       area_hectares: areaHectares,
       area_acres: areaAcres,
-      soil_type: soilType || undefined,
-      description: farmDescription
+      ...(soilType && { soil_type: soilType }),
+      ...(farmDescription && { description: farmDescription })
     };
+
+    // Log the exact payload being sent
+    console.log('Farm payload to be sent:', JSON.stringify(farmPayload, null, 2));
+    
     try {
+      setIsSaving(true);
       const response = await fetch(`${getBackendUrl()}/api/farms`, {
         method: "POST",
         headers: {
@@ -227,22 +293,51 @@ const FarmCalculator = () => {
         credentials: 'include',
         body: JSON.stringify(farmPayload),
       });
+      
       const result = await response.json();
-      if (!response.ok) throw new Error(result.message || "Failed to save farm");
-      setSavedFarms([...savedFarms, result.data.farm]);
+      console.log('Backend response:', result);
+      
+      if (!response.ok) {
+        // Show more detailed error information
+        const errorMessage = result.message || result.error || "Failed to save farm";
+        console.error('Validation error details:', result);
+        
+        // Log specific validation errors if available
+        if (result.errors && Array.isArray(result.errors)) {
+          console.error('Specific validation errors:');
+          result.errors.forEach((error, index) => {
+            console.error(`Error ${index + 1}:`, error);
+          });
+        }
+        
+        throw new Error(errorMessage);
+      }
+      
+      // Add the new farm to the saved farms list
+      const newFarm = {
+        ...result.data.farm,
+        area: unit === 'hectares' ? areaHectares : areaAcres,
+        unit: unit
+      };
+      
+      setSavedFarms(prev => [...prev, newFarm]);
       setFarmName('');
       setFarmDescription('');
       clearDrawing();
+      
       toast({
         title: "Farm Saved!",
         description: `${farmName} (${Number(area).toFixed(2)} ${unit}) has been saved successfully.`,
       });
     } catch (error) {
+      console.error('Error saving farm:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to save farm to backend.",
         variant: "destructive",
       });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -276,10 +371,55 @@ const FarmCalculator = () => {
 
   // Load farm on the dedicated view map
   const loadFarmOnViewMap = (farm) => {
-    if (viewFeatureGroupRef.current) {
+    console.log('Loading farm on view map:', farm);
+    
+    if (viewFeatureGroupRef.current && farm.coordinates && farm.coordinates.length > 0) {
       viewFeatureGroupRef.current.clearLayers();
-      const polygon = L.polygon(farm.coordinates.map(c => [c.lat, c.lng]));
-      viewFeatureGroupRef.current.addLayer(polygon);
+      
+      // Ensure coordinates are in the correct format
+      const validCoordinates = farm.coordinates.filter(coord => 
+        coord && typeof coord.lat === 'number' && typeof coord.lng === 'number' &&
+        !isNaN(coord.lat) && !isNaN(coord.lng)
+      );
+      
+      if (validCoordinates.length >= 3) {
+        const polygon = L.polygon(validCoordinates.map(c => [c.lat, c.lng]), {
+          color: 'green',
+          weight: 2,
+          fillColor: '#22c55e',
+          fillOpacity: 0.3
+        });
+        
+        viewFeatureGroupRef.current.addLayer(polygon);
+        
+        // Fit map to the polygon bounds
+        const bounds = L.latLngBounds(validCoordinates.map(c => [c.lat, c.lng]));
+        if (viewMapRef.current) {
+          viewMapRef.current.fitBounds(bounds, { padding: [20, 20] });
+        }
+        
+        // Set the loaded farm state
+        setLoadedFarmInViewer(farm);
+        
+        toast({
+          title: "Farm Loaded!",
+          description: `${farm.name} has been loaded on the map.`,
+        });
+      } else {
+        console.error('Invalid coordinates for farm:', farm);
+        toast({
+          title: "Error",
+          description: "Invalid farm coordinates. Cannot display on map.",
+          variant: "destructive",
+        });
+      }
+    } else {
+      console.error('Cannot load farm - missing coordinates or feature group ref');
+      toast({
+        title: "Error",
+        description: "Cannot load farm. Missing coordinates or map reference.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -363,6 +503,14 @@ const FarmCalculator = () => {
 
   const [activeTab, setActiveTab] = useState("calculator");
 
+  // Clear loaded farm when switching away from viewer tab
+  const handleTabChange = (newTab) => {
+    if (activeTab === "viewer" && newTab !== "viewer") {
+      setLoadedFarmInViewer(null);
+    }
+    setActiveTab(newTab);
+  };
+
   return (
     <div className="space-y-6">
       {/* Dropdown Menu for Navigation */}
@@ -372,7 +520,7 @@ const FarmCalculator = () => {
           id="farm-section"
           className="w-full p-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
           value={activeTab}
-          onChange={e => setActiveTab(e.target.value)}
+          onChange={e => handleTabChange(e.target.value)}
         >
           <option value="calculator" className="bg-background text-foreground">Calculator</option>
           <option value="viewer" className="bg-background text-foreground">Farm Viewer</option>
@@ -474,9 +622,19 @@ const FarmCalculator = () => {
                   {Number(area || 0).toFixed(2)} {unit}
                 </p>
                 {coordinates.length > 0 && (
-                  <Badge variant="secondary" className="mt-2 bg-green-100 text-green-700">
-                    {coordinates.length} points marked
-                  </Badge>
+                  <div className="mt-2 space-y-1">
+                    <Badge variant="secondary" className="bg-green-100 text-green-700">
+                      {coordinates.length} points marked
+                    </Badge>
+                    <div className="text-xs text-green-700">
+                      {(() => {
+                        const areaInSqMeters = calculatePolygonArea(coordinates);
+                        const hectares = (areaInSqMeters / 10000).toFixed(2);
+                        const acres = (areaInSqMeters / 4047).toFixed(2);
+                        return `${hectares} hectares • ${acres} acres`;
+                      })()}
+                    </div>
+                  </div>
                 )}
               </div>
 
@@ -500,14 +658,14 @@ const FarmCalculator = () => {
                 />
               </div>
 
-              <Button 
-                onClick={saveFarm} 
-                className="w-full"
-                disabled={!farmName || coordinates.length < 3}
-              >
-                <Save className="h-4 w-4 mr-2" />
-                Save Farm Profile
-              </Button>
+                             <Button 
+                 onClick={saveFarm} 
+                 className="w-full"
+                 disabled={!farmName || coordinates.length < 3 || isSaving}
+               >
+                 <Save className="h-4 w-4 mr-2" />
+                 {isSaving ? 'Saving...' : 'Save Farm Profile'}
+               </Button>
             </CardContent>
           </Card>
         </div>
@@ -538,7 +696,80 @@ const FarmCalculator = () => {
             <div className="mt-4">
               <div className="flex items-center justify-between mb-2">
                 <h4 className="font-semibold">Load Your Farms:</h4>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      // Refresh saved farms
+                      const fetchFarms = async () => {
+                        try {
+                          const response = await fetch(`${getBackendUrl()}/api/farms`, {
+                            credentials: 'include',
+                          });
+                          const result = await response.json();
+                          if (response.ok && result.data && result.data.farms) {
+                            const activeFarms = result.data.farms.filter(farm => farm.is_active !== false);
+                            setSavedFarms(activeFarms);
+                            toast({
+                              title: "Farms Refreshed",
+                              description: `Loaded ${activeFarms.length} farms.`,
+                            });
+                          }
+                        } catch (error) {
+                          console.error("Error fetching farms:", error);
+                          toast({
+                            title: "Error",
+                            description: "Failed to refresh farms.",
+                            variant: "destructive",
+                          });
+                        }
+                      };
+                      fetchFarms();
+                    }}
+                  >
+                    Refresh
+                  </Button>
+                  {loadedFarmInViewer && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        if (viewFeatureGroupRef.current) {
+                          viewFeatureGroupRef.current.clearLayers();
+                        }
+                        setLoadedFarmInViewer(null);
+                        toast({
+                          title: "Map Cleared",
+                          description: "Farm has been removed from the map.",
+                        });
+                      }}
+                    >
+                      Clear Map
+                    </Button>
+                  )}
+                </div>
               </div>
+              
+              {loadedFarmInViewer && (
+                <div className="mb-4 p-3 bg-green-50 rounded-lg">
+                  <h5 className="font-semibold text-green-800">Currently Loaded:</h5>
+                  <p className="text-sm text-green-700">
+                    {loadedFarmInViewer.name} - {loadedFarmInViewer.coordinates?.length || 0} points
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-2"
+                    onClick={() => {
+                      console.log('Loaded farm details:', loadedFarmInViewer);
+                      console.log('Coordinates:', loadedFarmInViewer.coordinates);
+                    }}
+                  >
+                    Debug Farm Data
+                  </Button>
+                </div>
+              )}
               
               {savedFarms.length === 0 ? (
                 <p className="text-gray-500">No saved farms available. Create farms in the Calculator tab first.</p>
@@ -548,12 +779,17 @@ const FarmCalculator = () => {
                     <Button
                       key={farm.id}
                       onClick={() => loadFarmOnViewMap(farm)}
-                      variant="outline"
+                      variant={loadedFarmInViewer?.id === farm.id ? "default" : "outline"}
                       size="sm"
                       className="text-left justify-start"
                     >
                       <MapPin className="h-4 w-4 mr-2" />
                       {farm.name}
+                      {loadedFarmInViewer?.id === farm.id && (
+                        <Badge variant="secondary" className="ml-2 text-xs">
+                          Loaded
+                        </Badge>
+                      )}
                     </Button>
                   ))}
                 </div>
@@ -727,18 +963,25 @@ const FarmCalculator = () => {
                       </div>
                       <p className="text-sm text-gray-600 mb-2">{farm.description}</p>
                       <div className="space-y-1">
-                        <p className="text-lg font-bold text-green-600">
-                          {farm.area_acres ? `${Number(farm.area_acres).toFixed(2)} acres` : farm.area_hectares ? `${Number(farm.area_hectares).toFixed(2)} hectares` : '0.00 acres'}
-                        </p>
-                        {farm.cropType && (
-                          <p className="text-xs text-gray-500">Crop: {farm.cropType}</p>
-                        )}
-                        {farm.aiAnalysis && (
-                          <Badge variant="secondary" className="bg-blue-100 text-blue-700">
-                            AI Analyzed
+                        <div className="flex justify-between items-center">
+                          <p className="text-lg font-bold text-green-600">
+                            {farm.area_acres ? `${Number(farm.area_acres).toFixed(2)} acres` : farm.area_hectares ? `${Number(farm.area_hectares).toFixed(2)} hectares` : '0.00 acres'}
+                          </p>
+                          <Badge variant="outline" className="text-xs">
+                            {farm.coordinates ? `${farm.coordinates.length} points` : '0 points'}
                           </Badge>
+                        </div>
+                        {farm.area_acres && farm.area_hectares && (
+                          <p className="text-xs text-gray-500">
+                            {Number(farm.area_hectares).toFixed(2)} hectares
+                          </p>
                         )}
-                        <p className="text-xs text-gray-500">Created: {farm.createdAt}</p>
+                        {farm.description && (
+                          <p className="text-xs text-gray-500 truncate">{farm.description}</p>
+                        )}
+                        <p className="text-xs text-gray-500">
+                          Created: {new Date(farm.created_at).toLocaleDateString()}
+                        </p>
                       </div>
                       {/* Removed View on Map and Load for Editing buttons */}
                     </CardContent>

@@ -9,6 +9,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import api from '@/services/api';
 
 declare const google: any;
 
@@ -26,8 +29,6 @@ interface FarmProfile {
   createdAt: Date;
 }
 
-// ... (imports remain unchanged)
-
 const FarmCalculator = () => {
   const [coordinates, setCoordinates] = useState<Coordinate[]>([]);
   const [farmName, setFarmName] = useState('');
@@ -37,8 +38,127 @@ const FarmCalculator = () => {
   const [drawingManager, setDrawingManager] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
   
   const mapRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
+
+  // Load saved farms from backend on component mount
+  useEffect(() => {
+    loadSavedFarms();
+  }, []);
+
+  const loadSavedFarms = async () => {
+    try {
+      const response = await api.get('/farms');
+      if (response.data.success) {
+        const farms = response.data.data.farms.map((farm: any) => ({
+          id: farm.id,
+          name: farm.name,
+          coordinates: farm.coordinates || [],
+          area: farm.area_hectares || farm.area_acres || 0,
+          unit: farm.area_hectares ? 'hectares' : 'acres',
+          createdAt: new Date(farm.created_at)
+        }));
+        setSavedFarms(farms);
+      }
+    } catch (error) {
+      console.error('Error loading saved farms:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load saved farms",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const saveFarmToBackend = async (farmData: {
+    name: string;
+    coordinates: Coordinate[];
+    area: number;
+    unit: string;
+  }) => {
+    try {
+      setIsSaving(true);
+      
+      // Convert area to hectares and acres for backend
+      let area_hectares = 0;
+      let area_acres = 0;
+      
+      if (farmData.unit === 'hectares') {
+        area_hectares = farmData.area;
+        area_acres = farmData.area * 2.47105;
+      } else if (farmData.unit === 'acres') {
+        area_acres = farmData.area;
+        area_hectares = farmData.area / 2.47105;
+      } else if (farmData.unit === 'sqm') {
+        area_hectares = farmData.area / 10000;
+        area_acres = farmData.area / 4046.86;
+      }
+
+      const farmPayload = {
+        name: farmData.name,
+        coordinates: farmData.coordinates,
+        area_hectares: parseFloat(area_hectares.toFixed(2)),
+        area_acres: parseFloat(area_acres.toFixed(2)),
+        location: farmData.coordinates.length > 0 ? {
+          lat: farmData.coordinates[0].lat,
+          lng: farmData.coordinates[0].lng,
+          address: `${farmData.name} Farm`
+        } : null
+      };
+
+      const response = await api.post('/farms', farmPayload);
+      
+      if (response.data.success) {
+        const savedFarm = {
+          id: response.data.data.farm.id,
+          name: farmData.name,
+          coordinates: farmData.coordinates,
+          area: farmData.area,
+          unit: farmData.unit,
+          createdAt: new Date()
+        };
+        
+        setSavedFarms(prev => [...prev, savedFarm]);
+        toast({
+          title: "Success",
+          description: "Farm saved successfully!",
+        });
+        return true;
+      }
+    } catch (error: any) {
+      console.error('Error saving farm:', error);
+      const errorMessage = error.response?.data?.message || 'Failed to save farm';
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const deleteFarmFromBackend = async (farmId: string) => {
+    try {
+      await api.delete(`/farms/${farmId}`);
+      setSavedFarms(prev => prev.filter(farm => farm.id !== farmId));
+      toast({
+        title: "Success",
+        description: "Farm deleted successfully!",
+      });
+    } catch (error: any) {
+      console.error('Error deleting farm:', error);
+      const errorMessage = error.response?.data?.message || 'Failed to delete farm';
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    }
+  };
 
   useEffect(() => {
     const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
@@ -119,17 +239,8 @@ const FarmCalculator = () => {
                 break;
             }
 
-            if (farmName.trim()) {
-              setSavedFarms(prev => [...prev, {
-                id: Date.now().toString(),
-                name: farmName,
-                coordinates: newCoords,
-                area: calculatedArea,
-                unit: areaUnit,
-                createdAt: new Date()
-              }]);
-              setFarmName('');
-            }
+            // Don't auto-save, let user click save button
+            setCoordinates(newCoords);
 
             newDrawingManager.setDrawingMode(null);
 
@@ -180,7 +291,7 @@ const FarmCalculator = () => {
   };
 
   const deleteFarm = (farmId: string) => {
-    setSavedFarms(prev => prev.filter(farm => farm.id !== farmId));
+    deleteFarmFromBackend(farmId);
   };
 
   if (isLoading) {
@@ -228,12 +339,44 @@ const FarmCalculator = () => {
           </div>
 
           <div className="flex gap-2">
-            <button onClick={handleStartDrawing} className="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors">
+            <Button onClick={handleStartDrawing}>
               Start Drawing Polygon
-            </button>
-            <button onClick={handleClearMap} className="px-4 py-2 bg-secondary text-secondary-foreground rounded hover:bg-secondary/80 transition-colors">
+            </Button>
+            <Button variant="outline" onClick={handleClearMap}>
               Clear Map
-            </button>
+            </Button>
+            <Button 
+              onClick={() => {
+                if (farmName.trim() && coordinates.length > 0 && typeof google !== 'undefined' && google.maps && google.maps.geometry) {
+                  const areaInMeters = google.maps.geometry.spherical.computeArea(
+                    coordinates.map((coord: any) => new google.maps.LatLng(coord.lat, coord.lng))
+                  );
+                  let calculatedArea = areaInMeters;
+                  if (unit === 'acres') {
+                    calculatedArea = areaInMeters * 0.000247105;
+                  } else if (unit === 'hectares') {
+                    calculatedArea = areaInMeters * 0.0001;
+                  }
+                  saveFarmToBackend({ 
+                    name: farmName, 
+                    coordinates: coordinates, 
+                    area: calculatedArea, 
+                    unit: unit 
+                  });
+                  setFarmName('');
+                  setCoordinates([]);
+                } else {
+                  toast({
+                    title: "Error",
+                    description: "Please enter a farm name and draw a polygon first",
+                    variant: "destructive",
+                  });
+                }
+              }}
+              disabled={isSaving || !farmName.trim() || coordinates.length === 0}
+            >
+              {isSaving ? 'Saving...' : 'Save Farm'}
+            </Button>
           </div>
 
           <div 
@@ -244,10 +387,27 @@ const FarmCalculator = () => {
           ></div>
 
           {coordinates.length > 0 && (
-            <div className="mt-4">
-              <h4 className="font-semibold text-foreground">Current Polygon Points: {coordinates.length}</h4>
-              <div className="text-sm text-muted-foreground">
-                Click and drag the polygon points to adjust the area.
+            <div className="mt-4 p-4 bg-green-50 rounded-lg border border-green-200">
+              <h4 className="font-semibold text-green-800">Current Polygon</h4>
+              <div className="text-sm text-green-700 mb-2">
+                Points: {coordinates.length} • Click and drag to adjust
+              </div>
+              <div className="text-lg font-bold text-green-600">
+                {(() => {
+                  if (typeof google !== 'undefined' && google.maps && google.maps.geometry) {
+                    const areaInMeters = google.maps.geometry.spherical.computeArea(
+                      coordinates.map((coord: any) => new google.maps.LatLng(coord.lat, coord.lng))
+                    );
+                    let calculatedArea = areaInMeters;
+                    if (unit === 'acres') {
+                      calculatedArea = areaInMeters * 0.000247105;
+                    } else if (unit === 'hectares') {
+                      calculatedArea = areaInMeters * 0.0001;
+                    }
+                    return `${calculatedArea.toFixed(2)} ${unit}`;
+                  }
+                  return 'Calculating...';
+                })()}
               </div>
             </div>
           )}
@@ -255,7 +415,7 @@ const FarmCalculator = () => {
           <div className="mt-4">
             <h3 className="font-semibold text-foreground">Saved Farms:</h3>
             {savedFarms.length === 0 ? (
-              <p className="text-muted-foreground">No farms saved yet</p>
+              <p className="text-muted-foreground">No farms saved yet. Draw a polygon and save it to see it here.</p>
             ) : (
               <div className="space-y-2">
                 {savedFarms.map(farm => (
@@ -266,13 +426,17 @@ const FarmCalculator = () => {
                       <span className="ml-2 text-sm text-muted-foreground">
                         ({farm.coordinates.length} points)
                       </span>
+                      <span className="ml-2 text-sm text-muted-foreground">
+                        • {new Date(farm.createdAt).toLocaleDateString()}
+                      </span>
                     </div>
-                    <button
+                    <Button
+                      variant="destructive"
+                      size="sm"
                       onClick={() => deleteFarm(farm.id)}
-                      className="px-2 py-1 text-sm bg-destructive text-destructive-foreground rounded hover:bg-destructive/90 transition-colors"
                     >
                       Delete
-                    </button>
+                    </Button>
                   </div>
                 ))}
               </div>
