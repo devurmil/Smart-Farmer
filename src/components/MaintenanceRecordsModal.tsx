@@ -86,6 +86,9 @@ const MaintenanceRecordsModal: React.FC<MaintenanceRecordsModalProps> = ({
             <Wrench className="h-5 w-5" />
             Maintenance Records
           </DialogTitle>
+          <DialogDescription>
+            View and manage all maintenance records for your equipment.
+          </DialogDescription>
         </DialogHeader>
 
         {loading ? (
