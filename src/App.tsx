@@ -100,10 +100,10 @@ const AppContent = () => {
             <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
             <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
             <Route path="/calculator" element={<ProtectedRoute><Calculator /></ProtectedRoute>} />
-            <Route path="/disease" element={<ProtectedRoute><DiseaseDetection /></ProtectedRoute>} />
+            {/* <Route path="/disease" element={<ProtectedRoute><DiseaseDetection /></ProtectedRoute>} /> */}
             <Route path="/cost-planning" element={<ProtectedRoute><CostPlanning /></ProtectedRoute>} />
             <Route path="/cost-planning/:cropName" element={<ProtectedRoute><CropDetail /></ProtectedRoute>} />
-            <Route path="/market-intelligence" element={<ProtectedRoute><MarketIntelligence /></ProtectedRoute>} />
+            {/* <Route path="/market-intelligence" element={<ProtectedRoute><MarketIntelligence /></ProtectedRoute>} /> */}
             <Route path="/equipment-rental" element={<ProtectedRoute><EquipmentRentalPage /></ProtectedRoute>} />
             <Route path="/farm-supply" element={<ProtectedRoute><FarmSupplyPage /></ProtectedRoute>} />
             <Route path="/suppliers" element={<ProtectedRoute><Suppliers /></ProtectedRoute>} />
