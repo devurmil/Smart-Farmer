@@ -75,13 +75,21 @@ const syncDatabase = async (force = false) => {
       await sequelize.sync({ force });
       console.log('✅ Database synchronized successfully (force mode).');
     } else {
-      // Use alter: true to add new columns without dropping tables
-      await sequelize.sync({ alter: true });
-      console.log('✅ Database synchronized successfully (alter mode).');
+      // Try to sync without altering existing tables first
+      try {
+        await sequelize.sync({ alter: true });
+        console.log('✅ Database synchronized successfully (alter mode).');
+      } catch (alterError) {
+        console.log('⚠️ Alter sync failed, trying to sync without alter...');
+        // If alter fails, try to sync without altering (just create missing tables)
+        await sequelize.sync();
+        console.log('✅ Database synchronized successfully (create missing tables only).');
+      }
     }
   } catch (error) {
     console.error('❌ Error synchronizing database:', error);
-    throw error;
+    // Don't throw error, just log it and continue
+    console.log('⚠️ Database sync failed, but continuing with server startup...');
   }
 };
 

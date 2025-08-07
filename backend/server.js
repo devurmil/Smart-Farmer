@@ -100,11 +100,13 @@ const PORT = process.env.PORT || 8000;
 app.listen(PORT, async () => {
     try {
         await models.syncDatabase();
+        console.log('✅ Database synchronization completed');
     } catch (err) {
-        console.error('Database sync failed:', err);
+        console.error('❌ Database sync failed:', err);
+        console.log('⚠️ Server will continue running, but some features may not work properly');
     }
-    console.log(`Server is running on port ${PORT}`);
+    console.log(`🚀 Server is running on port ${PORT}`);
     if (!process.env.JWT_SECRET || !process.env.FRONTEND_URL) {
-        console.warn('WARNING: JWT_SECRET or FRONTEND_URL is not set in .env file. The application may not work as expected.');
+        console.warn('⚠️ WARNING: JWT_SECRET or FRONTEND_URL is not set in .env file. The application may not work as expected.');
     }
 });

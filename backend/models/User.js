@@ -40,13 +40,11 @@ const User = sequelize.define('User', {
   facebook_id: {
     type: DataTypes.STRING(255),
     allowNull: true,
-    unique: true,
     comment: 'Facebook user ID for social login'
   },
   google_id: {
     type: DataTypes.STRING(255),
     allowNull: true,
-    unique: true,
     comment: 'Google user ID for social login'
   },
   login_method: {
