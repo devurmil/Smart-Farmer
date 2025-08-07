@@ -7,6 +7,7 @@ const WeatherData = require('./WeatherData');
 const CostPlan = require('./CostPlan');
 const Equipment = require('./Equipment');
 const Booking = require('./Booking');
+const Maintenance = require('./Maintenance');
 const Supply = require('./Supply');
 const SupplyOrder = require('./SupplyOrder');
 
@@ -47,6 +48,9 @@ Equipment.belongsTo(User, { foreignKey: 'ownerId', as: 'owner' });
 
 Equipment.hasMany(Booking, { foreignKey: 'equipmentId', as: 'bookings' });
 Booking.belongsTo(Equipment, { foreignKey: 'equipmentId', as: 'equipment' });
+
+Equipment.hasMany(Maintenance, { foreignKey: 'equipmentId', as: 'maintenance' });
+Maintenance.belongsTo(Equipment, { foreignKey: 'equipmentId', as: 'equipment' });
 
 User.hasMany(Booking, { foreignKey: 'userId', as: 'bookings' });
 Booking.belongsTo(User, { foreignKey: 'userId', as: 'user' });
@@ -91,6 +95,7 @@ module.exports = {
   CostPlan,
   Equipment,
   Booking,
+  Maintenance,
   Supply,
   SupplyOrder,
   syncDatabase

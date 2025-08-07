@@ -1,5 +1,5 @@
 const { Equipment, User } = require('../models');
-const { Booking } = require('../models');
+const { Booking, Maintenance } = require('../models');
 const path = require('path');
 
 // Helper: Check if equipment is available for a given date range
@@ -8,7 +8,7 @@ exports.isEquipmentAvailable = async function(equipmentId, startDate, endDate) {
     console.log(`Checking availability for equipment ${equipmentId} from ${startDate} to ${endDate}`);
     
     // Find any approved or pending bookings that overlap with the requested range
-    const overlapping = await Booking.findOne({
+    const overlappingBooking = await Booking.findOne({
       where: {
         equipmentId,
         status: { [require('sequelize').Op.in]: ['approved', 'pending'] },
@@ -34,9 +34,20 @@ exports.isEquipmentAvailable = async function(equipmentId, startDate, endDate) {
         ]
       }
     });
+
+    // Find any scheduled maintenance that overlaps with the requested range
+    const overlappingMaintenance = await Maintenance.findOne({
+      where: {
+        equipmentId,
+        status: { [require('sequelize').Op.in]: ['scheduled', 'in_progress'] },
+        scheduledDate: { [require('sequelize').Op.between]: [startDate, endDate] }
+      }
+    });
     
-    const isAvailable = !overlapping;
+    const isAvailable = !overlappingBooking && !overlappingMaintenance;
     console.log(`Equipment ${equipmentId} availability: ${isAvailable ? 'Available' : 'Not Available'}`);
+    if (overlappingBooking) console.log('Conflict: Overlapping booking found');
+    if (overlappingMaintenance) console.log('Conflict: Overlapping maintenance found');
     
     return isAvailable;
   } catch (error) {

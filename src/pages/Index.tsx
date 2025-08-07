@@ -1,9 +1,9 @@
 
 import Navigation from "@/components/Navigation";
-import DashboardCards from "@/components/DashboardCards";
 import FeatureGrid from "@/components/FeatureGrid";
 import WeatherWidget from "@/components/WeatherWidget";
 import RecentActivity from "@/components/RecentActivity";
+import EquipmentOwnerDashboard from "@/components/EquipmentOwnerDashboard";
 import { useState } from "react";
 import { X } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
@@ -12,6 +12,43 @@ const Index = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user } = useUser();
 
+  // Render equipment owner dashboard if user role is 'owner'
+  if (user?.role === 'owner') {
+    return (
+      <div className="min-h-screen bg-background">
+        {/* Sidebar for all devices */}
+        {sidebarOpen && (
+          <>
+            <div
+              className="fixed inset-0 bg-black bg-opacity-30 z-40"
+              onClick={() => setSidebarOpen(false)}
+            />
+            <div className="fixed top-0 left-0 bottom-0 w-64 bg-card border-r border-border z-50 transition-transform duration-200 flex flex-col">
+              <button
+                className="self-end m-2 p-2 rounded hover:bg-accent text-muted-foreground"
+                onClick={() => setSidebarOpen(false)}
+                aria-label="Close sidebar"
+              >
+                <X className="h-6 w-6" />
+              </button>
+              <div className="flex-1 overflow-y-auto">
+                <Navigation />
+              </div>
+            </div>
+          </>
+        )}
+        <div className="flex">
+          <main className="flex-1 p-6">
+            <div className="max-w-7xl mx-auto">
+              <EquipmentOwnerDashboard />
+            </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
+
+  // Default farmer dashboard
   return (
     <div className="min-h-screen bg-background">
       {/* Sidebar for all devices */}
@@ -46,7 +83,6 @@ const Index = () => {
                 Here's what's happening with your farm today. Your wheat crop is looking healthy and you have 2 equipment bookings this week.
               </p>
             </div>
-            <DashboardCards />
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
               <div className="lg:col-span-2">
                 <WeatherWidget />
@@ -76,9 +112,6 @@ const Index = () => {
                     Join thousands of farmers who have increased their yield by 25% and reduced costs by 30% using our smart farming platform.
                   </p>
                   <div className="flex space-x-4">
-                    <button className="bg-card text-green-600 px-6 py-3 rounded-lg font-semibold hover:bg-accent transition-colors">
-                      Upgrade to Pro
-                    </button>
                     <button className="border border-green-300 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors">
                       Learn More
                     </button>

@@ -1,4 +1,4 @@
-const { Booking, Equipment, User } = require('../models');
+const { Booking, Equipment, User, Maintenance } = require('../models');
 
 // Create a new booking
 exports.createBooking = async (req, res) => {
@@ -84,6 +84,23 @@ exports.createBooking = async (req, res) => {
       return res.status(409).json({ 
         error: 'Equipment is already booked for the selected dates. Please choose different dates.',
         message: 'Date conflict detected'
+      });
+    }
+
+    // Check for overlapping maintenance
+    const overlappingMaintenance = await Maintenance.findOne({
+      where: {
+        equipmentId: equipmentId,
+        status: { [require('sequelize').Op.in]: ['scheduled', 'in_progress'] },
+        scheduledDate: { [require('sequelize').Op.between]: [startDate, endDate] }
+      }
+    });
+
+    if (overlappingMaintenance) {
+      console.log('Overlapping maintenance found:', overlappingMaintenance.toJSON());
+      return res.status(409).json({ 
+        error: 'Equipment is scheduled for maintenance during the selected dates. Please choose different dates.',
+        message: 'Maintenance conflict detected'
       });
     }
     

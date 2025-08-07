@@ -14,6 +14,7 @@ const diseaseRouter = require('./routes/disease');
 const bookingRouter = require('./routes/booking');
 const cropsRouter = require('./routes/crops');
 const costPlanningRouter = require('./routes/cost-planning');
+const maintenanceRouter = require('./routes/maintenance');
 const authRouter = require('./routes/auth');
 
 const app = express();
@@ -90,6 +91,7 @@ app.use('/api/disease', diseaseRouter);
 app.use('/api/booking', bookingRouter);
 app.use('/api/crops', cropsRouter);
 app.use('/api/cost-planning', costPlanningRouter);
+app.use('/api/maintenance', maintenanceRouter);
 
 
 // --- 4. Server Initialization ---
