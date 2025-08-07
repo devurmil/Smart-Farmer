@@ -359,8 +359,8 @@ const EquipmentOwnerDashboard = () => {
        <MaintenanceScheduleModal
          isOpen={maintenanceModalOpen}
          onClose={() => setMaintenanceModalOpen(false)}
-         equipmentList={dashboardData.equipmentStatus.map((equipment, index) => ({
-           id: index.toString(),
+         equipmentList={dashboardData.equipmentStatus.map((equipment) => ({
+           id: equipment.id.toString(),
            name: equipment.name,
            status: equipment.status
          }))}

@@ -42,14 +42,27 @@ const MaintenanceScheduleModal: React.FC<MaintenanceScheduleModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log("Form values:", {
+      selectedEquipment,
+      maintenanceType,
+      scheduledDate,
+      description
+    });
+    
     if (!selectedEquipment || !maintenanceType || !scheduledDate || !description) {
       alert("Please fill in all fields");
+      console.log("Validation failed:", {
+        selectedEquipment: !!selectedEquipment,
+        maintenanceType: !!maintenanceType,
+        scheduledDate: !!scheduledDate,
+        description: !!description
+      });
       return;
     }
 
     setLoading(true);
     
-        try {
+    try {
       const maintenanceData = {
         equipmentId: parseInt(selectedEquipment),
         type: maintenanceType,

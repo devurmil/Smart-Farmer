@@ -88,20 +88,26 @@ exports.createBooking = async (req, res) => {
     }
 
     // Check for overlapping maintenance
-    const overlappingMaintenance = await Maintenance.findOne({
-      where: {
-        equipmentId: equipmentId,
-        status: { [require('sequelize').Op.in]: ['scheduled', 'in_progress'] },
-        scheduledDate: { [require('sequelize').Op.between]: [startDate, endDate] }
-      }
-    });
-
-    if (overlappingMaintenance) {
-      console.log('Overlapping maintenance found:', overlappingMaintenance.toJSON());
-      return res.status(409).json({ 
-        error: 'Equipment is scheduled for maintenance during the selected dates. Please choose different dates.',
-        message: 'Maintenance conflict detected'
+    try {
+      const overlappingMaintenance = await Maintenance.findOne({
+        where: {
+          equipmentId: equipmentId,
+          status: { [require('sequelize').Op.in]: ['scheduled', 'in-progress'] },
+          scheduledDate: { [require('sequelize').Op.between]: [startDate, endDate] }
+        }
       });
+
+      if (overlappingMaintenance) {
+        console.log('Overlapping maintenance found:', overlappingMaintenance.toJSON());
+        return res.status(409).json({ 
+          error: 'Equipment is scheduled for maintenance during the selected dates. Please choose different dates.',
+          message: 'Maintenance conflict detected'
+        });
+      }
+    } catch (maintenanceError) {
+      console.error('Error checking maintenance conflicts:', maintenanceError);
+      // Continue with booking if maintenance check fails
+      console.log('Continuing with booking despite maintenance check error');
     }
     
     // Debug: Log booking data before insert

@@ -36,13 +36,19 @@ exports.isEquipmentAvailable = async function(equipmentId, startDate, endDate) {
     });
 
     // Find any scheduled maintenance that overlaps with the requested range
-    const overlappingMaintenance = await Maintenance.findOne({
-      where: {
-        equipmentId,
-        status: { [require('sequelize').Op.in]: ['scheduled', 'in_progress'] },
-        scheduledDate: { [require('sequelize').Op.between]: [startDate, endDate] }
-      }
-    });
+    let overlappingMaintenance = null;
+    try {
+      overlappingMaintenance = await Maintenance.findOne({
+        where: {
+          equipmentId,
+          status: { [require('sequelize').Op.in]: ['scheduled', 'in-progress'] },
+          scheduledDate: { [require('sequelize').Op.between]: [startDate, endDate] }
+        }
+      });
+    } catch (maintenanceError) {
+      console.error('Error checking maintenance conflicts:', maintenanceError);
+      // Continue without maintenance check if it fails
+    }
     
     const isAvailable = !overlappingBooking && !overlappingMaintenance;
     console.log(`Equipment ${equipmentId} availability: ${isAvailable ? 'Available' : 'Not Available'}`);

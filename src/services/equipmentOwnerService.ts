@@ -39,6 +39,7 @@ export interface Booking {
 }
 
 export interface EquipmentStatus {
+  id: number;
   name: string;
   status: 'available' | 'booked' | 'maintenance';
   location: string;
@@ -202,6 +203,7 @@ class EquipmentOwnerService {
 
       // Map equipment to status format
       const status = equipment.slice(0, 4).map((item: any) => ({
+        id: item.id,
         name: item.name || 'Unknown Equipment',
         status: item.isAvailable ? 'available' : 'booked', // This is simplified - would need more complex logic
         location: item.location || 'Unknown Location',
