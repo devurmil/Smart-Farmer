@@ -101,6 +101,15 @@ app.listen(PORT, async () => {
     try {
         await models.syncDatabase();
         console.log('✅ Database synchronization completed');
+        
+        // Run database fix script to ensure all tables and constraints are properly set up
+        try {
+            const fixDatabase = require('./scripts/fix-database');
+            await fixDatabase();
+            console.log('✅ Database fix script completed');
+        } catch (fixError) {
+            console.log('⚠️ Database fix script failed, but continuing:', fixError.message);
+        }
     } catch (err) {
         console.error('❌ Database sync failed:', err);
         console.log('⚠️ Server will continue running, but some features may not work properly');

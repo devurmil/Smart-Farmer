@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -82,7 +82,12 @@ const MaintenanceScheduleModal: React.FC<MaintenanceScheduleModalProps> = ({
       
     } catch (error) {
       console.error("Error scheduling maintenance:", error);
-      const errorMessage = error.response?.data?.error || error.message || "Failed to schedule maintenance. Please try again.";
+      console.error("Error details:", {
+        response: error.response?.data,
+        status: error.response?.status,
+        message: error.message
+      });
+      const errorMessage = error.response?.data?.error || error.response?.data?.message || error.message || "Failed to schedule maintenance. Please try again.";
       alert(errorMessage);
     } finally {
       setLoading(false);
@@ -103,6 +108,9 @@ const MaintenanceScheduleModal: React.FC<MaintenanceScheduleModalProps> = ({
             <Wrench className="h-5 w-5 text-blue-600" />
             Schedule Equipment Maintenance
           </DialogTitle>
+          <DialogDescription>
+            Schedule maintenance for your equipment. This will make the equipment unavailable for booking on the scheduled date.
+          </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">

@@ -7,9 +7,11 @@ exports.scheduleMaintenance = async (req, res) => {
     
     // Validate required fields
     if (!equipmentId || !type || !scheduledDate) {
+      console.log('Missing fields:', { equipmentId, type, scheduledDate });
       return res.status(400).json({ 
         success: false, 
-        error: 'Missing required fields: equipmentId, type, scheduledDate' 
+        error: 'Missing required fields: equipmentId, type, scheduledDate',
+        received: { equipmentId, type, scheduledDate }
       });
     }
 
@@ -43,14 +45,27 @@ exports.scheduleMaintenance = async (req, res) => {
     }
 
     // Create maintenance record
-    const maintenance = await Maintenance.create({
-      equipmentId,
-      type,
-      scheduledDate,
-      description: description || '',
-      status: 'scheduled',
-      priority: type === 'emergency' ? 'urgent' : 'medium'
-    });
+    let maintenance;
+    try {
+      maintenance = await Maintenance.create({
+        equipmentId,
+        type,
+        scheduledDate,
+        description: description || '',
+        status: 'scheduled',
+        priority: type === 'emergency' ? 'urgent' : 'medium'
+      });
+    } catch (createError) {
+      console.error('Error creating maintenance record:', createError);
+      // Check if it's a table doesn't exist error
+      if (createError.name === 'SequelizeDatabaseError' && createError.message.includes('relation "Maintenance" does not exist')) {
+        return res.status(500).json({
+          success: false,
+          error: 'Maintenance table not found. Please contact administrator.'
+        });
+      }
+      throw createError;
+    }
 
     console.log('Maintenance scheduled:', maintenance.toJSON());
 
@@ -62,9 +77,15 @@ exports.scheduleMaintenance = async (req, res) => {
 
   } catch (error) {
     console.error('Error scheduling maintenance:', error);
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
     res.status(500).json({ 
       success: false, 
-      error: 'Failed to schedule maintenance' 
+      error: 'Failed to schedule maintenance',
+      details: error.message
     });
   }
 };

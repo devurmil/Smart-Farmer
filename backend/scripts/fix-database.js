@@ -70,7 +70,9 @@ async function fixDatabase() {
     
   } catch (error) {
     console.error('❌ Error fixing database:', error);
-  } finally {
+  }
+  // Don't close connection if called from server
+  if (require.main === module) {
     await sequelize.close();
   }
 }
