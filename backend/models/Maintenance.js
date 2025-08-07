@@ -29,7 +29,7 @@ const Maintenance = sequelize.define('Maintenance', {
     allowNull: true,
   },
   status: {
-    type: DataTypes.ENUM('scheduled', 'in_progress', 'completed', 'cancelled'),
+    type: DataTypes.ENUM('scheduled', 'in-progress', 'completed', 'cancelled'),
     defaultValue: 'scheduled',
   },
   completedDate: {

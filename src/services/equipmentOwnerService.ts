@@ -18,8 +18,8 @@ export interface MaintenanceRecord {
   type: string;
   scheduledDate: string;
   description: string;
-  status: string;
-  priority: string;
+  status: 'scheduled' | 'in-progress' | 'completed' | 'cancelled';
+  priority: 'low' | 'medium' | 'high' | 'urgent';
   equipment?: {
     id: number;
     name: string;
