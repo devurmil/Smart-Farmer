@@ -7,6 +7,7 @@ import { useUser } from "@/contexts/UserContext";
 import equipmentOwnerService, { EquipmentOwnerDashboardData } from "@/services/equipmentOwnerService";
 import MaintenanceScheduleModal from "./MaintenanceScheduleModal";
 import MaintenanceRecordsModal from "./MaintenanceRecordsModal";
+import { useNavigate } from "react-router-dom";
 import { 
   Tractor, 
   Calendar, 
@@ -29,6 +30,7 @@ import {
 const EquipmentOwnerDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const { user } = useUser();
+  const navigate = useNavigate();
   const [dashboardData, setDashboardData] = useState<EquipmentOwnerDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -223,6 +225,13 @@ const EquipmentOwnerDashboard = () => {
                >
                  <Wrench className="h-4 w-4 mr-1" />
                  View Records
+               </Button>
+               <Button 
+                 variant="outline" 
+                 size="sm"
+                 onClick={() => navigate('/maintenance')}
+               >
+                 View All Maintenance
                </Button>
              </div>
            </CardContent>

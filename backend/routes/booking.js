@@ -18,11 +18,20 @@ router.get('/test', authMiddleware, (req, res) => {
 
 // SSE endpoint for real-time booking updates
 router.get('/stream', authMiddleware, (req, res) => {
+  // Get the origin from the request
+  const origin = req.headers.origin;
+  const allowedOrigins = [
+    'http://localhost:8080',
+    'https://smart-farmer-three.vercel.app'
+  ];
+  
+  const corsOrigin = allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
+  
   res.writeHead(200, {
     'Content-Type': 'text/event-stream',
     'Cache-Control': 'no-cache',
     'Connection': 'keep-alive',
-    'Access-Control-Allow-Origin': 'https://smart-farmer-three.vercel.app',
+    'Access-Control-Allow-Origin': corsOrigin,
     'Access-Control-Allow-Credentials': 'true',
     'Access-Control-Allow-Headers': 'Cache-Control'
   });
