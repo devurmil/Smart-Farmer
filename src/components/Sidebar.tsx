@@ -15,18 +15,32 @@ const Sidebar = ({ collapsed, onToggleCollapse }: SidebarProps) => {
   const isAdmin = user && user.role === 'admin';
   const isOwner = user && user.role === 'owner';
 
-  const navigationItems = [
-    { name: "Dashboard", icon: BarChart3, href: "/dashboard" },
-    { name: "Area Calculator", icon: Calculator, href: "/calculator" },
-    { name: "Disease Detection", icon: Camera, href: "/disease" },
-    { name: "Cost Planning", icon: DollarSign, href: "/cost-planning" },
-    { name: "Equipment Rental", icon: Tractor, href: "/equipment-rental" },
-    { name: "Farm Supply", icon: Package, href: "/farm-supply" },
-    { name: "News & Markets", icon: Newspaper, href: "/market-intelligence" },
-    { name: "Suppliers", icon: Store, href: "/suppliers" },
-    // Add maintenance page for equipment owners
-    ...(isOwner ? [{ name: "Maintenance", icon: Wrench, href: "/maintenance" }] : [])
-  ];
+  // Define navigation items based on user role
+  const getNavigationItems = () => {
+    if (isOwner) {
+      // Equipment owners only see relevant pages
+      return [
+        { name: "Dashboard", icon: BarChart3, href: "/dashboard" },
+        { name: "Equipment Rental", icon: Tractor, href: "/equipment-rental" },
+        { name: "News & Markets", icon: Newspaper, href: "/market-intelligence" },
+        { name: "Maintenance", icon: Wrench, href: "/maintenance" }
+      ];
+    } else {
+      // Farmers see all pages
+      return [
+        { name: "Dashboard", icon: BarChart3, href: "/dashboard" },
+        { name: "Area Calculator", icon: Calculator, href: "/calculator" },
+        { name: "Disease Detection", icon: Camera, href: "/disease" },
+        { name: "Cost Planning", icon: DollarSign, href: "/cost-planning" },
+        { name: "Equipment Rental", icon: Tractor, href: "/equipment-rental" },
+        { name: "Farm Supply", icon: Package, href: "/farm-supply" },
+        { name: "News & Markets", icon: Newspaper, href: "/market-intelligence" },
+        { name: "Suppliers", icon: Store, href: "/suppliers" }
+      ];
+    }
+  };
+
+  const navigationItems = getNavigationItems();
 
   return (
     <aside

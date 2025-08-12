@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
+import { useToast } from "@/components/ui/use-toast";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
@@ -68,6 +69,47 @@ const AppContent = () => {
     return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
   };
 
+  // Role-based Route Component for restricting access
+  const RoleBasedRoute = ({ 
+    children, 
+    allowedRoles = ['farmer', 'owner', 'admin'] 
+  }: { 
+    children: React.ReactNode;
+    allowedRoles?: string[];
+  }) => {
+    const { user, isAuthenticated, isLoading } = useUser();
+    const { toast } = useToast();
+    
+    if (isLoading) {
+      return (
+        <div className="flex items-center justify-center h-screen">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+        </div>
+      );
+    }
+    
+    if (!isAuthenticated) {
+      return <Navigate to="/login" replace />;
+    }
+    
+    if (!user || !allowedRoles.includes(user.role)) {
+      // Show toast notification for restricted access
+      setTimeout(() => {
+        toast({
+          variant: "destructive",
+          title: "Access Denied",
+          description: user?.role === 'owner' 
+            ? "This page is not available for equipment owners. Please use the navigation menu to access available features."
+            : "You don't have permission to access this page."
+        });
+      }, 100);
+      
+      return <Navigate to="/dashboard" replace />;
+    }
+    
+    return <>{children}</>;
+  };
+
   // Public Route Component - moved inside UserProvider
   const PublicRoute = ({ children }: { children: React.ReactNode }) => {
     const { isAuthenticated, isLoading } = useUser();
@@ -100,21 +142,34 @@ const AppContent = () => {
             <Route path="/" element={<ProtectedRoute><HomepageRedirect /></ProtectedRoute>} />
             <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
             <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
-            <Route path="/calculator" element={<ProtectedRoute><Calculator /></ProtectedRoute>} />
-            <Route path="/disease" element={<ProtectedRoute><DiseaseDetection /></ProtectedRoute>} />
-            <Route path="/cost-planning" element={<ProtectedRoute><CostPlanning /></ProtectedRoute>} />
-            <Route path="/cost-planning/:cropName" element={<ProtectedRoute><CropDetail /></ProtectedRoute>} />
+            
+            {/* Farmer-only pages */}
+            <Route path="/calculator" element={<RoleBasedRoute allowedRoles={['farmer']}><Calculator /></RoleBasedRoute>} />
+            <Route path="/disease" element={<RoleBasedRoute allowedRoles={['farmer']}><DiseaseDetection /></RoleBasedRoute>} />
+            <Route path="/cost-planning" element={<RoleBasedRoute allowedRoles={['farmer']}><CostPlanning /></RoleBasedRoute>} />
+            <Route path="/cost-planning/:cropName" element={<RoleBasedRoute allowedRoles={['farmer']}><CropDetail /></RoleBasedRoute>} />
+            <Route path="/farm-supply" element={<RoleBasedRoute allowedRoles={['farmer']}><FarmSupplyPage /></RoleBasedRoute>} />
+            <Route path="/suppliers" element={<RoleBasedRoute allowedRoles={['farmer']}><Suppliers /></RoleBasedRoute>} />
+            
+            {/* Shared pages (accessible by both farmers and owners) */}
             <Route path="/market-intelligence" element={<ProtectedRoute><MarketIntelligence /></ProtectedRoute>} />
             <Route path="/equipment-rental" element={<ProtectedRoute><EquipmentRentalPage /></ProtectedRoute>} />
-            <Route path="/farm-supply" element={<ProtectedRoute><FarmSupplyPage /></ProtectedRoute>} />
-            <Route path="/suppliers" element={<ProtectedRoute><Suppliers /></ProtectedRoute>} />
+            
+            {/* Owner-only pages */}
+            <Route path="/maintenance" element={<RoleBasedRoute allowedRoles={['owner']}><MaintenancePage /></RoleBasedRoute>} />
+            
+            {/* Settings pages (accessible by all authenticated users) */}
             <Route path="/profile-settings" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
-            <Route path="/maintenance" element={<ProtectedRoute><MaintenancePage /></ProtectedRoute>} />
+            
+            {/* Admin-only pages */}
             <Route path="/admin" element={isAdmin ? <ProtectedRoute><AdminPage /></ProtectedRoute> : <Navigate to="/" replace />} />
+            
+            {/* Public pages */}
             <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
             <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
             <Route path="/test-draw" element={<TestDrawMap />} />
+            
             {/* Catch-all route */}
             <Route path="*" element={<NotFound />} />
           </Routes>
