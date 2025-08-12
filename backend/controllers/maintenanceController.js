@@ -192,6 +192,64 @@ exports.updateMaintenanceStatus = async (req, res) => {
   }
 };
 
+// Update maintenance record (general update)
+exports.updateMaintenance = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { type, scheduledDate, description, priority, technician, cost, notes } = req.body;
+
+    const maintenance = await Maintenance.findByPk(id, {
+      include: [
+        {
+          model: Equipment,
+          as: 'equipment',
+          attributes: ['id', 'name', 'ownerId']
+        }
+      ]
+    });
+
+    if (!maintenance) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Maintenance record not found' 
+      });
+    }
+
+    // Check if user owns the equipment
+    if (maintenance.equipment.ownerId !== req.user.id) {
+      return res.status(403).json({ 
+        success: false, 
+        error: 'You can only update maintenance for your own equipment' 
+      });
+    }
+
+    // Update maintenance record
+    const updateData = {};
+    if (type) updateData.type = type;
+    if (scheduledDate) updateData.scheduledDate = scheduledDate;
+    if (description !== undefined) updateData.description = description;
+    if (priority) updateData.priority = priority;
+    if (technician !== undefined) updateData.technician = technician;
+    if (cost !== undefined) updateData.cost = cost;
+    if (notes !== undefined) updateData.notes = notes;
+
+    await maintenance.update(updateData);
+
+    res.json({
+      success: true,
+      message: 'Maintenance record updated successfully',
+      data: maintenance
+    });
+
+  } catch (error) {
+    console.error('Error updating maintenance record:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to update maintenance record' 
+    });
+  }
+};
+
 // Delete maintenance record
 exports.deleteMaintenance = async (req, res) => {
   try {

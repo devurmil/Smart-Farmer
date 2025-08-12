@@ -148,7 +148,7 @@ const MaintenancePage: React.FC = () => {
         updateData.completedDate = new Date().toISOString();
       }
       
-      await api.put(`/maintenance/${recordId}`, updateData);
+      await api.put(`/maintenance/${recordId}/status`, updateData);
       fetchData();
     } catch (err: any) {
       console.error('Error updating maintenance status:', err);

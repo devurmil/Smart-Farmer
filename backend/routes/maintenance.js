@@ -15,6 +15,9 @@ router.get('/records', maintenanceController.getMaintenanceRecords);
 // Update maintenance status
 router.put('/:id/status', maintenanceController.updateMaintenanceStatus);
 
+// Update maintenance record (general update)
+router.put('/:id', maintenanceController.updateMaintenance);
+
 // Delete maintenance record
 router.delete('/:id', maintenanceController.deleteMaintenance);
 
