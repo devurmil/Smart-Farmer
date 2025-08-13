@@ -4,6 +4,7 @@ import FeatureGrid from "@/components/FeatureGrid";
 import WeatherWidget from "@/components/WeatherWidget";
 import RecentActivity from "@/components/RecentActivity";
 import EquipmentOwnerDashboard from "@/components/EquipmentOwnerDashboard";
+import SupplierDashboard from "@/components/SupplierDashboard";
 import { useState } from "react";
 import { X } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
@@ -11,6 +12,42 @@ import { useUser } from "@/contexts/UserContext";
 const Index = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user } = useUser();
+
+  // Render supplier dashboard if user role is 'supplier'
+  if (user?.role === 'supplier') {
+    return (
+      <div className="min-h-screen bg-background">
+        {/* Sidebar for all devices */}
+        {sidebarOpen && (
+          <>
+            <div
+              className="fixed inset-0 bg-black bg-opacity-30 z-40"
+              onClick={() => setSidebarOpen(false)}
+            />
+            <div className="fixed top-0 left-0 bottom-0 w-64 bg-card border-r border-border z-50 transition-transform duration-200 flex flex-col">
+              <button
+                className="self-end m-2 p-2 rounded hover:bg-accent text-muted-foreground"
+                onClick={() => setSidebarOpen(false)}
+                aria-label="Close sidebar"
+              >
+                <X className="h-6 w-6" />
+              </button>
+              <div className="flex-1 overflow-y-auto">
+                <Navigation />
+              </div>
+            </div>
+          </>
+        )}
+        <div className="flex">
+          <main className="flex-1 p-6">
+            <div className="max-w-7xl mx-auto">
+              <SupplierDashboard />
+            </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
 
   // Render equipment owner dashboard if user role is 'owner'
   if (user?.role === 'owner') {

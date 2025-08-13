@@ -14,6 +14,7 @@ const Sidebar = ({ collapsed, onToggleCollapse }: SidebarProps) => {
   const { user } = useUser();
   const isAdmin = user && user.role === 'admin';
   const isOwner = user && user.role === 'owner';
+  const isSupplier = user && user.role === 'supplier';
 
   // Define navigation items based on user role
   const getNavigationItems = () => {
@@ -24,6 +25,14 @@ const Sidebar = ({ collapsed, onToggleCollapse }: SidebarProps) => {
         { name: "Equipment Rental", icon: Tractor, href: "/equipment-rental" },
         { name: "News & Markets", icon: Newspaper, href: "/market-intelligence" },
         { name: "Maintenance", icon: Wrench, href: "/maintenance" }
+      ];
+    } else if (isSupplier) {
+      // Suppliers see supply-related pages
+      return [
+        { name: "Dashboard", icon: BarChart3, href: "/dashboard" },
+        { name: "Farm Supply", icon: Package, href: "/farm-supply" },
+        { name: "News & Markets", icon: Newspaper, href: "/market-intelligence" },
+        { name: "Suppliers", icon: Store, href: "/suppliers" }
       ];
     } else {
       // Farmers see all pages

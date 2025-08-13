@@ -23,6 +23,8 @@ import Signup from "./pages/Signup";
 import EquipmentRentalPage from "./pages/EquipmentRentalPage";
 import FarmSupplyPage from "./pages/FarmSupplyPage";
 import Suppliers from "./pages/Suppliers";
+import SupplierDashboard from "./components/SupplierDashboard";
+
 import ProfileSettings from "./pages/ProfileSettings";
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
@@ -148,10 +150,11 @@ const AppContent = () => {
             <Route path="/disease" element={<RoleBasedRoute allowedRoles={['farmer']}><DiseaseDetection /></RoleBasedRoute>} />
             <Route path="/cost-planning" element={<RoleBasedRoute allowedRoles={['farmer']}><CostPlanning /></RoleBasedRoute>} />
             <Route path="/cost-planning/:cropName" element={<RoleBasedRoute allowedRoles={['farmer']}><CropDetail /></RoleBasedRoute>} />
-            <Route path="/farm-supply" element={<RoleBasedRoute allowedRoles={['farmer']}><FarmSupplyPage /></RoleBasedRoute>} />
-            <Route path="/suppliers" element={<RoleBasedRoute allowedRoles={['farmer']}><Suppliers /></RoleBasedRoute>} />
             
-            {/* Shared pages (accessible by both farmers and owners) */}
+            {/* Shared pages (accessible by farmers, owners, and suppliers) */}
+            <Route path="/farm-supply" element={<ProtectedRoute><FarmSupplyPage /></ProtectedRoute>} />
+            <Route path="/suppliers" element={<ProtectedRoute><Suppliers /></ProtectedRoute>} />
+            <Route path="/supplier-dashboard" element={<ProtectedRoute><SupplierDashboard /></ProtectedRoute>} />
             <Route path="/market-intelligence" element={<ProtectedRoute><MarketIntelligence /></ProtectedRoute>} />
             <Route path="/equipment-rental" element={<ProtectedRoute><EquipmentRentalPage /></ProtectedRoute>} />
             
