@@ -4,25 +4,38 @@ export interface SupplierStats {
   totalSupplies: number;
   activeOrders: number;
   monthlyRevenue: number;
-  revenueGrowth: number;
   averageRating: number;
-  totalReviews: number;
-  pendingOrders: number;
-  lowStockAlerts: number;
-  orderFulfillmentRate: number;
+  lowStockSupplies: number;
+  outOfStockSupplies: number;
+  totalInventoryValue: number;
 }
 
 export interface SupplyOrder {
   id: number;
-  supply: string;
-  buyer: string;
+  supplyId: number;
+  buyerId: string;
+  supplierId: string;
   quantity: number;
   totalPrice: number;
-  orderDate: string;
   status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
+  orderDate: string;
   deliveryAddress?: string;
   contactPhone?: string;
   notes?: string;
+  supply: {
+    id: number;
+    name: string;
+    category: string;
+    price: number;
+    unit: string;
+    availableQuantity: number;
+  };
+  buyer: {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+  };
 }
 
 export interface SupplyItem {
@@ -30,222 +43,41 @@ export interface SupplyItem {
   name: string;
   category: string;
   price: number;
-  stock: number;
   unit: string;
-  status: 'active' | 'inactive' | 'out-of-stock';
-  lastUpdated: string;
+  quantity: number;
+  availableQuantity: number;
+  available: boolean;
+  description?: string;
+  brand?: string;
+  imageUrl?: string;
+  createdAt: string;
+}
+
+export interface InventorySummary {
+  totalSupplies: number;
+  lowStockSupplies: number;
+  outOfStockSupplies: number;
+  totalValue: number;
+  supplies: SupplyItem[];
 }
 
 export interface SupplierDashboardData {
   stats: SupplierStats;
   recentOrders: SupplyOrder[];
   pendingOrders: SupplyOrder[];
-  supplyInventory: SupplyItem[];
+  inventory: SupplyItem[];
   topSellingSupplies: SupplyItem[];
 }
 
-class SupplierService {
-  // Fetch dashboard statistics
-  async getDashboardStats(): Promise<SupplierStats> {
-    try {
-      // Get supplies count
-      const suppliesResponse = await api.get('/supplies/my-supplies');
-      const totalSupplies = suppliesResponse.data.data?.length || 0;
-
-      // Get supplier orders
-      const ordersResponse = await api.get('/supplies/orders');
-      const orders = ordersResponse.data || [];
-
-      // Calculate active orders (confirmed and shipped)
-      const activeOrders = orders.filter((order: any) => 
-        ['confirmed', 'shipped'].includes(order.status)
-      ).length;
-
-      // Calculate pending orders
-      const pendingOrders = orders.filter((order: any) => 
-        order.status === 'pending'
-      ).length;
-
-      // Calculate monthly revenue (delivered orders this month)
-      const currentMonth = new Date().getMonth();
-      const currentYear = new Date().getFullYear();
-      const monthlyOrders = orders.filter((order: any) => {
-        const orderDate = new Date(order.orderDate);
-        return order.status === 'delivered' && 
-               orderDate.getMonth() === currentMonth &&
-               orderDate.getFullYear() === currentYear;
-      });
-      
-      const monthlyRevenue = monthlyOrders.reduce((total: number, order: any) => 
-        total + (order.totalPrice || 0), 0
-      );
-
-      // Calculate average rating (mock for now)
-      const averageRating = 4.2; // This would need to be calculated from reviews
-      const totalReviews = 15; // Mock data
-
-      // Mock data for fields not yet available in backend
-      const revenueGrowth = 8.5; // This would need to be calculated from historical data
-      
-      // Calculate low stock alerts
-      const supplies = suppliesResponse.data.data || [];
-      const lowStockAlerts = supplies.filter((supply: any) => 
-        supply.stock < 10
-      ).length;
-      
-      const orderFulfillmentRate = 94; // This would need to be calculated based on delivered vs total orders
-
-      return {
-        totalSupplies,
-        activeOrders,
-        monthlyRevenue,
-        revenueGrowth,
-        averageRating,
-        totalReviews,
-        pendingOrders,
-        lowStockAlerts,
-        orderFulfillmentRate
-      };
-    } catch (error) {
-      console.error('Error fetching supplier dashboard stats:', error);
-      // Return default values if API fails
-      return {
-        totalSupplies: 0,
-        activeOrders: 0,
-        monthlyRevenue: 0,
-        revenueGrowth: 0,
-        averageRating: 0,
-        totalReviews: 0,
-        pendingOrders: 0,
-        lowStockAlerts: 0,
-        orderFulfillmentRate: 0
-      };
-    }
-  }
-
-  // Fetch recent orders
-  async getRecentOrders(): Promise<SupplyOrder[]> {
-    try {
-      const response = await api.get('/supplies/orders');
-      const orders = response.data || [];
-
-      // Filter for recent orders (delivered and shipped)
-      const recent = orders
-        .filter((order: any) => ['delivered', 'shipped'].includes(order.status))
-        .sort((a: any, b: any) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime())
-        .slice(0, 5) // Get top 5 recent orders
-        .map((order: any) => ({
-          id: order.id,
-          supply: order.supply?.name || 'Unknown Supply',
-          buyer: order.buyer?.name || 'Unknown Buyer',
-          quantity: order.quantity || 0,
-          totalPrice: order.totalPrice || 0,
-          orderDate: new Date(order.orderDate).toLocaleDateString(),
-          status: order.status,
-          deliveryAddress: order.deliveryAddress,
-          contactPhone: order.contactPhone,
-          notes: order.notes
-        }));
-
-      return recent;
-    } catch (error) {
-      console.error('Error fetching recent orders:', error);
-      return [];
-    }
-  }
-
-  // Fetch pending orders
-  async getPendingOrders(): Promise<SupplyOrder[]> {
-    try {
-      const response = await api.get('/supplies/orders');
-      const orders = response.data || [];
-
-      // Filter for pending orders
-      const pending = orders
-        .filter((order: any) => order.status === 'pending')
-        .sort((a: any, b: any) => new Date(a.orderDate).getTime() - new Date(b.orderDate).getTime())
-        .slice(0, 5) // Get top 5 pending orders
-        .map((order: any) => ({
-          id: order.id,
-          supply: order.supply?.name || 'Unknown Supply',
-          buyer: order.buyer?.name || 'Unknown Buyer',
-          quantity: order.quantity || 0,
-          totalPrice: order.totalPrice || 0,
-          orderDate: new Date(order.orderDate).toLocaleDateString(),
-          status: order.status,
-          deliveryAddress: order.deliveryAddress,
-          contactPhone: order.contactPhone,
-          notes: order.notes
-        }));
-
-      return pending;
-    } catch (error) {
-      console.error('Error fetching pending orders:', error);
-      return [];
-    }
-  }
-
-  // Fetch supply inventory
-  async getSupplyInventory(): Promise<SupplyItem[]> {
-    try {
-      const response = await api.get('/supplies/my-supplies');
-      const supplies = response.data.data || [];
-
-      // Map supplies to inventory format
-      const inventory = supplies.slice(0, 6).map((supply: any) => ({
-        id: supply.id,
-        name: supply.name || 'Unknown Supply',
-        category: supply.category || 'General',
-        price: supply.price || 0,
-        stock: supply.stock || 0,
-        unit: supply.unit || 'unit',
-        status: supply.stock > 0 ? 'active' : 'out-of-stock',
-        lastUpdated: new Date(supply.updatedAt || supply.createdAt).toLocaleDateString()
-      }));
-
-      return inventory;
-    } catch (error) {
-      console.error('Error fetching supply inventory:', error);
-      return [];
-    }
-  }
-
-  // Fetch top selling supplies
-  async getTopSellingSupplies(): Promise<SupplyItem[]> {
-    try {
-      const response = await api.get('/supplies/my-supplies');
-      const supplies = response.data.data || [];
-
-      // Mock top selling logic - in real app this would be based on order history
-      const topSelling = supplies
-        .sort((a: any, b: any) => (b.stock || 0) - (a.stock || 0)) // Mock: sort by stock (higher stock = more popular)
-        .slice(0, 4)
-        .map((supply: any) => ({
-          id: supply.id,
-          name: supply.name || 'Unknown Supply',
-          category: supply.category || 'General',
-          price: supply.price || 0,
-          stock: supply.stock || 0,
-          unit: supply.unit || 'unit',
-          status: supply.stock > 0 ? 'active' : 'out-of-stock',
-          lastUpdated: new Date(supply.updatedAt || supply.createdAt).toLocaleDateString()
-        }));
-
-      return topSelling;
-    } catch (error) {
-      console.error('Error fetching top selling supplies:', error);
-      return [];
-    }
-  }
-
-  // Fetch all dashboard data
+export const supplierService = {
+  // Get supplier dashboard data
   async getDashboardData(): Promise<SupplierDashboardData> {
     try {
-      const [stats, recentOrders, pendingOrders, supplyInventory, topSellingSupplies] = await Promise.all([
-        this.getDashboardStats(),
+      const [stats, recentOrders, pendingOrders, inventory, topSellingSupplies] = await Promise.all([
+        this.getStats(),
         this.getRecentOrders(),
         this.getPendingOrders(),
-        this.getSupplyInventory(),
+        this.getInventory(),
         this.getTopSellingSupplies()
       ]);
 
@@ -253,14 +85,173 @@ class SupplierService {
         stats,
         recentOrders,
         pendingOrders,
-        supplyInventory,
+        inventory,
         topSellingSupplies
       };
     } catch (error) {
-      console.error('Error fetching supplier dashboard data:', error);
+      console.error('Error fetching dashboard data:', error);
+      throw error;
+    }
+  },
+
+  // Get supplier statistics
+  async getStats(): Promise<SupplierStats> {
+    try {
+      const inventorySummary = await this.getInventorySummary();
+      
+      // Calculate stats from inventory and orders
+      const totalSupplies = inventorySummary.totalSupplies;
+      const lowStockSupplies = inventorySummary.lowStockSupplies;
+      const outOfStockSupplies = inventorySummary.outOfStockSupplies;
+      const totalInventoryValue = inventorySummary.totalValue;
+
+      // Get orders for additional stats
+      const orders = await this.getOrders();
+      const activeOrders = orders.filter(order => 
+        ['pending', 'confirmed', 'shipped'].includes(order.status)
+      ).length;
+
+      // Calculate monthly revenue (last 30 days)
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
+      const monthlyRevenue = orders
+        .filter(order => 
+          order.status === 'delivered' && 
+          new Date(order.orderDate) >= thirtyDaysAgo
+        )
+        .reduce((sum, order) => sum + order.totalPrice, 0);
+
+      // Mock average rating (you can implement real rating system later)
+      const averageRating = 4.2;
+
+      return {
+        totalSupplies,
+        activeOrders,
+        monthlyRevenue: parseFloat(monthlyRevenue.toFixed(2)),
+        averageRating,
+        lowStockSupplies,
+        outOfStockSupplies,
+        totalInventoryValue
+      };
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+      throw error;
+    }
+  },
+
+  // Get inventory summary
+  async getInventorySummary(): Promise<InventorySummary> {
+    try {
+      const response = await api.get('/supplies/inventory-summary');
+      return response.data.data;
+    } catch (error) {
+      console.error('Error fetching inventory summary:', error);
+      throw error;
+    }
+  },
+
+  // Get recent orders
+  async getRecentOrders(): Promise<SupplyOrder[]> {
+    try {
+      const response = await api.get('/supplies/orders');
+      const orders = response.data;
+      return orders
+        .filter(order => order.status === 'delivered')
+        .slice(0, 5); // Get last 5 delivered orders
+    } catch (error) {
+      console.error('Error fetching recent orders:', error);
+      throw error;
+    }
+  },
+
+  // Get pending orders
+  async getPendingOrders(): Promise<SupplyOrder[]> {
+    try {
+      const response = await api.get('/supplies/orders');
+      const orders = response.data;
+      return orders.filter(order => 
+        ['pending', 'confirmed'].includes(order.status)
+      );
+    } catch (error) {
+      console.error('Error fetching pending orders:', error);
+      throw error;
+    }
+  },
+
+  // Get all orders
+  async getOrders(): Promise<SupplyOrder[]> {
+    try {
+      const response = await api.get('/supplies/orders');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+      throw error;
+    }
+  },
+
+  // Get inventory
+  async getInventory(): Promise<SupplyItem[]> {
+    try {
+      const response = await api.get('/supplies/my-supplies');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching inventory:', error);
+      throw error;
+    }
+  },
+
+  // Get top selling supplies
+  async getTopSellingSupplies(): Promise<SupplyItem[]> {
+    try {
+      const orders = await this.getOrders();
+      const supplySales = new Map<number, { supply: SupplyItem; totalSold: number }>();
+
+      // Calculate total sold for each supply
+      orders.forEach(order => {
+        if (order.status === 'delivered') {
+          const existing = supplySales.get(order.supplyId);
+          if (existing) {
+            existing.totalSold += order.quantity;
+          } else {
+            supplySales.set(order.supplyId, {
+              supply: order.supply as SupplyItem,
+              totalSold: order.quantity
+            });
+          }
+        }
+      });
+
+      // Sort by total sold and return top 5
+      return Array.from(supplySales.values())
+        .sort((a, b) => b.totalSold - a.totalSold)
+        .slice(0, 5)
+        .map(item => item.supply);
+    } catch (error) {
+      console.error('Error fetching top selling supplies:', error);
+      throw error;
+    }
+  },
+
+  // Update supply quantity (restocking)
+  async updateSupplyQuantity(supplyId: number, newQuantity: number): Promise<any> {
+    try {
+      const response = await api.put(`/supplies/${supplyId}/quantity`, { quantity: newQuantity });
+      return response.data;
+    } catch (error) {
+      console.error('Error updating supply quantity:', error);
+      throw error;
+    }
+  },
+
+  // Update order status
+  async updateOrderStatus(orderId: number, status: string): Promise<any> {
+    try {
+      const response = await api.put(`/supplies/orders/${orderId}/status`, { status });
+      return response.data;
+    } catch (error) {
+      console.error('Error updating order status:', error);
       throw error;
     }
   }
-}
-
-export default new SupplierService();
+};

@@ -5,25 +5,35 @@ require('dotenv').config({ path: path.resolve(__dirname, '../../.env') }); // Lo
 let sequelize;
 
 if (process.env.DATABASE_URL) {
-  // Use DATABASE_URL for production/online (can be MySQL or Postgres)
+  // Detect dialect from DATABASE_URL (postgres:// or mysql://)
+  const isPostgres = process.env.DATABASE_URL.startsWith('postgres://');
+
   sequelize = new Sequelize(process.env.DATABASE_URL, {
-    dialect: process.env.DB_DIALECT || 'mysql',
-    protocol: process.env.DB_DIALECT || 'mysql',
+    dialect: isPostgres ? 'postgres' : 'mysql',
+    protocol: isPostgres ? 'postgres' : 'mysql',
     logging: process.env.NODE_ENV === 'development' ? console.log : false,
+    dialectOptions: isPostgres
+      ? {
+          ssl: {
+            require: true,
+            rejectUnauthorized: false, // Needed for Supabase SSL
+          },
+        }
+      : {},
     pool: {
       max: 10,
       min: 0,
       acquire: 30000,
-      idle: 10000
+      idle: 10000,
     },
     define: {
       timestamps: true,
       underscored: true,
-      freezeTableName: true
-    }
+      freezeTableName: true,
+    },
   });
 } else {
-  // Use individual MySQL env vars for local/offline
+  // Local dev (MySQL fallback)
   sequelize = new Sequelize(
     process.env.DB_NAME,
     process.env.DB_USER,
@@ -37,13 +47,13 @@ if (process.env.DATABASE_URL) {
         max: 10,
         min: 0,
         acquire: 30000,
-        idle: 10000
+        idle: 10000,
       },
       define: {
         timestamps: true,
         underscored: true,
-        freezeTableName: true
-      }
+        freezeTableName: true,
+      },
     }
   );
 }

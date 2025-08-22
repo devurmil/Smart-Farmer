@@ -6,6 +6,7 @@ const { Supply, SupplyOrder, User } = require('../models');
 const { auth } = require('../middleware/auth');
 const { uploadSupplyImage } = require('../middleware/upload');
 const supplyController = require('../controllers/supplyController');
+const InventoryService = require('../services/inventoryService');
 const router = express.Router();
 
 // @route   GET /api/supplies
@@ -86,6 +87,7 @@ router.post('/', auth, uploadSupplyImage.single('image'), async (req, res) => {
       price: parseFloat(price),
       unit,
       quantity: parseInt(quantity),
+      availableQuantity: parseInt(quantity), // Set initial available quantity
       description,
       brand,
       supplierId: req.user.role === 'admin' && supplierId ? supplierId : req.user.id,
@@ -138,6 +140,31 @@ router.get('/my-supplies', auth, async (req, res) => {
   }
 });
 
+// @route   GET /api/supplies/inventory-summary
+// @desc    Get inventory summary for supplier
+// @access  Private
+router.get('/inventory-summary', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'supplier') {
+      return res.status(403).json({ message: 'Only suppliers can view inventory summary' });
+    }
+
+    const summary = await InventoryService.getInventorySummary(req.user.id);
+    
+    if (summary.error) {
+      return res.status(500).json({ message: summary.error });
+    }
+
+    res.json({
+      success: true,
+      data: summary
+    });
+  } catch (error) {
+    console.error('Error fetching inventory summary:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // Update supply by ID (admin or owner)
 router.put('/:id', auth, uploadSupplyImage.single('image'), async (req, res) => {
   try {
@@ -154,6 +181,38 @@ router.put('/:id', auth, uploadSupplyImage.single('image'), async (req, res) => 
     res.json({ success: true, message: 'Supply updated successfully', data: result.supply });
   } catch (error) {
     console.error('Error updating supply:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   PUT /api/supplies/:id/quantity
+// @desc    Update supply quantity (restocking)
+// @access  Private
+router.put('/:id/quantity', auth, async (req, res) => {
+  try {
+    const { quantity } = req.body;
+    
+    if (!quantity || isNaN(quantity) || quantity < 0) {
+      return res.status(400).json({ message: 'Valid quantity is required' });
+    }
+
+    const result = await InventoryService.updateSupplyQuantity(
+      parseInt(req.params.id), 
+      parseInt(quantity), 
+      req.user.id
+    );
+
+    if (!result.success) {
+      return res.status(400).json({ message: result.message });
+    }
+
+    res.json({
+      success: true,
+      message: result.message,
+      data: result.updatedSupply
+    });
+  } catch (error) {
+    console.error('Error updating supply quantity:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -194,35 +253,53 @@ router.delete('/:id', auth, async (req, res) => {
 // @access  Private
 router.post('/:id/order', auth, async (req, res) => {
   try {
-    const supply = await Supply.findByPk(req.params.id);
-    
-    if (!supply) {
-      return res.status(404).json({ message: 'Supply not found' });
-    }
-
-    if (!supply.available) {
-      return res.status(400).json({ message: 'Supply is not available' });
-    }
-
     const { quantity, deliveryAddress, contactPhone, notes } = req.body;
     const orderQuantity = parseInt(quantity) || 1;
-    const totalPrice = supply.price * orderQuantity;
 
+    // Check stock availability
+    const stockCheck = await InventoryService.checkStockAvailability(req.params.id, orderQuantity);
+    
+    if (!stockCheck.hasStock) {
+      return res.status(400).json({ 
+        success: false,
+        message: stockCheck.error 
+      });
+    }
+
+    // Reserve the quantity
+    const reservation = await InventoryService.reserveQuantity(req.params.id, orderQuantity);
+    
+    if (!reservation.success) {
+      return res.status(400).json({ 
+        success: false,
+        message: reservation.message 
+      });
+    }
+
+    const totalPrice = stockCheck.supply.price * orderQuantity;
+
+    // Create the order with inventory tracking
     const order = await SupplyOrder.create({
-      supplyId: supply.id,
+      supplyId: parseInt(req.params.id),
       buyerId: req.user.id,
-      supplierId: supply.supplierId,
+      supplierId: stockCheck.supply.supplierId,
       quantity: orderQuantity,
       totalPrice,
       deliveryAddress,
       contactPhone,
-      notes
+      notes,
+      originalSupplyQuantity: reservation.originalQuantity,
+      remainingSupplyQuantity: reservation.remainingQuantity
     });
 
     res.status(201).json({
       success: true,
       message: 'Order placed successfully',
-      data: order
+      data: order,
+      inventoryUpdate: {
+        originalQuantity: reservation.originalQuantity,
+        remainingQuantity: reservation.remainingQuantity
+      }
     });
   } catch (error) {
     console.error('Error placing order:', error);
@@ -245,7 +322,7 @@ router.get('/orders', auth, async (req, res) => {
           {
             model: Supply,
             as: 'supply',
-            attributes: ['id', 'name', 'category', 'price', 'unit']
+            attributes: ['id', 'name', 'category', 'price', 'unit', 'availableQuantity']
           },
           {
             model: User,
@@ -263,7 +340,7 @@ router.get('/orders', auth, async (req, res) => {
           {
             model: Supply,
             as: 'supply',
-            attributes: ['id', 'name', 'category', 'price', 'unit']
+            attributes: ['id', 'name', 'category', 'price', 'unit', 'availableQuantity']
           },
           {
             model: User,
@@ -301,6 +378,14 @@ router.put('/orders/:id/status', auth, async (req, res) => {
     
     if (!['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'].includes(status)) {
       return res.status(400).json({ message: 'Invalid status' });
+    }
+
+    // If order is being cancelled, restore the quantity
+    if (status === 'cancelled' && order.status !== 'cancelled') {
+      const restoreResult = await InventoryService.restoreQuantity(order.supplyId, order.quantity);
+      if (!restoreResult.success) {
+        console.error('Failed to restore quantity:', restoreResult.message);
+      }
     }
 
     await order.update({ status });

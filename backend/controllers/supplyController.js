@@ -1,4 +1,5 @@
 const { Supply, User } = require('../models');
+const InventoryService = require('../services/inventoryService');
 
 // Get all supplies (with supplier details)
 exports.getAllSupplies = async (whereClause = {}, order = [['createdAt', 'DESC']]) => {
@@ -36,4 +37,19 @@ exports.deleteSupply = async (id, user) => {
   }
   await supply.destroy();
   return { message: 'Supply deleted successfully' };
+};
+
+// Get inventory summary for supplier
+exports.getInventorySummary = async (supplierId) => {
+  return InventoryService.getInventorySummary(supplierId);
+};
+
+// Update supply quantity (restocking)
+exports.updateSupplyQuantity = async (supplyId, newQuantity, userId) => {
+  return InventoryService.updateSupplyQuantity(supplyId, newQuantity, userId);
+};
+
+// Check stock availability
+exports.checkStockAvailability = async (supplyId, requestedQuantity) => {
+  return InventoryService.checkStockAvailability(supplyId, requestedQuantity);
 }; 

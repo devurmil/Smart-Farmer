@@ -23,6 +23,9 @@ const SupplyOrder = sequelize.define('SupplyOrder', {
     type: DataTypes.INTEGER,
     allowNull: false,
     defaultValue: 1,
+    validate: {
+      min: 1
+    }
   },
   totalPrice: {
     type: DataTypes.FLOAT,
@@ -50,6 +53,17 @@ const SupplyOrder = sequelize.define('SupplyOrder', {
     type: DataTypes.TEXT,
     allowNull: true,
   },
+  // Inventory tracking fields
+  originalSupplyQuantity: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    comment: 'Quantity available in supply when order was placed'
+  },
+  remainingSupplyQuantity: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    comment: 'Remaining quantity in supply after order'
+  }
 });
 
 module.exports = SupplyOrder; 

@@ -28,6 +28,17 @@ const Supply = sequelize.define('Supply', {
     type: DataTypes.INTEGER,
     allowNull: false,
     defaultValue: 1,
+    validate: {
+      min: 0
+    }
+  },
+  availableQuantity: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 1,
+    validate: {
+      min: 0
+    }
   },
   supplierId: {
     type: DataTypes.UUID,
@@ -57,6 +68,18 @@ const Supply = sequelize.define('Supply', {
     type: DataTypes.JSON,
     allowNull: true,
   },
+});
+
+// Hook to set availableQuantity equal to quantity when creating
+Supply.beforeCreate((supply) => {
+  if (!supply.availableQuantity) {
+    supply.availableQuantity = supply.quantity;
+  }
+});
+
+// Hook to update available flag based on availableQuantity
+Supply.beforeSave((supply) => {
+  supply.available = supply.availableQuantity > 0;
 });
 
 module.exports = Supply; 
