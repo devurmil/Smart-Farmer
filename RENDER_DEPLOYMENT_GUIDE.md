@@ -91,8 +91,11 @@ postgresql://smartfarmer_user:password123@dpg-abc123-a.oregon-postgres.render.co
 ### Common Issues:
 
 #### 1. "Cannot read properties of null (reading 'replace')"
-**Cause**: DATABASE_URL is not set
-**Solution**: Set DATABASE_URL environment variable in Render
+**Cause**: DATABASE_URL is not set or has invalid format
+**Solution**: 
+- Set DATABASE_URL environment variable in Render
+- Ensure DATABASE_URL follows correct format
+- Test DATABASE_URL format locally first
 
 #### 2. "Database connection failed"
 **Cause**: Database credentials or connection string incorrect
@@ -105,11 +108,40 @@ postgresql://smartfarmer_user:password123@dpg-abc123-a.oregon-postgres.render.co
 **Cause**: Missing JWT_SECRET environment variable
 **Solution**: Set a secure JWT_SECRET in Render
 
+### 🔧 DATABASE_URL Format Issues
+
+#### Common Format Problems:
+1. **Missing Protocol**: Add `postgresql://` or `mysql://`
+2. **Missing @ Symbol**: Ensure format is `username:password@host`
+3. **Spaces or Line Breaks**: Remove all spaces and line breaks
+4. **Special Characters**: URL encode special characters in password
+
+#### Correct Format Examples:
+```bash
+# ✅ Correct PostgreSQL format
+DATABASE_URL=postgresql://username:password@host:port/database
+
+# ✅ Correct MySQL format  
+DATABASE_URL=mysql://username:password@host:port/database
+
+# ❌ Wrong formats
+DATABASE_URL=postgresql://username password@host/database  # Space in password
+DATABASE_URL=postgresql://username:password@host          # Missing database
+DATABASE_URL=username:password@host:port/database         # Missing protocol
+```
+
+#### Testing DATABASE_URL Locally:
+```bash
+# Test your DATABASE_URL format before deploying
+node test-database-url.js
+```
+
 ### Debug Steps:
 1. Check Render service logs
 2. Verify environment variables are set
 3. Test database connection locally
 4. Check database server status
+5. Validate DATABASE_URL format
 
 ## 📊 Monitoring
 
@@ -166,7 +198,7 @@ CLOUDINARY_API_SECRET=your_api_secret
 ## 🎯 Quick Deployment Checklist
 
 - [ ] Database created and running
-- [ ] DATABASE_URL copied to Render
+- [ ] DATABASE_URL copied to Render (correct format)
 - [ ] JWT_SECRET set in Render
 - [ ] NODE_ENV=production set
 - [ ] Service deployed successfully
@@ -182,6 +214,7 @@ If you encounter issues:
 2. **Verify Environment Variables**: Service dashboard → Environment
 3. **Test Database Connection**: Use database client to test connection
 4. **Check Service Status**: Ensure service is running and healthy
+5. **Test DATABASE_URL Format**: Run `node test-database-url.js` locally
 
 ## 🔗 Useful Links
 
