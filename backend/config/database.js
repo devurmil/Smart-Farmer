@@ -14,45 +14,171 @@ console.log('   DATABASE_URL:', process.env.DATABASE_URL ? 'Set' : 'Not Set');
 console.log('   DB_HOST:', process.env.DB_HOST || 'Not Set');
 console.log('   DB_NAME:', process.env.DB_NAME || 'Not Set');
 
-if (process.env.DATABASE_URL) {
-  // ✅ Production: Use Supabase DATABASE_URL with forced SSL
-  console.log('📡 Using DATABASE_URL for production database');
-
+// Helper function to validate DATABASE_URL
+const isValidDatabaseUrl = (url) => {
+  if (!url || typeof url !== 'string') return false;
+  
   try {
-    sequelize = new Sequelize(process.env.DATABASE_URL, {
-      dialect: 'postgres',
-      protocol: 'postgres',
-      logging: false,
-      dialectOptions: {
-        ssl: {
-          require: true,
-          rejectUnauthorized: false, // Supabase requires this
+    const urlObj = new URL(url);
+    return urlObj.protocol && urlObj.hostname && urlObj.pathname;
+  } catch (error) {
+    return false;
+  }
+};
+
+// Helper function to parse database URL and extract components
+const parseDatabaseUrl = (url) => {
+  try {
+    const urlObj = new URL(url);
+    const isPostgres = urlObj.protocol === 'postgresql:' || urlObj.protocol === 'postgres:';
+    
+    return {
+      protocol: urlObj.protocol,
+      host: urlObj.hostname,
+      port: urlObj.port || (isPostgres ? '5432' : '3306'),
+      database: urlObj.pathname.slice(1), // Remove leading slash
+      username: urlObj.username,
+      password: urlObj.password,
+      isPostgres
+    };
+  } catch (error) {
+    console.error('❌ Error parsing DATABASE_URL:', error.message);
+    return null;
+  }
+};
+
+// Helper function to detect Supabase Transaction Pooler
+const isSupabasePooler = (hostname) => {
+  return hostname.includes('pooler.supabase.com') || 
+         hostname.includes('aws-0-') || 
+         hostname.includes('pooler');
+};
+
+if (process.env.DATABASE_URL) {
+  // Production: Use DATABASE_URL (Render, Heroku, etc.)
+  console.log('📡 Using DATABASE_URL for production database');
+  
+  // Validate DATABASE_URL format
+  if (!isValidDatabaseUrl(process.env.DATABASE_URL)) {
+    console.error('❌ Invalid DATABASE_URL format');
+    console.error('   Expected format: postgresql://username:password@host:port/database');
+    console.error('   Your URL:', process.env.DATABASE_URL);
+    process.exit(1);
+  }
+  
+  // Parse the DATABASE_URL
+  const dbConfig = parseDatabaseUrl(process.env.DATABASE_URL);
+  if (!dbConfig) {
+    console.error('❌ Failed to parse DATABASE_URL');
+    process.exit(1);
+  }
+  
+  console.log('   Parsed database config:');
+  console.log('     Protocol:', dbConfig.protocol);
+  console.log('     Host:', dbConfig.host);
+  console.log('     Port:', dbConfig.port);
+  console.log('     Database:', dbConfig.database);
+  console.log('     Username:', dbConfig.username);
+  console.log('     Is PostgreSQL:', dbConfig.isPostgres);
+  console.log('     Is Supabase Pooler:', isSupabasePooler(dbConfig.host));
+  
+  try {
+    // Determine if this is Supabase Transaction Pooler
+    const isPooler = isSupabasePooler(dbConfig.host);
+    
+    // Create Sequelize instance with parsed components instead of raw URL
+    sequelize = new Sequelize(
+      dbConfig.database,
+      dbConfig.username,
+      dbConfig.password,
+      {
+        host: dbConfig.host,
+        port: dbConfig.port,
+        dialect: dbConfig.isPostgres ? 'postgres' : 'mysql',
+        protocol: dbConfig.isPostgres ? 'postgres' : 'mysql',
+        logging: false, // Disable logging in production
+        
+        // Supabase Transaction Pooler specific settings
+        dialectOptions: dbConfig.isPostgres
+          ? {
+              ssl: {
+                require: true,
+                rejectUnauthorized: false, // Required for Supabase SSL
+              },
+              // Connection pooler specific settings
+              ...(isPooler && {
+                // Use application_name to identify connections
+                application_name: 'smart-farmer-backend',
+                // Set statement timeout for pooler
+                statement_timeout: 30000, // 30 seconds
+                // Set idle timeout
+                idle_in_transaction_session_timeout: 30000, // 30 seconds
+              }),
+            }
+          : {},
+        
+        pool: {
+          max: isPooler ? 5 : 10, // Lower max connections for pooler
+          min: 0,
+          acquire: 30000,
+          idle: 10000,
+          // Pooler specific settings
+          ...(isPooler && {
+            // Shorter connection lifetime for pooler
+            max: 5,
+            // Faster connection acquisition
+            acquire: 15000,
+            // Shorter idle time
+            idle: 5000,
+          }),
         },
-      },
-      pool: {
-        max: 10,
-        min: 0,
-        acquire: 30000,
-        idle: 10000,
-      },
-      define: {
-        timestamps: true,
-        underscored: true,
-        freezeTableName: true,
-      },
-    });
+        
+        define: {
+          timestamps: true,
+          underscored: true,
+          freezeTableName: true,
+        },
+        
+        // Additional settings for Supabase pooler
+        ...(isPooler && {
+          // Disable query logging in production
+          logging: false,
+          // Set timezone
+          timezone: '+00:00',
+          // Disable native types for better compatibility
+          native: false,
+        }),
+      }
+    );
+    
+    console.log('   Connection type: Supabase Transaction Pooler');
+    console.log('   Pool settings: max=5, acquire=15s, idle=5s');
+    
   } catch (error) {
     console.error('❌ Error creating Sequelize instance:', error.message);
     throw error;
   }
 } else if (isProduction) {
-  // Production but no DATABASE_URL - critical error
+  // Production but no DATABASE_URL - this is an error
   console.error('❌ CRITICAL ERROR: DATABASE_URL is required in production!');
+  console.error('   Please set the DATABASE_URL environment variable in your Render dashboard.');
+  console.error('   Go to: Render Dashboard > Your Service > Environment > Environment Variables');
+  console.error('   Add: DATABASE_URL = your_database_connection_string');
   process.exit(1);
 } else {
-  // 🏠 Local development (MySQL fallback)
+  // Local development (MySQL fallback)
   console.log('🏠 Using local MySQL database for development');
-
+  
+  const requiredEnvVars = ['DB_HOST', 'DB_NAME', 'DB_USER', 'DB_PASSWORD'];
+  const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
+  
+  if (missingVars.length > 0) {
+    console.error('❌ Missing required environment variables for local development:');
+    missingVars.forEach(varName => console.error(`   - ${varName}`));
+    console.error('   Please check your .env file in the project root.');
+    process.exit(1);
+  }
+  
   sequelize = new Sequelize(
     process.env.DB_NAME,
     process.env.DB_USER,
@@ -83,25 +209,46 @@ const testConnection = async () => {
     console.log('🔌 Testing database connection...');
     await sequelize.authenticate();
     console.log('✅ Database connection established successfully.');
-
+    
     // Log database info
     const config = sequelize.config;
     console.log(`   Database: ${config.database}`);
     console.log(`   Host: ${config.host}`);
     console.log(`   Port: ${config.port}`);
     console.log(`   Dialect: ${config.dialect}`);
+    
+    // Test if it's a pooler connection
+    if (isSupabasePooler(config.host)) {
+      console.log('   Connection Type: Supabase Transaction Pooler');
+      console.log('   Pool Settings: Optimized for connection pooling');
+    }
+    
   } catch (error) {
     console.error('❌ Unable to connect to the database:', error.message);
-
+    
     if (isProduction) {
       console.error('   This is a production deployment. Please check:');
-      console.error('   1. DATABASE_URL env var is correct (must include ?sslmode=require)');
-      console.error('   2. Supabase allows connections');
+      console.error('   1. DATABASE_URL environment variable is set correctly');
+      console.error('   2. Database server is accessible from Render');
       console.error('   3. Database credentials are valid');
+      console.error('   4. Database exists and is running');
+      console.error('   5. DATABASE_URL format is correct');
+      console.error('      Expected: postgresql://username:password@host:port/database');
+      console.error('      Your URL:', process.env.DATABASE_URL);
+      
+      // Additional pooler-specific checks
+      if (process.env.DATABASE_URL && isSupabasePooler(process.env.DATABASE_URL)) {
+        console.error('   6. Supabase Transaction Pooler is enabled');
+        console.error('   7. Pooler hostname is correct (should contain "pooler.supabase.com")');
+        console.error('   8. Pooler port is correct (usually 6543)');
+      }
     } else {
-      console.error('   This is a local dev environment. Please check your .env file and MySQL setup.');
+      console.error('   This is a local development environment. Please check:');
+      console.error('   1. MySQL server is running');
+      console.error('   2. .env file has correct database credentials');
+      console.error('   3. Database exists');
     }
-
+    
     process.exit(1);
   }
 };
