@@ -8,7 +8,7 @@ const SupplyOrder = sequelize.define('SupplyOrder', {
     primaryKey: true,
   },
   supplyId: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.UUID,
     allowNull: false,
   },
   buyerId: {

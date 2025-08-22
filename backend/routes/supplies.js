@@ -280,7 +280,7 @@ router.post('/:id/order', auth, async (req, res) => {
 
     // Create the order with inventory tracking
     const order = await SupplyOrder.create({
-      supplyId: parseInt(req.params.id),
+      supplyId: req.params.id,
       buyerId: req.user.id,
       supplierId: stockCheck.supply.supplierId,
       quantity: orderQuantity,
