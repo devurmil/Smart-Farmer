@@ -99,36 +99,39 @@ export const supplierService = {
     try {
       const inventorySummary = await this.getInventorySummary();
       
-      // Calculate stats from inventory and orders
-      const totalSupplies = inventorySummary.totalSupplies;
-      const lowStockSupplies = inventorySummary.lowStockSupplies;
-      const outOfStockSupplies = inventorySummary.outOfStockSupplies;
-      const totalInventoryValue = inventorySummary.totalValue;
+      // Safely coerce inventory summary values
+      const totalSupplies = Number(inventorySummary?.totalSupplies) || 0;
+      const lowStockSupplies = Number(inventorySummary?.lowStockSupplies) || 0;
+      const outOfStockSupplies = Number(inventorySummary?.outOfStockSupplies) || 0;
+      const totalInventoryValue = Number(inventorySummary?.totalValue) || 0;
 
       // Get orders for additional stats
       const orders = await this.getOrders();
-      const activeOrders = orders.filter(order => 
-        ['pending', 'confirmed', 'shipped'].includes(order.status)
+      const safeOrders = Array.isArray(orders) ? orders : [];
+
+      const activeOrders = safeOrders.filter((order) => 
+        ['pending', 'confirmed', 'shipped'].includes(order?.status as any)
       ).length;
 
       // Calculate monthly revenue (last 30 days)
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      
-      const monthlyRevenue = orders
-        .filter(order => 
-          order.status === 'delivered' && 
-          new Date(order.orderDate) >= thirtyDaysAgo
+      const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+      const monthlyRevenueRaw = safeOrders
+        .filter((order) => 
+          order?.status === 'delivered' && 
+          new Date(order?.orderDate || 0).getTime() >= thirtyDaysAgo
         )
-        .reduce((sum, order) => sum + order.totalPrice, 0);
+        .reduce((sum, order) => sum + (Number(order?.totalPrice) || 0), 0);
 
-      // Mock average rating (you can implement real rating system later)
+      // Round to 2 decimals while staying a number
+      const monthlyRevenue = Math.round(monthlyRevenueRaw * 100) / 100;
+
+      // Mock average rating
       const averageRating = 4.2;
 
       return {
         totalSupplies,
         activeOrders,
-        monthlyRevenue: parseFloat(monthlyRevenue.toFixed(2)),
+        monthlyRevenue,
         averageRating,
         lowStockSupplies,
         outOfStockSupplies,
@@ -157,7 +160,7 @@ export const supplierService = {
       const response = await api.get('/supplies/orders');
       const orders = response.data;
       return orders
-        .filter(order => order.status === 'delivered')
+        .filter((order: any) => order?.status === 'delivered')
         .slice(0, 5); // Get last 5 delivered orders
     } catch (error) {
       console.error('Error fetching recent orders:', error);
@@ -170,8 +173,8 @@ export const supplierService = {
     try {
       const response = await api.get('/supplies/orders');
       const orders = response.data;
-      return orders.filter(order => 
-        ['pending', 'confirmed'].includes(order.status)
+      return orders.filter((order: any) => 
+        ['pending', 'confirmed'].includes(order?.status)
       );
     } catch (error) {
       console.error('Error fetching pending orders:', error);
@@ -208,15 +211,15 @@ export const supplierService = {
       const supplySales = new Map<number, { supply: SupplyItem; totalSold: number }>();
 
       // Calculate total sold for each supply
-      orders.forEach(order => {
-        if (order.status === 'delivered') {
-          const existing = supplySales.get(order.supplyId);
+      (orders || []).forEach((order: any) => {
+        if (order?.status === 'delivered') {
+          const existing = supplySales.get(order?.supplyId);
           if (existing) {
-            existing.totalSold += order.quantity;
+            existing.totalSold += Number(order?.quantity) || 0;
           } else {
-            supplySales.set(order.supplyId, {
-              supply: order.supply as SupplyItem,
-              totalSold: order.quantity
+            supplySales.set(order?.supplyId, {
+              supply: order?.supply as SupplyItem,
+              totalSold: Number(order?.quantity) || 0
             });
           }
         }
