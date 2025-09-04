@@ -223,25 +223,25 @@ const EquipmentList = () => {
       {/* Equipment Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {filteredEquipment.map((item) => (
-          <Card key={item.id} className="group overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border-0 bg-white">
+          <Card key={item.id} className="group overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border-emerald-200 bg-emerald-50/80 backdrop-blur-sm">
             {/* Equipment Image */}
             <div className="relative">
               {item.imageUrl ? (
-                <div className="aspect-video overflow-hidden bg-gradient-to-br from-blue-100 to-indigo-100">
+                <div className="aspect-video overflow-hidden bg-gradient-to-br from-emerald-100 to-green-100">
                   <img
                     src={item.imageUrl}
                     alt={item.name}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                     onError={(e) => {
                       e.target.parentElement.innerHTML = `
-                        <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-100 to-indigo-100">
+                        <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-emerald-100 to-green-100">
                           <div class="text-center">
-                            <div class="w-16 h-16 mx-auto mb-2 bg-blue-200 rounded-full flex items-center justify-center">
-                              <svg class="w-8 h-8 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                            <div class="w-16 h-16 mx-auto mb-2 bg-emerald-200 rounded-full flex items-center justify-center">
+                              <svg class="w-8 h-8 text-emerald-700" fill="currentColor" viewBox="0 0 20 20">
                                 <path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"/>
                               </svg>
                             </div>
-                            <p class="text-blue-600 font-medium">Equipment Image</p>
+                            <p class="text-emerald-700 font-medium">Equipment Image</p>
                           </div>
                         </div>
                       `;
@@ -249,10 +249,10 @@ const EquipmentList = () => {
                   />
                 </div>
               ) : (
-                <div className="aspect-video bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center">
+                <div className="aspect-video bg-gradient-to-br from-emerald-100 to-green-100 flex items-center justify-center">
                   <div className="text-center">
-                    <Tractor className="w-16 h-16 mx-auto mb-2 text-blue-600" />
-                    <p className="text-blue-600 font-medium">Equipment Image</p>
+                    <Tractor className="w-16 h-16 mx-auto mb-2 text-emerald-700" />
+                    <p className="text-emerald-700 font-medium">Equipment Image</p>
                   </div>
                 </div>
               )}
@@ -281,10 +281,10 @@ const EquipmentList = () => {
             <CardHeader className="pb-4">
               <div className="flex items-start justify-between">
                 <div>
-                  <CardTitle className="text-xl font-bold text-gray-800 group-hover:text-blue-600 transition-colors">
+                  <CardTitle className="text-xl font-bold text-emerald-900 group-hover:text-emerald-700 transition-colors">
                     {item.name}
                   </CardTitle>
-                  <p className="text-sm text-blue-600 font-medium bg-blue-50 px-2 py-1 rounded mt-1 inline-block">
+                  <p className="text-sm text-emerald-700 font-medium bg-emerald-50 px-2 py-1 rounded mt-1 inline-block">
                     {item.type}
                   </p>
                 </div>
@@ -303,17 +303,17 @@ const EquipmentList = () => {
                 {/* Price */}
                 <div className="flex items-center justify-between p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
                   <div className="flex items-center gap-2">
-                    <IndianRupee className="w-5 h-5 text-green-600" />
-                    <span className="text-2xl font-bold text-green-700">₹{item.price}</span>
-                    <span className="text-sm text-green-600">/ day</span>
+                    <IndianRupee className="w-5 h-5 text-green-700" />
+                    <span className="text-2xl font-bold text-green-800">₹{item.price}</span>
+                    <span className="text-sm text-green-700">/ day</span>
                   </div>
                 </div>
 
                 {/* Description */}
-                <p className="text-gray-600 text-sm line-clamp-2">{item.description}</p>
+                <p className="text-gray-700 text-sm line-clamp-2">{item.description}</p>
 
                 {/* Location & Contact */}
-                <div className="flex items-center gap-4 text-xs text-gray-500">
+                <div className="flex items-center gap-4 text-xs text-gray-600">
                   <div className="flex items-center gap-1">
                     <MapPin className="w-3 h-3" />
                     <span>Available Nearby</span>
@@ -328,7 +328,7 @@ const EquipmentList = () => {
                 <div className="flex gap-2 pt-4">
                   <Button
                     variant="outline"
-                    className="flex-1 border-blue-200 text-blue-600 hover:bg-blue-50"
+                    className="flex-1 border-emerald-300 text-emerald-700 hover:bg-emerald-50"
                   >
                     <Eye className="w-4 h-4 mr-2" />
                     Details
@@ -336,7 +336,7 @@ const EquipmentList = () => {
                   <Button
                     className={`flex-1 ${
                       item.available
-                        ? 'bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white'
+                        ? 'bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white'
                         : 'bg-gray-400 cursor-not-allowed text-gray-200'
                     }`}
                     onClick={() => item.available && setOpenBookingId(item.id)}
@@ -352,20 +352,21 @@ const EquipmentList = () => {
               </div>
             </CardContent>
 
-            {/* Booking Modal */}
-            {openBookingId === item.id && (
-              <EquipmentBookingModal
-                equipment={item}
-                onClose={handleBookingClose}
-                onBookingSuccess={handleBookingSuccess}
-                startDate={dateRange.startDate}
-                endDate={dateRange.endDate}
-                available={item.available}
-              />
-            )}
           </Card>
         ))}
       </div>
+
+      {/* Booking Modal - render once at root, not inside a card */}
+      {openBookingId && (
+        <EquipmentBookingModal
+          equipment={(filteredEquipment || []).find(e => e.id === openBookingId)}
+          onClose={handleBookingClose}
+          onBookingSuccess={handleBookingSuccess}
+          startDate={dateRange.startDate}
+          endDate={dateRange.endDate}
+          available={(filteredEquipment || []).find(e => e.id === openBookingId)?.available}
+        />
+      )}
 
       {/* Empty State for Filtered Results */}
       {filteredEquipment.length === 0 && equipment.length > 0 && (

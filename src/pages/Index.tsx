@@ -66,7 +66,8 @@ const Index = () => {
       color: "text-white",
       bgColor: "bg-blue-50",
       bgImage: "/design-assets/img_sq_1.jpg",
-      href: "/calculator"
+      href: "/calculator",
+      allowedRoles: ["farmer"]
     },
     {
       icon: Camera,
@@ -75,7 +76,8 @@ const Index = () => {
       color: "text-white",
       bgColor: "bg-green-50",
       bgImage: "/design-assets/img_sq_3.jpg",
-      href: "/disease"
+      href: "/disease",
+      allowedRoles: ["farmer"]
     },
     {
       icon: DollarSign,
@@ -84,7 +86,8 @@ const Index = () => {
       color: "text-white",
       bgColor: "bg-yellow-50",
       bgImage: "/design-assets/img_sq_4.jpg",
-      href: "/cost-planning"
+      href: "/cost-planning",
+      allowedRoles: ["farmer"]
     },
     {
       icon: Tractor,
@@ -93,7 +96,8 @@ const Index = () => {
       color: "text-white",
       bgColor: "bg-purple-50",
       bgImage: "/design-assets/img_sq_5.jpg",
-      href: "/equipment-rental"
+      href: "/equipment-rental",
+      allowedRoles: ["farmer", "owner"]
     },
     {
       icon: Package,
@@ -102,7 +106,8 @@ const Index = () => {
       color: "text-white",
       bgColor: "bg-red-50",
       bgImage: "/design-assets/img_sq_6.jpg",
-      href: "/farm-supply"
+      href: "/farm-supply",
+      allowedRoles: ["farmer", "owner", "supplier"]
     },
     {
       icon: BarChart3,
@@ -111,9 +116,16 @@ const Index = () => {
       color: "text-white",
       bgColor: "bg-indigo-50",
       bgImage: "/design-assets/img_sq_8.jpg",
-      href: "/market-intelligence"
+      href: "/market-intelligence",
+      allowedRoles: ["farmer", "owner", "supplier"]
     }
   ];
+
+  // Filter features by user role
+  const role = user?.role || 'farmer';
+  const visibleFeatures = features.filter((f) =>
+    !f.allowedRoles || f.allowedRoles.includes(role)
+  );
 
   // Statistics data
   const stats = [
@@ -233,7 +245,7 @@ const Index = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {features.map((feature, index) => (
+            {visibleFeatures.map((feature, index) => (
               <Card 
                 key={index} 
                 className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group hover:scale-105 overflow-hidden relative h-80"
@@ -248,11 +260,9 @@ const Index = () => {
                     backgroundPosition: 'center'
                   }}
                 >
-                  {/* Dark Overlay - Reduced transparency */}
                   <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors duration-300"></div>
                 </div>
 
-                {/* Content */}
                 <div className="relative z-10 h-full flex flex-col justify-between p-6">
                   <div>
                     <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
@@ -383,26 +393,19 @@ const Index = () => {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20 bg-green-600">
-        <div className="container mx-auto px-4 text-center">
+            {/* CTA Section */}
+      <section className="py-20 relative" style={{ backgroundImage: 'url(/Backgrounds/karsten-wurth-UbGYPMbMYP8-unsplash.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
+        {/* Dark overlay for better text readability */}
+        <div className="absolute inset-0 bg-black/50"></div>
+        <div className="container mx-auto px-4 text-center relative z-10">
           <div className="max-w-3xl mx-auto space-y-8">
             <h2 className="text-3xl lg:text-4xl font-bold text-white">
               Ready to Transform Your Farming?
             </h2>
-            <p className="text-xl text-green-100 leading-relaxed">
+            <p className="text-xl text-white/90 leading-relaxed">
               Join thousands of farmers who are already using Smart Farm India 
               to increase their productivity and profits.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" variant="secondary" className="bg-white text-green-600 hover:bg-gray-100 px-8 py-3 text-lg">
-                Start Free Trial
-                <ArrowRight className="w-5 h-5 ml-2" />
-              </Button>
-              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-green-600 px-8 py-3 text-lg">
-                Schedule Demo
-              </Button>
-            </div>
           </div>
         </div>
       </section>

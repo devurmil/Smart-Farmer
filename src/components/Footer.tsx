@@ -128,8 +128,8 @@ const Footer = () => {
                 <MapPin className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
                 <div>
                   <p className="text-gray-300 text-sm">
-                    123 Agriculture Street<br />
-                    New Delhi, India 110001
+                    Near Gh-4 Garden<br />
+                    Gandhinagar, India 382011
                   </p>
                 </div>
               </div>
@@ -142,7 +142,7 @@ const Footer = () => {
               <div className="flex items-center space-x-3">
                 <Mail className="w-5 h-5 text-green-500 flex-shrink-0" />
                 <a href="mailto:info@smartfarmindia.com" className="text-gray-300 hover:text-green-500 transition-colors text-sm">
-                  info@smartfarmindia.com
+                  smartfarmer117@gmail.com
                 </a>
               </div>
             </div>
