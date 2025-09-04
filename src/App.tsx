@@ -4,10 +4,9 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { useToast } from "@/components/ui/use-toast";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 
 import Header from "@/components/Header";
-import Sidebar from "@/components/Sidebar";
 import { UserProvider, useUser } from "./contexts/UserContext";
 import { SettingsProvider, useSettings } from "./context/SettingsContext";
 
@@ -37,11 +36,14 @@ import MaintenancePage from './pages/MaintenancePage';
 const queryClient = new QueryClient();
 
 const AppContent = () => {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [showRoleSelection, setShowRoleSelection] = useState(false);
   const { settings } = useSettings();
-  const { user } = useUser();
+  const { user, isAuthenticated } = useUser();
+  const location = useLocation();
   const isAdmin = user && user.role === 'admin';
+
+  // Check if current route is a public route (login, signup, etc.)
+  const isPublicRoute = ['/login', '/signup', '/forgot-password', '/reset-password'].includes(location.pathname);
 
   // Check if user needs role selection
   React.useEffect(() => {
@@ -127,57 +129,70 @@ const AppContent = () => {
     return isAuthenticated ? <HomepageRedirect /> : <>{children}</>;
   };
 
-  return (
-    <div className="flex h-screen overflow-hidden">
-      {/* Sidebar */}
-      <Sidebar collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed((prev) => !prev)} />
-
-      {/* Main Content */}
-      <div className="flex flex-col flex-1 overflow-auto">
-        {/* Header */}
-        <Header />
-
-        {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-4 bg-background">
+  // If it's a public route, render without header
+  if (isPublicRoute) {
+    return (
+      <div className="min-h-screen">
+        <main className="w-full">
           <Routes>
-            <Route path="/dashboard" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-            <Route path="/" element={<ProtectedRoute><HomepageRedirect /></ProtectedRoute>} />
             <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
             <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
-            
-            {/* Farmer-only pages */}
-            <Route path="/calculator" element={<RoleBasedRoute allowedRoles={['farmer']}><Calculator /></RoleBasedRoute>} />
-            <Route path="/disease" element={<RoleBasedRoute allowedRoles={['farmer']}><DiseaseDetection /></RoleBasedRoute>} />
-            <Route path="/cost-planning" element={<RoleBasedRoute allowedRoles={['farmer']}><CostPlanning /></RoleBasedRoute>} />
-            <Route path="/cost-planning/:cropName" element={<RoleBasedRoute allowedRoles={['farmer']}><CropDetail /></RoleBasedRoute>} />
-            
-            {/* Shared pages (accessible by farmers, owners, and suppliers) */}
-            <Route path="/farm-supply" element={<ProtectedRoute><FarmSupplyPage /></ProtectedRoute>} />
-            <Route path="/suppliers" element={<ProtectedRoute><Suppliers /></ProtectedRoute>} />
-            <Route path="/supplier-dashboard" element={<ProtectedRoute><SupplierDashboard /></ProtectedRoute>} />
-            <Route path="/market-intelligence" element={<ProtectedRoute><MarketIntelligence /></ProtectedRoute>} />
-            <Route path="/equipment-rental" element={<ProtectedRoute><EquipmentRentalPage /></ProtectedRoute>} />
-            
-            {/* Owner-only pages */}
-            <Route path="/maintenance" element={<RoleBasedRoute allowedRoles={['owner']}><MaintenancePage /></RoleBasedRoute>} />
-            
-            {/* Settings pages (accessible by all authenticated users) */}
-            <Route path="/profile-settings" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />
-            <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
-            
-            {/* Admin-only pages */}
-            <Route path="/admin" element={isAdmin ? <ProtectedRoute><AdminPage /></ProtectedRoute> : <Navigate to="/" replace />} />
-            
-            {/* Public pages */}
             <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
             <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
-            <Route path="/test-draw" element={<TestDrawMap />} />
-            
-            {/* Catch-all route */}
-            <Route path="*" element={<NotFound />} />
           </Routes>
         </main>
+
+        {/* Role Selection Modal */}
+        <RoleSelectionModal 
+          isOpen={showRoleSelection} 
+          onClose={() => setShowRoleSelection(false)} 
+        />
       </div>
+    );
+  }
+
+  // For authenticated routes, render with header
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <Header />
+
+      {/* Main Content */}
+      <main className="pt-16 lg:pt-20">
+        <Routes>
+          <Route path="/dashboard" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+          <Route path="/" element={<ProtectedRoute><HomepageRedirect /></ProtectedRoute>} />
+          
+          {/* Farmer-only pages */}
+          <Route path="/calculator" element={<RoleBasedRoute allowedRoles={['farmer']}><Calculator /></RoleBasedRoute>} />
+          <Route path="/disease" element={<RoleBasedRoute allowedRoles={['farmer']}><DiseaseDetection /></RoleBasedRoute>} />
+          <Route path="/cost-planning" element={<RoleBasedRoute allowedRoles={['farmer']}><CostPlanning /></RoleBasedRoute>} />
+          <Route path="/cost-planning/:cropName" element={<RoleBasedRoute allowedRoles={['farmer']}><CropDetail /></RoleBasedRoute>} />
+          
+          {/* Shared pages (accessible by farmers, owners, and suppliers) */}
+          <Route path="/farm-supply" element={<ProtectedRoute><FarmSupplyPage /></ProtectedRoute>} />
+          <Route path="/suppliers" element={<ProtectedRoute><Suppliers /></ProtectedRoute>} />
+          <Route path="/supplier-dashboard" element={<ProtectedRoute><SupplierDashboard /></ProtectedRoute>} />
+          <Route path="/market-intelligence" element={<ProtectedRoute><MarketIntelligence /></ProtectedRoute>} />
+          <Route path="/equipment-rental" element={<ProtectedRoute><EquipmentRentalPage /></ProtectedRoute>} />
+          
+          {/* Owner-only pages */}
+          <Route path="/maintenance" element={<RoleBasedRoute allowedRoles={['owner']}><MaintenancePage /></RoleBasedRoute>} />
+          
+          {/* Settings pages (accessible by all authenticated users) */}
+          <Route path="/profile-settings" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />
+          <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+          
+          {/* Admin-only pages */}
+          <Route path="/admin" element={isAdmin ? <ProtectedRoute><AdminPage /></ProtectedRoute> : <Navigate to="/" replace />} />
+          
+          {/* Public pages */}
+          <Route path="/test-draw" element={<TestDrawMap />} />
+          
+          {/* Catch-all route */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </main>
 
       {/* Role Selection Modal */}
       <RoleSelectionModal 

@@ -1,266 +1,306 @@
-import { Search, Bell, User, X, LogOut, Settings } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
-import { useState, useRef, useEffect } from "react";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { useUser } from "@/contexts/UserContext";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useUser } from '@/contexts/UserContext';
+import { Menu, X, User, LogOut, Settings, Bell, ChevronDown, BarChart3, Calculator, Camera, DollarSign, Tractor, Package, Store, Newspaper, Wrench } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
-interface HeaderProps {}
-
-const Header = ({}: HeaderProps) => {
+const Header = () => {
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { user, logout } = useUser();
+  const location = useLocation();
   const navigate = useNavigate();
-  const { user, isAuthenticated, logout } = useUser();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showResults, setShowResults] = useState(false);
-  const searchRef = useRef<HTMLDivElement>(null);
-  const isMobile = useIsMobile();
-  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
 
-  const handleLogoClick = () => {
-    navigate('/');
-  };
-
-  const searchData = [
-    { name: "Dashboard", href: "/", description: "Main dashboard with overview", category: "Main" },
-    { name: "Farm Area Calculator", href: "/calculator", description: "Calculate farm area using GPS and maps", category: "Tools" },
-    { name: "AI Disease Detection", href: "/disease", description: "Detect crop diseases using AI", category: "Tools" },
-    { name: "Cost Planning", href: "/cost-planning", description: "Plan farming budget and costs", category: "Planning" },
-    { name: "Equipment Rental", href: "#equipment", description: "Rent tractors and farm equipment", category: "Services" },
-    { name: "Market Intelligence", href: "#news", description: "Real-time crop prices and trends", category: "Market" },
-    { name: "Supplier Network", href: "#suppliers", description: "Find verified suppliers", category: "Services" },
-    { name: "IoT Monitoring", href: "#iot", description: "Monitor soil and weather sensors", category: "Monitoring" },
-    { name: "Analytics Dashboard", href: "#analytics", description: "Farm performance insights", category: "Analytics" },
-    { name: "Weather Widget", href: "#weather", description: "Current weather conditions", category: "Weather" },
-    { name: "Recent Activity", href: "#activity", description: "View recent farm activities", category: "Activity" }
-  ];
-
-  const filteredResults = searchData.filter(item =>
-    item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.category.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const handleSearchClick = (href: string) => {
-    if (href.startsWith('/')) {
-      navigate(href);
-    } else {
-      window.location.hash = href.substring(1);
-    }
-    setSearchQuery("");
-    setShowResults(false);
-  };
-
+  // Handle scroll effect
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
-        setShowResults(false);
-      }
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50);
     };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
+  const getInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+  };
+
+  // Define navigation items based on user role
+  const getNavigationItems = () => {
+    if (user?.role === 'owner') {
+      // Equipment owners only see relevant pages
+      return [
+        { name: "Dashboard", icon: BarChart3, href: "/dashboard" },
+        { name: "Equipment Rental", icon: Tractor, href: "/equipment-rental" },
+        { name: "News & Markets", icon: Newspaper, href: "/market-intelligence" },
+        { name: "Maintenance", icon: Wrench, href: "/maintenance" }
+      ];
+    } else if (user?.role === 'supplier') {
+      // Suppliers see supply-related pages
+      return [
+        { name: "Dashboard", icon: BarChart3, href: "/dashboard" },
+        { name: "Farm Supply", icon: Package, href: "/farm-supply" },
+        { name: "News & Markets", icon: Newspaper, href: "/market-intelligence" },
+        { name: "Suppliers", icon: Store, href: "/suppliers" }
+      ];
+    } else {
+      // Farmers see all pages
+      return [
+        { name: "Dashboard", icon: BarChart3, href: "/dashboard" },
+        { name: "Area Calculator", icon: Calculator, href: "/calculator" },
+        { name: "Disease Detection", icon: Camera, href: "/disease" },
+        { name: "Cost Planning", icon: DollarSign, href: "/cost-planning" },
+        { name: "Equipment Rental", icon: Tractor, href: "/equipment-rental" },
+        { name: "Farm Supply", icon: Package, href: "/farm-supply" },
+        { name: "News & Markets", icon: Newspaper, href: "/market-intelligence" },
+        { name: "Suppliers", icon: Store, href: "/suppliers" }
+      ];
+    }
+  };
+
+  const navigationItems = getNavigationItems();
+
   return (
-    <header className="bg-card border-b border-border px-4 py-3 shadow-sm">
-      <div className="max-w-7xl mx-auto flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2 cursor-pointer" onClick={handleLogoClick}>
-            <div className="w-12 h-12 rounded-lg flex items-center justify-center overflow-hidden">
-              <img
-                src="/logo.png"
-                alt="Smart Farmer Logo"
-                className="w-full h-full object-cover"
-              />
+    <header 
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        isScrolled 
+          ? 'bg-[#d4ffe]/95 backdrop-blur-md shadow-lg border-b border-gray-200' 
+          : 'bg-[#d4ffe]'
+      }`}
+    >
+      <div className="container mx-auto px-4">
+        <div className="flex items-center justify-between h-16 lg:h-20">
+          {/* Logo */}
+          <Link to="/" className="flex items-center space-x-3">
+            <div className="w-10 h-10 lg:w-12 lg:h-12 bg-green-600 rounded-full flex items-center justify-center">
+              <svg className="w-6 h-6 lg:w-7 lg:h-7 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+              </svg>
             </div>
-            <div>
-              <h1 className="text-xl font-bold text-foreground">Smart Farmer</h1>
-              <p className="text-xs text-muted-foreground">Assistant Platform</p>
+            <div className="hidden sm:block">
+              <h1 className="text-xl lg:text-2xl font-bold text-gray-900">Smart Farm India</h1>
+              <p className="text-xs text-green-600 font-medium">Digital Agriculture Solutions</p>
             </div>
-          </div>
-        </div>
-        {/* Desktop Search Bar (centered) */}
-        {!isMobile && (
-          <div className="relative mx-8 flex-1 max-w-xl" ref={searchRef}>
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <input
-              type="text"
-              placeholder="Search tools, features, or services..."
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setShowResults(e.target.value.length > 0);
-              }}
-              onFocus={() => setShowResults(searchQuery.length > 0)}
-              className="pl-10 pr-10 py-2 w-full bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-foreground placeholder:text-muted-foreground"
-              style={{ minWidth: 0 }}
-            />
-            {searchQuery && (
-              <button
-                onClick={() => {
-                  setSearchQuery("");
-                  setShowResults(false);
-                }}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+          </Link>
+
+          {/* Desktop Navigation */}
+          <nav className="hidden lg:flex items-center space-x-6">
+            {/* Main Navigation Items */}
+            {navigationItems.slice(0, 4).map((item) => (
+              <Link 
+                key={item.name}
+                to={item.href} 
+                className={`text-sm font-medium transition-colors ${
+                  location.pathname === item.href 
+                    ? 'text-green-600' 
+                    : 'text-gray-700 hover:text-green-600'
+                }`}
               >
-                <X className="h-4 w-4" />
-              </button>
+                {item.name}
+              </Link>
+            ))}
+
+            {/* More Dropdown */}
+            {navigationItems.length > 4 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="text-sm font-medium text-gray-700 hover:text-green-600">
+                    More
+                    <ChevronDown className="w-4 h-4 ml-1" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  {navigationItems.slice(4).map((item) => (
+                    <DropdownMenuItem key={item.name} onClick={() => navigate(item.href)}>
+                      <item.icon className="w-4 h-4 mr-2" />
+                      {item.name}
+                    </DropdownMenuItem>
+                  ))}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate('/settings')}>
+                    <Settings className="w-4 h-4 mr-2" />
+                    Settings
+                  </DropdownMenuItem>
+                  {user?.role === 'admin' && (
+                    <DropdownMenuItem onClick={() => navigate('/admin')}>
+                      <User className="w-4 h-4 mr-2" />
+                      Admin Panel
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
-            {showResults && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
-                {filteredResults.length > 0 ? (
-                  filteredResults.map((item, index) => (
-                    <button
-                      key={index}
-                      onClick={() => handleSearchClick(item.href)}
-                      className="w-full text-left px-4 py-3 hover:bg-accent hover:text-accent-foreground border-b border-border last:border-b-0 transition-colors"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="font-medium text-popover-foreground">{item.name}</div>
-                          <div className="text-sm text-muted-foreground">{item.description}</div>
-                        </div>
-                        <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
-                          {item.category}
-                        </span>
-                      </div>
-                    </button>
-                  ))
-                ) : (
-                  <div className="px-4 py-3 text-muted-foreground text-sm">
-                    No results found for "{searchQuery}"
-                  </div>
-                )}
+
+            {/* Settings Dropdown (if no more dropdown) */}
+            {navigationItems.length <= 4 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="text-sm font-medium text-gray-700 hover:text-green-600">
+                    <Settings className="w-4 h-4 mr-1" />
+                    Settings
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem onClick={() => navigate('/settings')}>
+                    <Settings className="w-4 h-4 mr-2" />
+                    General Settings
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/profile-settings')}>
+                    <User className="w-4 h-4 mr-2" />
+                    Profile Settings
+                  </DropdownMenuItem>
+                  {user?.role === 'admin' && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => navigate('/admin')}>
+                        <User className="w-4 h-4 mr-2" />
+                        Admin Panel
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </nav>
+
+          {/* User Menu */}
+          <div className="flex items-center space-x-4">
+            {/* Notifications */}
+            <Button variant="ghost" size="sm" className="relative">
+              <Bell className="w-5 h-5 text-gray-600" />
+              <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
+            </Button>
+
+            {/* User Dropdown */}
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="flex items-center space-x-2 p-2">
+                    <Avatar className="w-8 h-8">
+                      <AvatarImage src={user.profile_picture} alt={user.name} />
+                      <AvatarFallback className="bg-green-100 text-green-600 text-sm font-medium">
+                        {getInitials(user.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="hidden sm:block text-left">
+                      <p className="text-sm font-medium text-gray-900">{user.name}</p>
+                      <p className="text-xs text-gray-500 capitalize">{user.role}</p>
+                    </div>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem onClick={() => navigate('/profile-settings')}>
+                    <User className="w-4 h-4 mr-2" />
+                    Profile Settings
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/settings')}>
+                    <Settings className="w-4 h-4 mr-2" />
+                    Settings
+                  </DropdownMenuItem>
+                  {user.role === 'admin' && (
+                    <DropdownMenuItem onClick={() => navigate('/admin')}>
+                      <User className="w-4 h-4 mr-2" />
+                      Admin Panel
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} className="text-red-600">
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <Button variant="outline" size="sm" onClick={() => navigate('/login')}>
+                  Login
+                </Button>
+                <Button size="sm" onClick={() => navigate('/signup')}>
+                  Sign Up
+                </Button>
               </div>
             )}
-          </div>
-        )}
-        {/* Notification and User Icons (right) */}
-        <div className="flex items-center space-x-2">
-          <Button variant="ghost" size="sm">
-            <Bell className="h-5 w-5" />
-          </Button>
-          
-          {isAuthenticated ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="relative">
-                  {user?.profile_picture ? (
-                    <img
-                      src={user.profile_picture}
-                      alt={user.name}
-                      className="w-8 h-8 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center">
-                      <span className="text-white text-sm font-medium">
-                        {user?.name?.charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-                  )}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>
-                  <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">{user?.name}</p>
-                    <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate('/profile-settings')}>
-                  <Settings className="mr-2 h-4 w-4" />
-                  <span>Profile Settings</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={logout}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Log out</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
+
+            {/* Mobile Menu Button */}
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => navigate('/login')}
-              title="Login to your account"
+              className="lg:hidden"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             >
-              <User className="h-5 w-5" />
+              {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </Button>
-          )}
+          </div>
         </div>
-        {/* Mobile Search Overlay */}
-        {isMobile && mobileSearchOpen && (
-          <div className="absolute left-0 right-0 top-full z-50 bg-background flex flex-col p-4 transition-all border-b border-border shadow-lg" style={{ minHeight: 'calc(100vh - 64px)' }}>
-            <div className="flex items-center mb-4">
-              <button onClick={() => setMobileSearchOpen(false)} className="mr-2">
-                <X className="h-6 w-6 text-muted-foreground" />
-              </button>
-              <input
-                autoFocus
-                type="text"
-                placeholder="Search tools, features, or services..."
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setShowResults(e.target.value.length > 0);
-                }}
-                onFocus={() => setShowResults(searchQuery.length > 0)}
-                className="flex-1 px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-input text-foreground placeholder:text-muted-foreground"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => {
-                    setSearchQuery("");
-                    setShowResults(false);
-                  }}
-                  className="ml-2 text-gray-400 hover:text-gray-600"
+
+        {/* Mobile Navigation */}
+        {isMobileMenuOpen && (
+          <div className="lg:hidden border-t border-gray-200 bg-white">
+            <nav className="py-4 space-y-2">
+              {navigationItems.map((item) => (
+                <Link 
+                  key={item.name}
+                  to={item.href} 
+                  className={`flex items-center px-4 py-2 text-sm font-medium transition-colors ${
+                    location.pathname === item.href 
+                      ? 'text-green-600 bg-green-50' 
+                      : 'text-gray-700 hover:text-green-600 hover:bg-gray-50'
+                  }`}
+                  onClick={() => setIsMobileMenuOpen(false)}
                 >
-                  <X className="h-5 w-5" />
-                </button>
-              )}
-            </div>
-            <div className="flex-1 overflow-y-auto">
-              {showResults && (
-                <div className="bg-popover border border-border rounded-lg shadow-lg max-h-96 overflow-y-auto">
-                  {filteredResults.length > 0 ? (
-                    filteredResults.map((item, index) => (
-                      <button
-                        key={index}
-                        onClick={() => {
-                          handleSearchClick(item.href);
-                          setMobileSearchOpen(false);
-                        }}
-                        className="w-full text-left px-4 py-3 hover:bg-accent hover:text-accent-foreground border-b border-border last:border-b-0 transition-colors"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <div className="font-medium text-popover-foreground">{item.name}</div>
-                            <div className="text-sm text-muted-foreground">{item.description}</div>
-                          </div>
-                          <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
-                            {item.category}
-                          </span>
-                        </div>
-                      </button>
-                    ))
-                  ) : (
-                    <div className="px-4 py-3 text-muted-foreground text-sm">
-                      No results found for "{searchQuery}"
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+                  <item.icon className="w-4 h-4 mr-3" />
+                  {item.name}
+                </Link>
+              ))}
+              
+              {/* Settings in mobile menu */}
+              <div className="border-t border-gray-200 pt-2 mt-2">
+                <Link 
+                  to="/settings" 
+                  className={`flex items-center px-4 py-2 text-sm font-medium transition-colors ${
+                    location.pathname === '/settings' 
+                      ? 'text-green-600 bg-green-50' 
+                      : 'text-gray-700 hover:text-green-600 hover:bg-gray-50'
+                  }`}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <Settings className="w-4 h-4 mr-3" />
+                  Settings
+                </Link>
+                <Link 
+                  to="/profile-settings" 
+                  className={`flex items-center px-4 py-2 text-sm font-medium transition-colors ${
+                    location.pathname === '/profile-settings' 
+                      ? 'text-green-600 bg-green-50' 
+                      : 'text-gray-700 hover:text-green-600 hover:bg-gray-50'
+                  }`}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <User className="w-4 h-4 mr-3" />
+                  Profile Settings
+                </Link>
+                {user?.role === 'admin' && (
+                  <Link 
+                    to="/admin" 
+                    className={`flex items-center px-4 py-2 text-sm font-medium transition-colors ${
+                      location.pathname === '/admin' 
+                        ? 'text-green-600 bg-green-50' 
+                        : 'text-gray-700 hover:text-green-600 hover:bg-gray-50'
+                    }`}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <User className="w-4 h-4 mr-3" />
+                    Admin Panel
+                  </Link>
+                )}
+              </div>
+            </nav>
           </div>
         )}
       </div>
