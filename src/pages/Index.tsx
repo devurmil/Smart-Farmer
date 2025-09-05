@@ -22,6 +22,19 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Footer from '@/components/Footer';
 
+// Import images
+import greenBackground from '/Backgrounds/green-background.jpg';
+import hero1 from '/design-assets/hero_1.jpg';
+import hero2 from '/design-assets/hero_2.jpg';
+import hero3 from '/design-assets/hero_3.jpg';
+import ctaBackground from '/Backgrounds/karsten-wurth-UbGYPMbMYP8-unsplash.jpg';
+import imgSq1 from '/design-assets/img_sq_1.jpg';
+import imgSq3 from '/design-assets/img_sq_3.jpg';
+import imgSq4 from '/design-assets/img_sq_4.jpg';
+import imgSq5 from '/design-assets/img_sq_5.jpg';
+import imgSq6 from '/design-assets/img_sq_6.jpg';
+import imgSq8 from '/design-assets/img_sq_8.jpg';
+
 const Index = () => {
   const { user } = useUser();
   const navigate = useNavigate();
@@ -35,7 +48,7 @@ const Index = () => {
       location: "Punjab",
       content: "Smart Farm India has revolutionized my farming practices. The disease detection feature saved my entire wheat crop last season!",
       rating: 5,
-      image: "/design-assets/hero_1.jpg"
+      image: hero1
     },
     {
       id: 2,
@@ -44,7 +57,7 @@ const Index = () => {
       location: "Karnataka",
       content: "The cost planning tools helped me optimize my budget and increase profits by 40%. Highly recommended for all farmers!",
       rating: 5,
-      image: "/design-assets/hero_2.jpg"
+      image: hero2
     },
     {
       id: 3,
@@ -53,7 +66,7 @@ const Index = () => {
       location: "Gujarat",
       content: "As an equipment owner, this platform has helped me connect with more farmers and increase my rental business significantly.",
       rating: 5,
-      image: "/design-assets/hero_3.jpg"
+      image: hero3
     }
   ];
 
@@ -64,8 +77,8 @@ const Index = () => {
       title: "GPS Area Calculator",
       description: "Calculate your farm area accurately using GPS technology and interactive maps.",
       color: "text-white",
-      bgColor: "bg-blue-50",
-      bgImage: "/design-assets/img_sq_1.jpg",
+      bgColor: "bg-blue-50", // This is likely unused with bgImage
+      bgImage: imgSq1,
       href: "/calculator",
       allowedRoles: ["farmer"]
     },
@@ -74,8 +87,8 @@ const Index = () => {
       title: "AI Disease Detection",
       description: "Detect crop diseases early using advanced AI technology and image recognition.",
       color: "text-white",
-      bgColor: "bg-green-50",
-      bgImage: "/design-assets/img_sq_3.jpg",
+      bgColor: "bg-green-50", // This is likely unused with bgImage
+      bgImage: imgSq3,
       href: "/disease",
       allowedRoles: ["farmer"]
     },
@@ -85,7 +98,7 @@ const Index = () => {
       description: "Plan your farming budget and track expenses with detailed cost analysis tools.",
       color: "text-white",
       bgColor: "bg-yellow-50",
-      bgImage: "/design-assets/img_sq_4.jpg",
+      bgImage: imgSq4,
       href: "/cost-planning",
       allowedRoles: ["farmer"]
     },
@@ -95,7 +108,7 @@ const Index = () => {
       description: "Rent tractors and farm equipment from verified owners in your area.",
       color: "text-white",
       bgColor: "bg-purple-50",
-      bgImage: "/design-assets/img_sq_5.jpg",
+      bgImage: imgSq5,
       href: "/equipment-rental",
       allowedRoles: ["farmer", "owner"]
     },
@@ -105,7 +118,7 @@ const Index = () => {
       description: "Connect with reliable suppliers for seeds, fertilizers, and farming supplies.",
       color: "text-white",
       bgColor: "bg-red-50",
-      bgImage: "/design-assets/img_sq_6.jpg",
+      bgImage: imgSq6,
       href: "/farm-supply",
       allowedRoles: ["farmer", "owner", "supplier"]
     },
@@ -115,7 +128,7 @@ const Index = () => {
       description: "Get real-time crop prices, market trends, and weather forecasts.",
       color: "text-white",
       bgColor: "bg-indigo-50",
-      bgImage: "/design-assets/img_sq_8.jpg",
+      bgImage: imgSq8,
       href: "/market-intelligence",
       allowedRoles: ["farmer", "owner", "supplier"]
     }
@@ -142,7 +155,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="relative pt-20 pb-16" style={{ backgroundImage: 'url(/Backgrounds/green-background.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
+      <section className="relative pt-20 pb-16" style={{ backgroundImage: `url(${greenBackground})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
         {/* Dark overlay for better text readability */}
         <div className="absolute inset-0 bg-black/30"></div>
         <div className="container mx-auto px-4">
@@ -200,7 +213,7 @@ const Index = () => {
             <div className="relative">
               <div className="relative z-10">
                 <img 
-                  src="/design-assets/hero_1.jpg" 
+                  src={hero1} 
                   alt="Smart Farming" 
                   className="w-full h-96 lg:h-[500px] object-cover rounded-2xl shadow-2xl"
                 />
@@ -337,7 +350,7 @@ const Index = () => {
 
             <div className="relative">
               <img 
-                src="/design-assets/hero_2.jpg" 
+                src={hero2} 
                 alt="Why Choose Us" 
                 className="w-full h-96 lg:h-[500px] object-cover rounded-2xl shadow-2xl"
               />
@@ -394,7 +407,7 @@ const Index = () => {
       </section>
 
             {/* CTA Section */}
-      <section className="py-20 relative" style={{ backgroundImage: 'url(/Backgrounds/karsten-wurth-UbGYPMbMYP8-unsplash.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
+      <section className="py-20 relative" style={{ backgroundImage: `url(${ctaBackground})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
         {/* Dark overlay for better text readability */}
         <div className="absolute inset-0 bg-black/50"></div>
         <div className="container mx-auto px-4 text-center relative z-10">

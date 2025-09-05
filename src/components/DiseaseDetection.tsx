@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import * as tf from '@tensorflow/tfjs';
+// Import the background image
+import diseaseBackground from '/Backgrounds/Disease Background.jpg';
 import {
   Loader2,
   Lightbulb,
@@ -532,7 +534,7 @@ const DiseaseDetection = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   return (
-    <div className="min-h-screen relative" style={{ backgroundImage: 'url(/Backgrounds/green-background.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
+    <div className="min-h-screen relative" style={{ backgroundImage: `url(${diseaseBackground})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
       <div className="absolute inset-0 bg-black/20"></div>
       <div className="relative z-10">
         {/* Hero Section */}

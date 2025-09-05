@@ -19,6 +19,9 @@ import OwnerEquipmentList from '../components/OwnerEquipmentList';
 import EquipmentList from '../components/EquipmentList';
 import UserBookingsList from '../components/UserBookingsList';
 import { getBackendUrl } from '@/lib/utils';
+// Import background images
+import equipmentMainBg from '/Backgrounds/federico-respini-sYffw0LNr7s-unsplash.jpg';
+import equipmentSectionBg from '/Backgrounds/equipment.jpg';
 
 const EquipmentRentalPage = () => {
   const { user, token } = useUser();
@@ -103,11 +106,11 @@ const EquipmentRentalPage = () => {
   }, [user, refreshTrigger]);
 
   return (
-    <div className="min-h-screen relative" style={{ backgroundImage: 'url(/Backgrounds/federico-respini-sYffw0LNr7s-unsplash.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
+    <div className="min-h-screen relative" style={{ backgroundImage: `url(${equipmentMainBg})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
       <div className="absolute inset-0 bg-black/30"></div>
       <div className="relative z-10">
         {/* Hero Section */}
-        <div className="relative overflow-hidden" style={{ backgroundImage: 'url(/Backgrounds/equipment.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
+        <div className="relative overflow-hidden" style={{ backgroundImage: `url(${equipmentSectionBg})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
           <div className="absolute inset-0 bg-black/60"></div>
           <div className="relative px-6 py-16 mx-auto max-w-7xl">
             <div className="text-center">

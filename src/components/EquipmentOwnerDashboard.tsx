@@ -8,6 +8,8 @@ import equipmentOwnerService, { EquipmentOwnerDashboardData } from "@/services/e
 import MaintenanceScheduleModal from "./MaintenanceScheduleModal";
 import MaintenanceRecordsModal from "./MaintenanceRecordsModal";
 import { useNavigate } from "react-router-dom";
+// Import the background image
+import equipmentBackground from '/Backgrounds/equipment.jpg';
 import { 
   Tractor, 
   Calendar, 
@@ -113,7 +115,9 @@ const EquipmentOwnerDashboard = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen relative" style={{ backgroundImage: `url(${equipmentBackground})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+      <div className="absolute inset-0 bg-black/20"></div>
+      <div className="relative z-10 space-y-6">
              {/* Header Section */}
        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
          <div>
@@ -381,7 +385,8 @@ const EquipmentOwnerDashboard = () => {
          isOpen={maintenanceRecordsModalOpen}
          onClose={() => setMaintenanceRecordsModalOpen(false)}
        />
-     </div>
+      </div>
+    </div>
    );
  };
 

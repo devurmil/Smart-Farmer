@@ -24,6 +24,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
+// Import the background image
+import costBackground from '/Backgrounds/Cost Background.jpg';
+
 const units = [
   { label: 'Acre', value: 'acre', symbol: 'ac' },
   { label: 'Hectare', value: 'hectare', symbol: 'ha' },
@@ -113,7 +116,7 @@ const CostPlanning = () => {
         {/* Background Image */}
         <div
           className="absolute inset-0 w-full h-full bg-cover bg-center"
-          style={{ backgroundImage: "url('/Backgrounds/Cost Background.jpg')" }}
+          style={{ backgroundImage: `url(${costBackground})` }}
         />
         {/* Overlay */}
         <div className="absolute inset-0 bg-black/20" />

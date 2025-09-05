@@ -7,6 +7,9 @@ import SupplierSupplyList from '../components/SupplierSupplyList';
 import SupplyList from '../components/SupplyList';
 import SupplyOrders from '../components/SupplyOrders';
 
+// Import the background image
+import farmSupplyBg from '/Backgrounds/federico-respini-sYffw0LNr7s-unsplash.jpg';
+
 const FarmSupplyPage = () => {
   const { user } = useUser();
   const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -16,7 +19,7 @@ const FarmSupplyPage = () => {
   };
 
   return (
-    <div className="min-h-screen relative" style={{ backgroundImage: "url('/Backgrounds/federico-respini-sYffw0LNr7s-unsplash.jpg')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
+    <div className="min-h-screen relative" style={{ backgroundImage: `url(${farmSupplyBg})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
       <div className="absolute inset-0 bg-black/20"></div>
       <div className="relative z-10 container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">

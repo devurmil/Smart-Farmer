@@ -10,6 +10,9 @@ import { useUser } from '@/contexts/UserContext';
 import { getBackendUrl } from '@/lib/utils';
 import RoleSelectionModal from '@/components/RoleSelectionModal';
 
+// Import the image
+import hero3 from '/design-assets/hero_3.jpg';
+
 const Login = () => {
   const navigate = useNavigate();
   const { login, user } = useUser();
@@ -73,7 +76,7 @@ const Login = () => {
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-green-600/20 to-emerald-600/20 z-10"></div>
         <img 
-          src="/design-assets/hero_3.jpg" 
+          src={hero3} 
           alt="Smart Farming" 
           className="w-full h-full object-cover"
         />
