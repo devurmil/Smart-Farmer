@@ -33,22 +33,18 @@ router.get('/', auth, async (req, res) => {
       whereClause = {};
     }
 
-    const supplies = await Supply.findAll({
-      where: whereClause,
-      include: [
-        {
-          model: User,
-          as: 'supplier',
-          attributes: ['id', 'name', 'email', 'phone']
-        }
-      ],
-      order: [['createdAt', 'DESC']]
-    });
+    const supplies = await Supply.find(whereClause)
+      .populate('supplierId', 'name email phone')
+      .sort({ createdAt: -1 })
+      .limit(parseInt(limit))
+      .skip(offset);
 
+    const total = await Supply.countDocuments(whereClause);
+    
     res.json({
       success: true,
       data: supplies,
-      total: supplies.length,
+      total,
       page,
       limit,
     });
@@ -128,10 +124,8 @@ router.get('/my-supplies', auth, async (req, res) => {
       return res.status(403).json({ message: 'Only suppliers can view their supplies' });
     }
 
-    const supplies = await Supply.findAll({
-      where: { supplierId: req.user.id },
-      order: [['createdAt', 'DESC']]
-    });
+    const supplies = await Supply.find({ supplierId: req.user.id })
+      .sort({ createdAt: -1 });
 
     res.json(supplies);
   } catch (error) {
@@ -222,21 +216,21 @@ router.put('/:id/quantity', auth, async (req, res) => {
 // @access  Private
 router.delete('/:id', auth, async (req, res) => {
   try {
-    const supply = await Supply.findByPk(req.params.id);
+    const supply = await Supply.findById(req.params.id);
     
     if (!supply) {
       return res.status(404).json({ success: false, message: 'Supply not found' });
     }
 
     // Check if the supply belongs to the current user OR if user is admin
-    const isOwner = supply.supplierId === req.user.id;
+    const isOwner = supply.supplierId.toString() === req.user.id;
     const isAdmin = req.user.role === 'admin';
 
     if (!isOwner && !isAdmin) {
       return res.status(403).json({ success: false, message: 'Not authorized to delete this supply' });
     }
 
-    await supply.destroy();
+    await Supply.findByIdAndDelete(req.params.id);
 
     res.json({
       success: true,
@@ -316,40 +310,16 @@ router.get('/orders', auth, async (req, res) => {
     
     if (req.user.role === 'supplier') {
       // Get orders where user is the supplier
-      orders = await SupplyOrder.findAll({
-        where: { supplierId: req.user.id },
-        include: [
-          {
-            model: Supply,
-            as: 'supply',
-            attributes: ['id', 'name', 'category', 'price', 'unit', 'availableQuantity']
-          },
-          {
-            model: User,
-            as: 'buyer',
-            attributes: ['id', 'name', 'email', 'phone']
-          }
-        ],
-        order: [['orderDate', 'DESC']]
-      });
+      orders = await SupplyOrder.find({ supplierId: req.user.id })
+        .populate('supplyId', 'name category price unit availableQuantity')
+        .populate('buyerId', 'name email phone')
+        .sort({ orderDate: -1 });
     } else {
       // Get orders where user is the buyer
-      orders = await SupplyOrder.findAll({
-        where: { buyerId: req.user.id },
-        include: [
-          {
-            model: Supply,
-            as: 'supply',
-            attributes: ['id', 'name', 'category', 'price', 'unit', 'availableQuantity']
-          },
-          {
-            model: User,
-            as: 'seller',
-            attributes: ['id', 'name', 'email', 'phone']
-          }
-        ],
-        order: [['orderDate', 'DESC']]
-      });
+      orders = await SupplyOrder.find({ buyerId: req.user.id })
+        .populate('supplyId', 'name category price unit availableQuantity')
+        .populate('supplierId', 'name email phone')
+        .sort({ orderDate: -1 });
     }
 
     res.json(orders);
@@ -364,13 +334,13 @@ router.get('/orders', auth, async (req, res) => {
 // @access  Private
 router.put('/orders/:id/status', auth, async (req, res) => {
   try {
-    const order = await SupplyOrder.findByPk(req.params.id);
+    const order = await SupplyOrder.findById(req.params.id);
     
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
     }
 
-    if (order.supplierId !== req.user.id) {
+    if (order.supplierId.toString() !== req.user.id) {
       return res.status(403).json({ message: 'Not authorized to update this order' });
     }
 
@@ -382,18 +352,22 @@ router.put('/orders/:id/status', auth, async (req, res) => {
 
     // If order is being cancelled, restore the quantity
     if (status === 'cancelled' && order.status !== 'cancelled') {
-      const restoreResult = await InventoryService.restoreQuantity(order.supplyId, order.quantity);
+      const restoreResult = await InventoryService.restoreQuantity(order.supplyId.toString(), order.quantity);
       if (!restoreResult.success) {
         console.error('Failed to restore quantity:', restoreResult.message);
       }
     }
 
-    await order.update({ status });
+    const updatedOrder = await SupplyOrder.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true }
+    );
 
     res.json({
       success: true,
       message: 'Order status updated successfully',
-      data: order
+      data: updatedOrder
     });
   } catch (error) {
     console.error('Error updating order status:', error);
@@ -406,10 +380,8 @@ router.put('/orders/:id/status', auth, async (req, res) => {
 // @access  Public
 router.get('/suppliers', async (req, res) => {
   try {
-    const suppliers = await User.findAll({
-      where: { role: 'supplier' },
-      attributes: ['id', 'name', 'email', 'phone']
-    });
+    const suppliers = await User.find({ role: 'supplier' })
+      .select('name email phone');
     res.json({ success: true, data: suppliers });
   } catch (error) {
     console.error('Error fetching suppliers:', error);

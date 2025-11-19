@@ -14,11 +14,13 @@ router.get('/', auth, async (req, res) => {
     if (!isAdmin(req)) {
       return res.status(403).json({ success: false, message: 'Access denied. Admins only.' });
     }
-    const users = await User.findAll({ attributes: { exclude: ['password'] }, order: [['created_at', 'DESC']] });
+    const users = await User.find()
+      .select('-password')
+      .sort({ createdAt: -1 });
     // For each user, add equipmentCount and supplyCount
     const usersWithDetails = await Promise.all(users.map(async user => {
-      const equipment = await Equipment.findAll({ where: { ownerId: user.id } });
-      const supplies = await Supply.findAll({ where: { supplierId: user.id } });
+      const equipment = await Equipment.find({ ownerId: user._id });
+      const supplies = await Supply.find({ supplierId: user._id });
       return { ...user.toJSON(), equipment, supplies };
     }));
     res.json({ success: true, data: { users: usersWithDetails } });
@@ -34,9 +36,9 @@ router.delete('/:id', auth, async (req, res) => {
     if (!isAdmin(req)) {
       return res.status(403).json({ success: false, message: 'Access denied. Admins only.' });
     }
-    const user = await User.findByPk(req.params.id);
+    const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
-    await user.destroy();
+    await User.findByIdAndDelete(req.params.id);
     res.json({ success: true, message: 'User deleted successfully' });
   } catch (error) {
     console.error('Delete user error:', error);
@@ -50,15 +52,16 @@ router.put('/:id', auth, async (req, res) => {
     if (!isAdmin(req)) {
       return res.status(403).json({ success: false, message: 'Access denied. Admins only.' });
     }
-    const user = await User.findByPk(req.params.id);
+    const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
     const { name, email, phone, password, role } = req.body;
-    if (name) user.name = name;
-    if (email) user.email = email;
-    if (phone) user.phone = phone;
-    if (role) user.role = role;
+    const updateData = {};
+    if (name) updateData.name = name;
+    if (email) updateData.email = email;
+    if (phone) updateData.phone = phone;
+    if (role) updateData.role = role;
     // Only update password if a non-empty password is provided
-    // The User model's beforeUpdate hook will handle the hashing automatically
+    // The User model's pre-save hook will handle the hashing automatically
     if (password && password.trim() !== '') {
       // Validate password length
       if (password.length < 6) {
@@ -67,12 +70,12 @@ router.put('/:id', auth, async (req, res) => {
           message: 'Password must be at least 6 characters long' 
         });
       }
-      user.password = password;
+      updateData.password = password;
     }
-    await user.save();
-    const updatedUser = user.toJSON();
-    delete updatedUser.password;
-    res.json({ success: true, message: 'User updated successfully', data: { user: updatedUser } });
+    const updatedUser = await User.findByIdAndUpdate(req.params.id, updateData, { new: true });
+    const userObj = updatedUser.toJSON();
+    delete userObj.password;
+    res.json({ success: true, message: 'User updated successfully', data: { user: userObj } });
   } catch (error) {
     console.error('Update user error:', error);
     res.status(500).json({ success: false, message: 'Server error while updating user' });
@@ -97,7 +100,7 @@ router.post('/', auth, async (req, res) => {
         message: 'Password must be at least 6 characters long' 
       });
     }
-    const existing = await User.findOne({ where: { email } });
+    const existing = await User.findOne({ email });
     if (existing) {
       return res.status(400).json({ success: false, message: 'User with this email already exists' });
     }
