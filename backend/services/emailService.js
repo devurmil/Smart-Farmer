@@ -11,16 +11,24 @@ const GMAIL_USER = process.env.GOOGLE_EMAIL;
 
 const SMTP_HOST = process.env.SMTP_HOST;
 const SMTP_PORT = process.env.SMTP_PORT;
+<<<<<<< HEAD
 const SMTP_USER = process.env.SMTP_USER;
 const SMTP_PASS = process.env.SMTP_PASS;
 const SMTP_SECURE = (process.env.SMTP_SECURE || "").toLowerCase() === "true";
 const FALLBACK_FROM =
   process.env.EMAIL_FROM || "Smart Farmer <no-reply@smartfarmer.dev>";
+=======
+const SMTP_SECURE = process.env.SMTP_SECURE;
+const SMTP_USER = process.env.SMTP_USER;
+const SMTP_PASS = process.env.SMTP_PASS;
+const SMTP_FROM = process.env.SMTP_FROM || `Smart Farmer <${SMTP_USER || GMAIL_USER || 'no-reply@smartfarmer.local'}>`;
+>>>>>>> 39c7623d18982e1a77f2b9f9587bfee3ddceafc3
 
 const hasGoogleCredentials =
   CLIENT_ID && CLIENT_SECRET && REFRESH_TOKEN && GMAIL_USER;
 const hasSmtpCredentials = SMTP_HOST && SMTP_PORT && SMTP_USER && SMTP_PASS;
 
+<<<<<<< HEAD
 let cachedEtherealAccount = null;
 
 const createGoogleTransport = async () => {
@@ -30,10 +38,61 @@ const createGoogleTransport = async () => {
     REDIRECT_URI
   );
   oAuth2Client.setCredentials({ refresh_token: REFRESH_TOKEN });
+=======
+const hasSmtpCredentials =
+  SMTP_HOST && SMTP_PORT && SMTP_USER && SMTP_PASS;
 
-  const accessToken = await oAuth2Client.getAccessToken();
+const createTransport = async () => {
+  if (hasSmtpCredentials) {
+    const port = Number(SMTP_PORT) || 587;
+    const secure =
+      typeof SMTP_SECURE === 'string'
+        ? SMTP_SECURE.toLowerCase() === 'true'
+        : port === 465;
+
+    return nodemailer.createTransport({
+      host: SMTP_HOST,
+      port,
+      secure,
+      auth: {
+        user: SMTP_USER,
+        pass: SMTP_PASS,
+      },
+    });
+  }
+
+  if (hasGoogleCredentials) {
+    const oAuth2Client = new google.auth.OAuth2(
+      CLIENT_ID,
+      CLIENT_SECRET,
+      REDIRECT_URI
+    );
+    oAuth2Client.setCredentials({ refresh_token: REFRESH_TOKEN });
+>>>>>>> 39c7623d18982e1a77f2b9f9587bfee3ddceafc3
+
+    const accessToken = await oAuth2Client.getAccessToken();
+
+    return nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        type: 'OAuth2',
+        user: GMAIL_USER,
+        clientId: CLIENT_ID,
+        clientSecret: CLIENT_SECRET,
+        refreshToken: REFRESH_TOKEN,
+        accessToken: accessToken?.token || accessToken,
+      },
+    });
+  }
+
+  // Development fallback - create disposable Ethereal account
+  const testAccount = await nodemailer.createTestAccount();
+  console.warn(
+    '[emailService] Missing SMTP/Google credentials. Using Ethereal test account.'
+  );
 
   return nodemailer.createTransport({
+<<<<<<< HEAD
     service: "gmail",
     auth: {
       type: "OAuth2",
@@ -42,10 +101,18 @@ const createGoogleTransport = async () => {
       clientSecret: CLIENT_SECRET,
       refreshToken: REFRESH_TOKEN,
       accessToken: accessToken?.token || accessToken,
+=======
+    host: 'smtp.ethereal.email',
+    port: 587,
+    auth: {
+      user: testAccount.user,
+      pass: testAccount.pass,
+>>>>>>> 39c7623d18982e1a77f2b9f9587bfee3ddceafc3
     },
   });
 };
 
+<<<<<<< HEAD
 const createSmtpTransport = () => {
   const port = Number(SMTP_PORT) || 587;
   const secure = SMTP_SECURE || port === 465;
@@ -103,6 +170,13 @@ const sendEmail = async ({ to, subject, html }) => {
       : FALLBACK_FROM;
     const info = await transport.sendMail({
       from: resolvedFrom,
+=======
+const sendEmail = async ({ to, subject, html, from }) => {
+  try {
+    const transport = await createTransport();
+    await transport.sendMail({
+      from: from || SMTP_FROM,
+>>>>>>> 39c7623d18982e1a77f2b9f9587bfee3ddceafc3
       to,
       subject,
       html,
