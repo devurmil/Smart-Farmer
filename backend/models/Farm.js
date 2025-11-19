@@ -1,83 +1,68 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
+const mongoose = require('mongoose');
 
-const Farm = sequelize.define('Farm', {
-  id: {
-    type: DataTypes.UUID,
-    defaultValue: DataTypes.UUIDV4,
-    primaryKey: true
-  },
+const farmSchema = new mongoose.Schema({
   user_id: {
-    type: DataTypes.UUID,
-    allowNull: false,
-    references: {
-      model: 'users',
-      key: 'id'
-    },
-    onDelete: 'CASCADE'
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
   },
   name: {
-    type: DataTypes.STRING(255),
-    allowNull: false,
-    validate: {
-      notEmpty: true,
-      len: [2, 255]
-    }
+    type: String,
+    required: true,
+    trim: true,
+    minlength: 2,
+    maxlength: 255
   },
   location: {
-    type: DataTypes.JSON,
-    allowNull: true,
-    comment: 'Stores {lat, lng, address, city, state, country}'
+    type: mongoose.Schema.Types.Mixed,
+    default: null
   },
   coordinates: {
-    type: DataTypes.JSON,
-    allowNull: true,
-    comment: 'Array of {lat, lng} objects representing the farm boundary polygon'
+    type: mongoose.Schema.Types.Mixed,
+    default: null
   },
   area_hectares: {
-    type: DataTypes.DECIMAL(10, 2),
-    allowNull: true,
-    validate: {
-      min: 0
-    }
+    type: Number,
+    default: null,
+    min: 0
   },
   area_acres: {
-    type: DataTypes.DECIMAL(10, 2),
-    allowNull: true,
-    validate: {
-      min: 0
-    }
+    type: Number,
+    default: null,
+    min: 0
   },
   soil_type: {
-    type: DataTypes.STRING(100),
-    allowNull: true
+    type: String,
+    default: null,
+    maxlength: 100
   },
   irrigation_type: {
-    type: DataTypes.ENUM('drip', 'sprinkler', 'flood', 'rain_fed', 'mixed'),
-    allowNull: true
+    type: String,
+    enum: ['drip', 'sprinkler', 'flood', 'rain_fed', 'mixed'],
+    default: null
   },
   farm_type: {
-    type: DataTypes.ENUM('organic', 'conventional', 'mixed'),
-    defaultValue: 'conventional'
+    type: String,
+    enum: ['organic', 'conventional', 'mixed'],
+    default: 'conventional'
   },
   description: {
-    type: DataTypes.TEXT,
-    allowNull: true
+    type: String,
+    default: null
   },
   is_active: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: true
+    type: Boolean,
+    default: true
   }
 }, {
-  tableName: 'farms',
-  indexes: [
-    {
-      fields: ['user_id']
-    },
-    {
-      fields: ['is_active']
-    }
-  ]
+  timestamps: true,
+  collection: 'farms'
 });
+
+// Indexes
+farmSchema.index({ user_id: 1 });
+farmSchema.index({ is_active: 1 });
+
+const Farm = mongoose.model('Farm', farmSchema);
 
 module.exports = Farm;

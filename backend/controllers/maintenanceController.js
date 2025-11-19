@@ -1,4 +1,5 @@
 const { Maintenance, Equipment } = require('../models');
+const mongoose = require('mongoose');
 
 // Schedule maintenance for equipment
 exports.scheduleMaintenance = async (req, res) => {
@@ -15,8 +16,13 @@ exports.scheduleMaintenance = async (req, res) => {
       });
     }
 
+    // Convert equipmentId to ObjectId if needed
+    const equipmentObjectId = mongoose.Types.ObjectId.isValid(equipmentId) 
+      ? new mongoose.Types.ObjectId(equipmentId) 
+      : equipmentId;
+
     // Check if equipment exists
-    const equipment = await Equipment.findByPk(equipmentId);
+    const equipment = await Equipment.findById(equipmentObjectId);
     if (!equipment) {
       return res.status(404).json({ 
         success: false, 
@@ -25,7 +31,10 @@ exports.scheduleMaintenance = async (req, res) => {
     }
 
     // Check if equipment belongs to the authenticated user (owner)
-    if (equipment.ownerId !== req.user.id) {
+    const equipmentOwnerId = equipment.ownerId.toString();
+    const userId = req.user.id.toString();
+    
+    if (equipmentOwnerId !== userId) {
       return res.status(403).json({ 
         success: false, 
         error: 'You can only schedule maintenance for your own equipment' 
@@ -48,26 +57,19 @@ exports.scheduleMaintenance = async (req, res) => {
     let maintenance;
     try {
       maintenance = await Maintenance.create({
-        equipmentId,
+        equipmentId: equipmentObjectId,
         type,
-        scheduledDate,
+        scheduledDate: new Date(scheduledDate),
         description: description || '',
         status: 'scheduled',
         priority: type === 'emergency' ? 'urgent' : 'medium'
       });
     } catch (createError) {
       console.error('Error creating maintenance record:', createError);
-      // Check if it's a table doesn't exist error
-      if (createError.name === 'SequelizeDatabaseError' && createError.message.includes('relation "Maintenance" does not exist')) {
-        return res.status(500).json({
-          success: false,
-          error: 'Maintenance table not found. Please contact administrator.'
-        });
-      }
       throw createError;
     }
 
-    console.log('Maintenance scheduled:', maintenance.toJSON());
+    console.log('Maintenance scheduled:', maintenance.toObject());
 
     res.status(201).json({
       success: true,
@@ -98,7 +100,10 @@ exports.getMaintenanceRecords = async (req, res) => {
 
     // If equipmentId is provided, filter by equipment
     if (equipmentId) {
-      whereClause.equipmentId = equipmentId;
+      const equipmentObjectId = mongoose.Types.ObjectId.isValid(equipmentId) 
+        ? new mongoose.Types.ObjectId(equipmentId) 
+        : equipmentId;
+      whereClause.equipmentId = equipmentObjectId;
     }
 
     // If status is provided, filter by status
@@ -106,18 +111,20 @@ exports.getMaintenanceRecords = async (req, res) => {
       whereClause.status = status;
     }
 
-    const maintenanceRecords = await Maintenance.findAll({
-      where: whereClause,
-      include: [
-        {
-          model: Equipment,
-          as: 'equipment',
-          attributes: ['id', 'name', 'type', 'ownerId'],
-          where: { ownerId: req.user.id } // Only show maintenance for user's equipment
-        }
-      ],
-      order: [['scheduledDate', 'ASC']]
-    });
+    // Get user's equipment IDs first
+    const userId = mongoose.Types.ObjectId.isValid(req.user.id) 
+      ? new mongoose.Types.ObjectId(req.user.id) 
+      : req.user.id;
+    
+    const userEquipment = await Equipment.find({ ownerId: userId }).select('_id');
+    const equipmentIds = userEquipment.map(eq => eq._id);
+
+    // Add equipment filter to only show maintenance for user's equipment
+    whereClause.equipmentId = { $in: equipmentIds };
+
+    const maintenanceRecords = await Maintenance.find(whereClause)
+      .populate('equipmentId', 'name type ownerId')
+      .sort({ scheduledDate: 1 });
 
     res.json({
       success: true,
@@ -139,15 +146,12 @@ exports.updateMaintenanceStatus = async (req, res) => {
     const { id } = req.params;
     const { status, notes, cost, technician } = req.body;
 
-    const maintenance = await Maintenance.findByPk(id, {
-      include: [
-        {
-          model: Equipment,
-          as: 'equipment',
-          attributes: ['id', 'name', 'ownerId']
-        }
-      ]
-    });
+    const maintenanceObjectId = mongoose.Types.ObjectId.isValid(id) 
+      ? new mongoose.Types.ObjectId(id) 
+      : id;
+
+    const maintenance = await Maintenance.findById(maintenanceObjectId)
+      .populate('equipmentId', 'name ownerId');
 
     if (!maintenance) {
       return res.status(404).json({ 
@@ -157,7 +161,10 @@ exports.updateMaintenanceStatus = async (req, res) => {
     }
 
     // Check if user owns the equipment
-    if (maintenance.equipment.ownerId !== req.user.id) {
+    const equipmentOwnerId = maintenance.equipmentId.ownerId.toString();
+    const userId = req.user.id.toString();
+
+    if (equipmentOwnerId !== userId) {
       return res.status(403).json({ 
         success: false, 
         error: 'You can only update maintenance for your own equipment' 
@@ -175,12 +182,14 @@ exports.updateMaintenanceStatus = async (req, res) => {
       updateData.completedDate = new Date();
     }
 
-    await maintenance.update(updateData);
+    await Maintenance.findByIdAndUpdate(maintenanceObjectId, updateData, { new: true });
+    const updatedMaintenance = await Maintenance.findById(maintenanceObjectId)
+      .populate('equipmentId', 'name ownerId');
 
     res.json({
       success: true,
       message: 'Maintenance status updated successfully',
-      data: maintenance
+      data: updatedMaintenance
     });
 
   } catch (error) {
@@ -198,15 +207,12 @@ exports.updateMaintenance = async (req, res) => {
     const { id } = req.params;
     const { type, scheduledDate, description, priority, technician, cost, notes } = req.body;
 
-    const maintenance = await Maintenance.findByPk(id, {
-      include: [
-        {
-          model: Equipment,
-          as: 'equipment',
-          attributes: ['id', 'name', 'ownerId']
-        }
-      ]
-    });
+    const maintenanceObjectId = mongoose.Types.ObjectId.isValid(id) 
+      ? new mongoose.Types.ObjectId(id) 
+      : id;
+
+    const maintenance = await Maintenance.findById(maintenanceObjectId)
+      .populate('equipmentId', 'name ownerId');
 
     if (!maintenance) {
       return res.status(404).json({ 
@@ -216,7 +222,10 @@ exports.updateMaintenance = async (req, res) => {
     }
 
     // Check if user owns the equipment
-    if (maintenance.equipment.ownerId !== req.user.id) {
+    const equipmentOwnerId = maintenance.equipmentId.ownerId.toString();
+    const userId = req.user.id.toString();
+
+    if (equipmentOwnerId !== userId) {
       return res.status(403).json({ 
         success: false, 
         error: 'You can only update maintenance for your own equipment' 
@@ -226,19 +235,21 @@ exports.updateMaintenance = async (req, res) => {
     // Update maintenance record
     const updateData = {};
     if (type) updateData.type = type;
-    if (scheduledDate) updateData.scheduledDate = scheduledDate;
+    if (scheduledDate) updateData.scheduledDate = new Date(scheduledDate);
     if (description !== undefined) updateData.description = description;
     if (priority) updateData.priority = priority;
     if (technician !== undefined) updateData.technician = technician;
     if (cost !== undefined) updateData.cost = cost;
     if (notes !== undefined) updateData.notes = notes;
 
-    await maintenance.update(updateData);
+    await Maintenance.findByIdAndUpdate(maintenanceObjectId, updateData, { new: true });
+    const updatedMaintenance = await Maintenance.findById(maintenanceObjectId)
+      .populate('equipmentId', 'name ownerId');
 
     res.json({
       success: true,
       message: 'Maintenance record updated successfully',
-      data: maintenance
+      data: updatedMaintenance
     });
 
   } catch (error) {
@@ -255,15 +266,12 @@ exports.deleteMaintenance = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const maintenance = await Maintenance.findByPk(id, {
-      include: [
-        {
-          model: Equipment,
-          as: 'equipment',
-          attributes: ['id', 'name', 'ownerId']
-        }
-      ]
-    });
+    const maintenanceObjectId = mongoose.Types.ObjectId.isValid(id) 
+      ? new mongoose.Types.ObjectId(id) 
+      : id;
+
+    const maintenance = await Maintenance.findById(maintenanceObjectId)
+      .populate('equipmentId', 'name ownerId');
 
     if (!maintenance) {
       return res.status(404).json({ 
@@ -273,14 +281,17 @@ exports.deleteMaintenance = async (req, res) => {
     }
 
     // Check if user owns the equipment
-    if (maintenance.equipment.ownerId !== req.user.id) {
+    const equipmentOwnerId = maintenance.equipmentId.ownerId.toString();
+    const userId = req.user.id.toString();
+
+    if (equipmentOwnerId !== userId) {
       return res.status(403).json({ 
         success: false, 
         error: 'You can only delete maintenance for your own equipment' 
       });
     }
 
-    await maintenance.destroy();
+    await Maintenance.findByIdAndDelete(maintenanceObjectId);
 
     res.json({
       success: true,
@@ -294,4 +305,4 @@ exports.deleteMaintenance = async (req, res) => {
       error: 'Failed to delete maintenance record' 
     });
   }
-}; 
+};

@@ -1,15 +1,20 @@
 const { Supply, SupplyOrder } = require('../models');
+const mongoose = require('mongoose');
 
 class InventoryService {
   /**
    * Check if supply has enough quantity for order
-   * @param {number} supplyId - Supply ID
+   * @param {string} supplyId - Supply ID
    * @param {number} requestedQuantity - Quantity requested
    * @returns {Object} - { hasStock: boolean, availableQuantity: number, supply: Object }
    */
   static async checkStockAvailability(supplyId, requestedQuantity) {
     try {
-      const supply = await Supply.findByPk(supplyId);
+      const supplyObjectId = mongoose.Types.ObjectId.isValid(supplyId) 
+        ? new mongoose.Types.ObjectId(supplyId) 
+        : supplyId;
+      
+      const supply = await Supply.findById(supplyObjectId);
       
       if (!supply) {
         return { hasStock: false, error: 'Supply not found' };
@@ -35,13 +40,17 @@ class InventoryService {
 
   /**
    * Reserve quantity for an order
-   * @param {number} supplyId - Supply ID
+   * @param {string} supplyId - Supply ID
    * @param {number} quantity - Quantity to reserve
    * @returns {Object} - { success: boolean, message: string, updatedSupply: Object }
    */
   static async reserveQuantity(supplyId, quantity) {
     try {
-      const supply = await Supply.findByPk(supplyId);
+      const supplyObjectId = mongoose.Types.ObjectId.isValid(supplyId) 
+        ? new mongoose.Types.ObjectId(supplyId) 
+        : supplyId;
+      
+      const supply = await Supply.findById(supplyObjectId);
       
       if (!supply) {
         return { success: false, message: 'Supply not found' };
@@ -56,12 +65,14 @@ class InventoryService {
 
       // Update available quantity
       const newAvailableQuantity = supply.availableQuantity - quantity;
-      await supply.update({ availableQuantity: newAvailableQuantity });
+      await Supply.findByIdAndUpdate(supplyObjectId, { availableQuantity: newAvailableQuantity }, { new: true });
+      
+      const updatedSupply = await Supply.findById(supplyObjectId);
 
       return {
         success: true,
         message: 'Quantity reserved successfully',
-        updatedSupply: supply,
+        updatedSupply: updatedSupply,
         originalQuantity: supply.availableQuantity + quantity,
         remainingQuantity: newAvailableQuantity
       };
@@ -73,25 +84,31 @@ class InventoryService {
 
   /**
    * Restore quantity when order is cancelled
-   * @param {number} supplyId - Supply ID
+   * @param {string} supplyId - Supply ID
    * @param {number} quantity - Quantity to restore
    * @returns {Object} - { success: boolean, message: string }
    */
   static async restoreQuantity(supplyId, quantity) {
     try {
-      const supply = await Supply.findByPk(supplyId);
+      const supplyObjectId = mongoose.Types.ObjectId.isValid(supplyId) 
+        ? new mongoose.Types.ObjectId(supplyId) 
+        : supplyId;
+      
+      const supply = await Supply.findById(supplyObjectId);
       
       if (!supply) {
         return { success: false, message: 'Supply not found' };
       }
 
       const newAvailableQuantity = supply.availableQuantity + quantity;
-      await supply.update({ availableQuantity: newAvailableQuantity });
+      await Supply.findByIdAndUpdate(supplyObjectId, { availableQuantity: newAvailableQuantity }, { new: true });
+
+      const updatedSupply = await Supply.findById(supplyObjectId);
 
       return {
         success: true,
         message: 'Quantity restored successfully',
-        updatedSupply: supply
+        updatedSupply: updatedSupply
       };
     } catch (error) {
       console.error('Error restoring quantity:', error);
@@ -101,24 +118,17 @@ class InventoryService {
 
   /**
    * Get inventory summary for a supplier
-   * @param {string} supplierId - Supplier UUID
+   * @param {string} supplierId - Supplier ID
    * @returns {Object} - Inventory summary
    */
   static async getInventorySummary(supplierId) {
     try {
-      const supplies = await Supply.findAll({
-        where: { supplierId },
-        attributes: [
-          'id',
-          'name',
-          'category',
-          'quantity',
-          'availableQuantity',
-          'available',
-          'price',
-          'unit'
-        ]
-      });
+      const supplierObjectId = mongoose.Types.ObjectId.isValid(supplierId) 
+        ? new mongoose.Types.ObjectId(supplierId) 
+        : supplierId;
+      
+      const supplies = await Supply.find({ supplierId: supplierObjectId })
+        .select('id name category quantity availableQuantity available price unit');
 
       const totalSupplies = supplies.length;
       const lowStockSupplies = supplies.filter(s => s.availableQuantity <= 5 && s.availableQuantity > 0);
@@ -140,20 +150,27 @@ class InventoryService {
 
   /**
    * Update supply quantity (for restocking)
-   * @param {number} supplyId - Supply ID
+   * @param {string} supplyId - Supply ID
    * @param {number} newQuantity - New total quantity
    * @param {string} userId - User ID (for authorization)
    * @returns {Object} - { success: boolean, message: string }
    */
   static async updateSupplyQuantity(supplyId, newQuantity, userId) {
     try {
-      const supply = await Supply.findByPk(supplyId);
+      const supplyObjectId = mongoose.Types.ObjectId.isValid(supplyId) 
+        ? new mongoose.Types.ObjectId(supplyId) 
+        : supplyId;
+      
+      const supply = await Supply.findById(supplyObjectId);
       
       if (!supply) {
         return { success: false, message: 'Supply not found' };
       }
 
-      if (supply.supplierId !== userId) {
+      const supplierId = supply.supplierId.toString();
+      const userStringId = userId.toString();
+
+      if (supplierId !== userStringId) {
         return { success: false, message: 'Not authorized to update this supply' };
       }
 
@@ -169,15 +186,17 @@ class InventoryService {
         return { success: false, message: 'Cannot reduce quantity below what is already ordered' };
       }
 
-      await supply.update({
+      await Supply.findByIdAndUpdate(supplyObjectId, {
         quantity: newQuantity,
         availableQuantity: newAvailableQuantity
-      });
+      }, { new: true });
+
+      const updatedSupply = await Supply.findById(supplyObjectId);
 
       return {
         success: true,
         message: 'Supply quantity updated successfully',
-        updatedSupply: supply
+        updatedSupply: updatedSupply
       };
     } catch (error) {
       console.error('Error updating supply quantity:', error);

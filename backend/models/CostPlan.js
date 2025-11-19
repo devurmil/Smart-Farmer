@@ -1,156 +1,120 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
+const mongoose = require('mongoose');
 
-const CostPlan = sequelize.define('CostPlan', {
-  id: {
-    type: DataTypes.UUID,
-    defaultValue: DataTypes.UUIDV4,
-    primaryKey: true
-  },
+const costPlanSchema = new mongoose.Schema({
   user_id: {
-    type: DataTypes.UUID,
-    allowNull: false,
-    references: {
-      model: 'users',
-      key: 'id'
-    },
-    onDelete: 'CASCADE'
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
   },
   farm_id: {
-    type: DataTypes.UUID,
-    allowNull: true,
-    references: {
-      model: 'farms',
-      key: 'id'
-    },
-    onDelete: 'SET NULL'
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Farm',
+    default: null
   },
   crop_id: {
-    type: DataTypes.UUID,
-    allowNull: true,
-    references: {
-      model: 'crops',
-      key: 'id'
-    },
-    onDelete: 'SET NULL'
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Crop',
+    default: null
   },
   crop_type: {
-    type: DataTypes.STRING(100),
-    allowNull: false,
-    validate: {
-      notEmpty: true
-    }
+    type: String,
+    required: true,
+    trim: true,
+    maxlength: 100
   },
   area_unit: {
-    type: DataTypes.ENUM('acre', 'hectare', 'sq_meter', 'bigha'),
-    allowNull: false,
-    defaultValue: 'acre'
+    type: String,
+    enum: ['acre', 'hectare', 'sq_meter', 'bigha'],
+    default: 'acre',
+    required: true
   },
   area_value: {
-    type: DataTypes.DECIMAL(10, 2),
-    allowNull: false,
-    validate: {
-      min: 0
-    }
+    type: Number,
+    required: true,
+    min: 0
   },
   total_cost: {
-    type: DataTypes.DECIMAL(12, 2),
-    allowNull: false,
-    validate: {
-      min: 0
-    }
+    type: Number,
+    required: true,
+    min: 0
   },
   cost_breakdown: {
-    type: DataTypes.JSON,
-    allowNull: true,
-    comment: 'Detailed breakdown of costs (seeds, fertilizer, labor, etc.)'
+    type: mongoose.Schema.Types.Mixed,
+    default: null
   },
   season: {
-    type: DataTypes.STRING(20),
-    allowNull: true,
-    comment: 'Kharif, Rabi, Zaid'
+    type: String,
+    default: null,
+    maxlength: 20
   },
   year: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    // Remove defaultValue function, will set in hook
+    type: Number,
+    required: true
   },
   planting_month: {
-    type: DataTypes.STRING(20),
-    allowNull: true
+    type: String,
+    default: null,
+    maxlength: 20
   },
   harvesting_month: {
-    type: DataTypes.STRING(20),
-    allowNull: true
+    type: String,
+    default: null,
+    maxlength: 20
   },
   expected_yield: {
-    type: DataTypes.DECIMAL(10, 2),
-    allowNull: true,
-    comment: 'Expected yield in kg'
+    type: Number,
+    default: null,
+    min: 0
   },
   expected_revenue: {
-    type: DataTypes.DECIMAL(12, 2),
-    allowNull: true,
-    comment: 'Expected revenue in INR'
+    type: Number,
+    default: null,
+    min: 0
   },
   expected_profit: {
-    type: DataTypes.DECIMAL(12, 2),
-    allowNull: true,
-    comment: 'Expected profit (revenue - cost)'
+    type: Number,
+    default: null
   },
   market_price_per_kg: {
-    type: DataTypes.DECIMAL(8, 2),
-    allowNull: true,
-    comment: 'Current market price per kg'
+    type: Number,
+    default: null,
+    min: 0
   },
   notes: {
-    type: DataTypes.TEXT,
-    allowNull: true
+    type: String,
+    default: null
   },
   is_template: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: false,
-    comment: 'True if this is a template for future use'
+    type: Boolean,
+    default: false
   },
   is_active: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: true
+    type: Boolean,
+    default: true
   }
 }, {
-  tableName: 'cost_plans',
-  indexes: [
-    {
-      fields: ['user_id']
-    },
-    {
-      fields: ['farm_id']
-    },
-    {
-      fields: ['crop_id']
-    },
-    {
-      fields: ['crop_type']
-    },
-    {
-      fields: ['year']
-    },
-    {
-      fields: ['season']
-    },
-    {
-      fields: ['is_template']
-    },
-    {
-      fields: ['created_at']
-    }
-  ],
-  hooks: {
-    beforeValidate: (costPlan) => {
-      if (!costPlan.year) {
-        costPlan.year = new Date().getFullYear();
-      }
-    }
-  }
+  timestamps: true,
+  collection: 'cost_plans'
 });
+
+// Pre-validate hook to set year if not provided
+costPlanSchema.pre('validate', function(next) {
+  if (!this.year) {
+    this.year = new Date().getFullYear();
+  }
+  next();
+});
+
+// Indexes
+costPlanSchema.index({ user_id: 1 });
+costPlanSchema.index({ farm_id: 1 });
+costPlanSchema.index({ crop_id: 1 });
+costPlanSchema.index({ crop_type: 1 });
+costPlanSchema.index({ year: 1 });
+costPlanSchema.index({ season: 1 });
+costPlanSchema.index({ is_template: 1 });
+costPlanSchema.index({ createdAt: 1 });
+
+const CostPlan = mongoose.model('CostPlan', costPlanSchema);
 
 module.exports = CostPlan;

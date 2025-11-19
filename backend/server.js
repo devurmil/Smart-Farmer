@@ -4,7 +4,7 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const jwt = require('jsonwebtoken');
 const helmet = require('helmet');
-const User = require('./models/User');
+const { connectDatabase } = require('./config/database');
 const models = require('./models');
 const usersRouter = require('./routes/users');
 const equipmentRouter = require('./routes/equipment');
@@ -97,25 +97,25 @@ app.use('/api/maintenance', maintenanceRouter);
 // --- 4. Server Initialization ---
 
 const PORT = process.env.PORT || 8000;
-app.listen(PORT, async () => {
+
+// Start server after database connection
+const startServer = async () => {
     try {
-        await models.syncDatabase();
-        console.log('✅ Database synchronization completed');
+        // Connect to MongoDB
+        await connectDatabase();
+        console.log('✅ Database connection established');
         
-        // Run database fix script to ensure all tables and constraints are properly set up
-        try {
-            const fixDatabase = require('./scripts/fix-database');
-            await fixDatabase();
-            console.log('✅ Database fix script completed');
-        } catch (fixError) {
-            console.log('⚠️ Database fix script failed, but continuing:', fixError.message);
-        }
+        // Start the server
+        app.listen(PORT, () => {
+            console.log(`🚀 Server is running on port ${PORT}`);
+            if (!process.env.JWT_SECRET || !process.env.FRONTEND_URL) {
+                console.warn('⚠️ WARNING: JWT_SECRET or FRONTEND_URL is not set in .env file. The application may not work as expected.');
+            }
+        });
     } catch (err) {
-        console.error('❌ Database sync failed:', err);
-        console.log('⚠️ Server will continue running, but some features may not work properly');
+        console.error('❌ Failed to start server:', err);
+        process.exit(1);
     }
-    console.log(`🚀 Server is running on port ${PORT}`);
-    if (!process.env.JWT_SECRET || !process.env.FRONTEND_URL) {
-        console.warn('⚠️ WARNING: JWT_SECRET or FRONTEND_URL is not set in .env file. The application may not work as expected.');
-    }
-});
+};
+
+startServer();

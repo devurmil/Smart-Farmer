@@ -1,109 +1,109 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
+const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
-const User = sequelize.define('User', {
-  id: {
-    type: DataTypes.UUID,
-    defaultValue: DataTypes.UUIDV4,
-    primaryKey: true
-  },
+const userSchema = new mongoose.Schema({
   name: {
-    type: DataTypes.STRING(255),
-    allowNull: false,
-    validate: {
-      notEmpty: true,
-      len: [2, 255]
-    }
+    type: String,
+    required: true,
+    trim: true,
+    minlength: 2,
+    maxlength: 255
   },
   email: {
-    type: DataTypes.STRING(255),
-    allowNull: false,
+    type: String,
+    required: true,
     unique: true,
-    validate: {
-      isEmail: true,
-      notEmpty: true
-    }
+    lowercase: true,
+    trim: true,
+    match: [/^\S+@\S+\.\S+$/, 'Please provide a valid email']
   },
   password: {
-    type: DataTypes.STRING(255),
-    allowNull: true, // Can be null for social logins
-    validate: {
-      len: [6, 255]
-    }
+    type: String,
+    required: false, // Can be null for social logins
+    minlength: 6,
+    maxlength: 255,
+    select: false // Don't include password in queries by default
   },
   profile_picture: {
-    type: DataTypes.TEXT,
-    allowNull: true,
-    comment: 'Cloudinary URL for user profile picture'
+    type: String,
+    default: null
   },
   facebook_id: {
-    type: DataTypes.STRING(255),
-    allowNull: true,
-    comment: 'Facebook user ID for social login'
+    type: String,
+    default: null,
+    sparse: true // Allows multiple nulls but enforces uniqueness for non-null values
   },
   google_id: {
-    type: DataTypes.STRING(255),
-    allowNull: true,
-    comment: 'Google user ID for social login'
+    type: String,
+    default: null,
+    sparse: true
   },
   login_method: {
-    type: DataTypes.ENUM('email', 'facebook', 'google'),
-    defaultValue: 'email',
-    allowNull: false
+    type: String,
+    enum: ['email', 'facebook', 'google'],
+    default: 'email',
+    required: true
   },
   is_verified: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: false
+    type: Boolean,
+    default: false
   },
   phone: {
-    type: DataTypes.STRING(20),
-    allowNull: true
+    type: String,
+    default: null,
+    maxlength: 20
   },
   location: {
-    type: DataTypes.JSON,
-    allowNull: true
+    type: mongoose.Schema.Types.Mixed,
+    default: null
   },
   last_login: {
-    type: DataTypes.DATE,
-    allowNull: true
+    type: Date,
+    default: null
   },
   role: {
-    type: DataTypes.ENUM('farmer', 'owner', 'supplier'),
-    allowNull: true, // Allow null initially for social login users
-    defaultValue: 'farmer',
+    type: String,
+    enum: ['farmer', 'owner', 'supplier'],
+    default: 'farmer'
   },
   role_selection_pending: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: false,
-    comment: 'Indicates if user needs to select their role (for social logins)'
+    type: Boolean,
+    default: false
   }
 }, {
-  tableName: 'users',
-  hooks: {
-    beforeCreate: async (user) => {
-      if (user.password) {
-        user.password = await bcrypt.hash(user.password, 12);
-      }
-    },
-    beforeUpdate: async (user) => {
-      if (user.changed('password') && user.password) {
-        user.password = await bcrypt.hash(user.password, 12);
-      }
-    }
-  }
+  timestamps: true, // Adds createdAt and updatedAt
+  collection: 'users'
 });
 
-// Instance methods
-User.prototype.comparePassword = async function(candidatePassword) {
+// Hash password before saving
+userSchema.pre('save', async function(next) {
+  // Only hash the password if it has been modified (or is new)
+  if (!this.isModified('password')) return next();
+  
+  if (this.password) {
+    this.password = await bcrypt.hash(this.password, 12);
+  }
+  next();
+});
+
+// Instance method to compare password
+userSchema.methods.comparePassword = async function(candidatePassword) {
   if (!this.password) return false;
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
-User.prototype.toJSON = function() {
-  const values = Object.assign({}, this.get());
-  delete values.password;
-  return values;
+// Method to convert user to JSON (exclude password)
+userSchema.methods.toJSON = function() {
+  const userObject = this.toObject();
+  delete userObject.password;
+  return userObject;
 };
+
+// Indexes
+userSchema.index({ email: 1 }, { unique: true });
+userSchema.index({ facebook_id: 1 }, { sparse: true });
+userSchema.index({ google_id: 1 }, { sparse: true });
+
+const User = mongoose.model('User', userSchema);
 
 module.exports = User;

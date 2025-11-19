@@ -1,43 +1,47 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
+const mongoose = require('mongoose');
 
-const Equipment = sequelize.define('Equipment', {
-  id: {
-    type: DataTypes.INTEGER,
-    autoIncrement: true,
-    primaryKey: true,
-  },
+const equipmentSchema = new mongoose.Schema({
   name: {
-    type: DataTypes.STRING,
-    allowNull: false,
+    type: String,
+    required: true,
+    trim: true
   },
   type: {
-    type: DataTypes.STRING,
-    allowNull: false,
+    type: String,
+    required: true,
+    trim: true
   },
   price: {
-    type: DataTypes.FLOAT,
-    allowNull: false,
+    type: Number,
+    required: true,
+    min: 0
   },
   ownerId: {
-    type: DataTypes.UUID,
-    allowNull: false,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
   },
   imageUrl: {
-    type: DataTypes.TEXT, // allow longer Cloudinary URLs
-    allowNull: true,
+    type: String,
+    default: null
   },
   description: {
-    type: DataTypes.TEXT,
-    allowNull: true,
-    defaultValue: '',
+    type: String,
+    default: ''
   },
   available: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: true,
-  },
+    type: Boolean,
+    default: true
+  }
 }, {
-  timestamps: true, // adds createdAt and updatedAt
+  timestamps: true,
+  collection: 'equipment'
 });
+
+// Indexes
+equipmentSchema.index({ ownerId: 1 });
+equipmentSchema.index({ available: 1 });
+
+const Equipment = mongoose.model('Equipment', equipmentSchema);
 
 module.exports = Equipment;

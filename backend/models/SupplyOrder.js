@@ -1,69 +1,75 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
+const mongoose = require('mongoose');
 
-const SupplyOrder = sequelize.define('SupplyOrder', {
-  id: {
-    type: DataTypes.INTEGER,
-    autoIncrement: true,
-    primaryKey: true,
-  },
+const supplyOrderSchema = new mongoose.Schema({
   supplyId: {
-    type: DataTypes.UUID,
-    allowNull: false,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Supply',
+    required: true
   },
   buyerId: {
-    type: DataTypes.UUID,
-    allowNull: false,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
   },
   supplierId: {
-    type: DataTypes.UUID,
-    allowNull: false,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
   },
   quantity: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    defaultValue: 1,
-    validate: {
-      min: 1
-    }
+    type: Number,
+    required: true,
+    default: 1,
+    min: 1
   },
   totalPrice: {
-    type: DataTypes.FLOAT,
-    allowNull: false,
+    type: Number,
+    required: true,
+    min: 0
   },
   status: {
-    type: DataTypes.ENUM('pending', 'confirmed', 'shipped', 'delivered', 'cancelled'),
-    allowNull: false,
-    defaultValue: 'pending',
+    type: String,
+    enum: ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'],
+    default: 'pending',
+    required: true
   },
   orderDate: {
-    type: DataTypes.DATE,
-    allowNull: false,
-    defaultValue: DataTypes.NOW,
+    type: Date,
+    default: Date.now,
+    required: true
   },
   deliveryAddress: {
-    type: DataTypes.TEXT,
-    allowNull: true,
+    type: String,
+    default: null
   },
   contactPhone: {
-    type: DataTypes.STRING,
-    allowNull: true,
+    type: String,
+    default: null
   },
   notes: {
-    type: DataTypes.TEXT,
-    allowNull: true,
+    type: String,
+    default: null
   },
-  // Inventory tracking fields
   originalSupplyQuantity: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    comment: 'Quantity available in supply when order was placed'
+    type: Number,
+    required: true
   },
   remainingSupplyQuantity: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    comment: 'Remaining quantity in supply after order'
+    type: Number,
+    required: true
   }
+}, {
+  timestamps: true,
+  collection: 'supply_orders'
 });
 
-module.exports = SupplyOrder; 
+// Indexes
+supplyOrderSchema.index({ supplyId: 1 });
+supplyOrderSchema.index({ buyerId: 1 });
+supplyOrderSchema.index({ supplierId: 1 });
+supplyOrderSchema.index({ status: 1 });
+supplyOrderSchema.index({ orderDate: 1 });
+
+const SupplyOrder = mongoose.model('SupplyOrder', supplyOrderSchema);
+
+module.exports = SupplyOrder;

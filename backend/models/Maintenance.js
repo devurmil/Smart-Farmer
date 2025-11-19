@@ -1,70 +1,61 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
+const mongoose = require('mongoose');
 
-const Maintenance = sequelize.define('Maintenance', {
-  id: {
-    type: DataTypes.INTEGER,
-    autoIncrement: true,
-    primaryKey: true,
-  },
+const maintenanceSchema = new mongoose.Schema({
   equipmentId: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    references: {
-      model: 'Equipment',
-      key: 'id'
-    },
-    onDelete: 'CASCADE'
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Equipment',
+    required: true
   },
   type: {
-    type: DataTypes.ENUM('routine', 'repair', 'inspection', 'upgrade', 'emergency'),
-    allowNull: false,
+    type: String,
+    enum: ['routine', 'repair', 'inspection', 'upgrade', 'emergency'],
+    required: true
   },
   scheduledDate: {
-    type: DataTypes.DATEONLY,
-    allowNull: false,
+    type: Date,
+    required: true
   },
   description: {
-    type: DataTypes.TEXT,
-    allowNull: true,
+    type: String,
+    default: null
   },
   status: {
-    type: DataTypes.ENUM('scheduled', 'in-progress', 'completed', 'cancelled'),
-    defaultValue: 'scheduled',
+    type: String,
+    enum: ['scheduled', 'in-progress', 'completed', 'cancelled'],
+    default: 'scheduled'
   },
   completedDate: {
-    type: DataTypes.DATE,
-    allowNull: true,
+    type: Date,
+    default: null
   },
   notes: {
-    type: DataTypes.TEXT,
-    allowNull: true,
+    type: String,
+    default: null
   },
   cost: {
-    type: DataTypes.DECIMAL(10, 2),
-    allowNull: true,
+    type: Number,
+    default: null,
+    min: 0
   },
   technician: {
-    type: DataTypes.STRING,
-    allowNull: true,
+    type: String,
+    default: null
   },
   priority: {
-    type: DataTypes.ENUM('low', 'medium', 'high', 'urgent'),
-    defaultValue: 'medium',
+    type: String,
+    enum: ['low', 'medium', 'high', 'urgent'],
+    default: 'medium'
   }
 }, {
   timestamps: true,
-  indexes: [
-    {
-      fields: ['equipmentId']
-    },
-    {
-      fields: ['scheduledDate']
-    },
-    {
-      fields: ['status']
-    }
-  ]
+  collection: 'maintenance'
 });
 
-module.exports = Maintenance; 
+// Indexes
+maintenanceSchema.index({ equipmentId: 1 });
+maintenanceSchema.index({ scheduledDate: 1 });
+maintenanceSchema.index({ status: 1 });
+
+const Maintenance = mongoose.model('Maintenance', maintenanceSchema);
+
+module.exports = Maintenance;

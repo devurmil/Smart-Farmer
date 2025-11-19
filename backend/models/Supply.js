@@ -1,85 +1,87 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
+const mongoose = require('mongoose');
 
-const Supply = sequelize.define('Supply', {
-  id: {
-    type: DataTypes.INTEGER,
-    autoIncrement: true,
-    primaryKey: true,
-  },
+const supplySchema = new mongoose.Schema({
   name: {
-    type: DataTypes.STRING,
-    allowNull: false,
+    type: String,
+    required: true,
+    trim: true
   },
   category: {
-    type: DataTypes.ENUM('seeds', 'fertilizers', 'pesticides', 'tools', 'machinery', 'other'),
-    allowNull: false,
+    type: String,
+    enum: ['seeds', 'fertilizers', 'pesticides', 'tools', 'machinery', 'other'],
+    required: true
   },
   price: {
-    type: DataTypes.FLOAT,
-    allowNull: false,
+    type: Number,
+    required: true,
+    min: 0
   },
   unit: {
-    type: DataTypes.STRING,
-    allowNull: false,
-    defaultValue: 'piece',
+    type: String,
+    required: true,
+    default: 'piece'
   },
   quantity: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    defaultValue: 1,
-    validate: {
-      min: 0
-    }
+    type: Number,
+    required: true,
+    default: 1,
+    min: 0
   },
   availableQuantity: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    defaultValue: 1,
-    validate: {
-      min: 0
-    }
+    type: Number,
+    required: true,
+    default: 1,
+    min: 0
   },
   supplierId: {
-    type: DataTypes.UUID,
-    allowNull: false,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
   },
   imageUrl: {
-    type: DataTypes.STRING,
-    allowNull: true,
+    type: String,
+    default: null
   },
   description: {
-    type: DataTypes.TEXT,
-    allowNull: true,
+    type: String,
+    default: null
   },
   brand: {
-    type: DataTypes.STRING,
-    allowNull: true,
+    type: String,
+    default: null
   },
   expiryDate: {
-    type: DataTypes.DATE,
-    allowNull: true,
+    type: Date,
+    default: null
   },
   available: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: true,
+    type: Boolean,
+    default: true
   },
   location: {
-    type: DataTypes.JSON,
-    allowNull: true,
-  },
-});
-
-// Hook to set availableQuantity equal to quantity when creating
-Supply.beforeCreate((supply) => {
-  if (!supply.availableQuantity) {
-    supply.availableQuantity = supply.quantity;
+    type: mongoose.Schema.Types.Mixed,
+    default: null
   }
+}, {
+  timestamps: true,
+  collection: 'supplies'
 });
 
-// Hook to update available flag based on availableQuantity
-Supply.beforeSave((supply) => {
-  supply.available = supply.availableQuantity > 0;
+// Pre-save hook to set availableQuantity equal to quantity when creating
+supplySchema.pre('save', function(next) {
+  if (this.isNew && !this.availableQuantity) {
+    this.availableQuantity = this.quantity;
+  }
+  // Update available flag based on availableQuantity
+  this.available = this.availableQuantity > 0;
+  next();
 });
 
-module.exports = Supply; 
+// Indexes
+supplySchema.index({ supplierId: 1 });
+supplySchema.index({ category: 1 });
+supplySchema.index({ available: 1 });
+
+const Supply = mongoose.model('Supply', supplySchema);
+
+module.exports = Supply;

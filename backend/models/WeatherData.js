@@ -1,126 +1,98 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
+const mongoose = require('mongoose');
 
-const WeatherData = sequelize.define('WeatherData', {
-  id: {
-    type: DataTypes.UUID,
-    defaultValue: DataTypes.UUIDV4,
-    primaryKey: true
-  },
+const weatherDataSchema = new mongoose.Schema({
   farm_id: {
-    type: DataTypes.UUID,
-    allowNull: true,
-    references: {
-      model: 'farms',
-      key: 'id'
-    },
-    onDelete: 'CASCADE'
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Farm',
+    default: null
   },
   location: {
-    type: DataTypes.JSON,
-    allowNull: false,
-    comment: 'Stores {lat, lng, city, country}'
+    type: mongoose.Schema.Types.Mixed,
+    required: true
   },
   date: {
-    type: DataTypes.DATEONLY,
-    allowNull: false
+    type: Date,
+    required: true
   },
   temperature_max: {
-    type: DataTypes.DECIMAL(5, 2),
-    allowNull: true,
-    comment: 'Maximum temperature in Celsius'
+    type: Number,
+    default: null
   },
   temperature_min: {
-    type: DataTypes.DECIMAL(5, 2),
-    allowNull: true,
-    comment: 'Minimum temperature in Celsius'
+    type: Number,
+    default: null
   },
   temperature_avg: {
-    type: DataTypes.DECIMAL(5, 2),
-    allowNull: true,
-    comment: 'Average temperature in Celsius'
+    type: Number,
+    default: null
   },
   humidity: {
-    type: DataTypes.DECIMAL(5, 2),
-    allowNull: true,
-    comment: 'Humidity percentage'
+    type: Number,
+    default: null
   },
   rainfall: {
-    type: DataTypes.DECIMAL(6, 2),
-    allowNull: true,
-    comment: 'Rainfall in mm'
+    type: Number,
+    default: null
   },
   wind_speed: {
-    type: DataTypes.DECIMAL(5, 2),
-    allowNull: true,
-    comment: 'Wind speed in km/h'
+    type: Number,
+    default: null
   },
   wind_direction: {
-    type: DataTypes.STRING(10),
-    allowNull: true,
-    comment: 'Wind direction (N, NE, E, SE, S, SW, W, NW)'
+    type: String,
+    default: null,
+    maxlength: 10
   },
   pressure: {
-    type: DataTypes.DECIMAL(7, 2),
-    allowNull: true,
-    comment: 'Atmospheric pressure in hPa'
+    type: Number,
+    default: null
   },
   uv_index: {
-    type: DataTypes.DECIMAL(3, 1),
-    allowNull: true,
-    comment: 'UV index'
+    type: Number,
+    default: null
   },
   visibility: {
-    type: DataTypes.DECIMAL(5, 2),
-    allowNull: true,
-    comment: 'Visibility in km'
+    type: Number,
+    default: null
   },
   weather_condition: {
-    type: DataTypes.STRING(100),
-    allowNull: true,
-    comment: 'Weather description (sunny, cloudy, rainy, etc.)'
+    type: String,
+    default: null,
+    maxlength: 100
   },
   weather_icon: {
-    type: DataTypes.STRING(10),
-    allowNull: true,
-    comment: 'Weather icon code'
+    type: String,
+    default: null,
+    maxlength: 10
   },
   sunrise: {
-    type: DataTypes.TIME,
-    allowNull: true
+    type: String,
+    default: null
   },
   sunset: {
-    type: DataTypes.TIME,
-    allowNull: true
+    type: String,
+    default: null
   },
   data_source: {
-    type: DataTypes.STRING(50),
-    allowNull: false,
-    defaultValue: 'openweather',
-    comment: 'Source of weather data'
+    type: String,
+    default: 'openweather',
+    maxlength: 50
   },
   is_forecast: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: false,
-    comment: 'True if this is forecast data, false for historical'
+    type: Boolean,
+    default: false
   }
 }, {
-  tableName: 'weather_data',
-  indexes: [
-    {
-      fields: ['farm_id']
-    },
-    {
-      fields: ['date']
-    },
-    {
-      fields: ['is_forecast']
-    },
-    {
-      unique: true,
-      fields: ['farm_id', 'date', 'is_forecast']
-    }
-  ]
+  timestamps: true,
+  collection: 'weather_data'
 });
+
+// Indexes
+weatherDataSchema.index({ farm_id: 1 });
+weatherDataSchema.index({ date: 1 });
+weatherDataSchema.index({ is_forecast: 1 });
+weatherDataSchema.index({ farm_id: 1, date: 1, is_forecast: 1 }, { unique: true });
+
+const WeatherData = mongoose.model('WeatherData', weatherDataSchema);
 
 module.exports = WeatherData;

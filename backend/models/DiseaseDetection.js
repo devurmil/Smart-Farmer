@@ -1,143 +1,110 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
+const mongoose = require('mongoose');
 
-const DiseaseDetection = sequelize.define('DiseaseDetection', {
-  id: {
-    type: DataTypes.UUID,
-    defaultValue: DataTypes.UUIDV4,
-    primaryKey: true
-  },
+const diseaseDetectionSchema = new mongoose.Schema({
   user_id: {
-    type: DataTypes.UUID,
-    allowNull: false,
-    references: {
-      model: 'users',
-      key: 'id'
-    },
-    onDelete: 'CASCADE'
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
   },
   crop_id: {
-    type: DataTypes.UUID,
-    allowNull: true,
-    references: {
-      model: 'crops',
-      key: 'id'
-    },
-    onDelete: 'SET NULL'
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Crop',
+    default: null
   },
   farm_id: {
-    type: DataTypes.UUID,
-    allowNull: true,
-    references: {
-      model: 'farms',
-      key: 'id'
-    },
-    onDelete: 'SET NULL'
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Farm',
+    default: null
   },
   crop_type: {
-    type: DataTypes.STRING(100),
-    allowNull: false,
-    validate: {
-      notEmpty: true
-    }
+    type: String,
+    required: true,
+    trim: true,
+    maxlength: 100
   },
   image_url: {
-    type: DataTypes.TEXT,
-    allowNull: false
+    type: String,
+    required: true
   },
   image_public_id: {
-    type: DataTypes.STRING(255),
-    allowNull: true,
-    comment: 'Cloudinary public ID for image management'
+    type: String,
+    default: null,
+    maxlength: 255
   },
   detected_disease: {
-    type: DataTypes.STRING(255),
-    allowNull: false
+    type: String,
+    required: true,
+    maxlength: 255
   },
   confidence_score: {
-    type: DataTypes.DECIMAL(5, 2),
-    allowNull: false,
-    validate: {
-      min: 0,
-      max: 100
-    }
+    type: Number,
+    required: true,
+    min: 0,
+    max: 100
   },
   severity_level: {
-    type: DataTypes.ENUM('None', 'Low', 'Moderate', 'High', 'Very High'),
-    allowNull: true
+    type: String,
+    enum: ['None', 'Low', 'Moderate', 'High', 'Very High'],
+    default: null
   },
   treatment_recommended: {
-    type: DataTypes.TEXT,
-    allowNull: true
+    type: String,
+    default: null
   },
   pesticide_recommended: {
-    type: DataTypes.TEXT,
-    allowNull: true
+    type: String,
+    default: null
   },
   prevention_tips: {
-    type: DataTypes.TEXT,
-    allowNull: true
+    type: String,
+    default: null
   },
   treatment_applied: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: false
+    type: Boolean,
+    default: false
   },
   treatment_date: {
-    type: DataTypes.DATE,
-    allowNull: true
+    type: Date,
+    default: null
   },
   treatment_notes: {
-    type: DataTypes.TEXT,
-    allowNull: true
+    type: String,
+    default: null
   },
   follow_up_required: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: false
+    type: Boolean,
+    default: false
   },
   follow_up_date: {
-    type: DataTypes.DATE,
-    allowNull: true
+    type: Date,
+    default: null
   },
   location: {
-    type: DataTypes.JSON,
-    allowNull: true,
-    comment: 'GPS coordinates where image was taken'
+    type: mongoose.Schema.Types.Mixed,
+    default: null
   },
   weather_conditions: {
-    type: DataTypes.JSON,
-    allowNull: true,
-    comment: 'Weather at time of detection'
+    type: mongoose.Schema.Types.Mixed,
+    default: null
   },
   is_verified: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: false,
-    comment: 'Verified by agricultural expert'
+    type: Boolean,
+    default: false
   }
 }, {
-  tableName: 'disease_detections',
-  indexes: [
-    {
-      fields: ['user_id']
-    },
-    {
-      fields: ['crop_id']
-    },
-    {
-      fields: ['farm_id']
-    },
-    {
-      fields: ['crop_type']
-    },
-    {
-      fields: ['detected_disease']
-    },
-    {
-      fields: ['created_at']
-    },
-    {
-      fields: ['treatment_applied']
-    }
-  ]
+  timestamps: true,
+  collection: 'disease_detections'
 });
+
+// Indexes
+diseaseDetectionSchema.index({ user_id: 1 });
+diseaseDetectionSchema.index({ crop_id: 1 });
+diseaseDetectionSchema.index({ farm_id: 1 });
+diseaseDetectionSchema.index({ crop_type: 1 });
+diseaseDetectionSchema.index({ detected_disease: 1 });
+diseaseDetectionSchema.index({ createdAt: 1 });
+diseaseDetectionSchema.index({ treatment_applied: 1 });
+
+const DiseaseDetection = mongoose.model('DiseaseDetection', diseaseDetectionSchema);
 
 module.exports = DiseaseDetection;
