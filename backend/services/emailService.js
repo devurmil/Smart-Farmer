@@ -1,75 +1,35 @@
 const nodemailer = require("nodemailer");
-const { google } = require("googleapis");
 
-const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
-const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
-const REFRESH_TOKEN = process.env.GOOGLE_REFRESH_TOKEN;
-const REDIRECT_URI =
-  process.env.GOOGLE_REDIRECT_URI ||
-  "https://developers.google.com/oauthplayground";
-const GMAIL_USER = process.env.GOOGLE_EMAIL;
-
-const SMTP_HOST = process.env.SMTP_HOST;
-const SMTP_PORT = process.env.SMTP_PORT;
-const SMTP_USER = process.env.SMTP_USER;
-const SMTP_PASS = process.env.SMTP_PASS;
-const SMTP_SECURE = (process.env.SMTP_SECURE || "").toLowerCase() === "true";
+const EMAIL_HOST = process.env.EMAIL_HOST || "smtp.gmail.com";
+const EMAIL_PORT = Number(process.env.EMAIL_PORT) || 465;
+const EMAIL_USER = process.env.EMAIL_USER;
+const EMAIL_PASS = process.env.EMAIL_PASS;
+const EMAIL_SECURE =
+  typeof process.env.EMAIL_SECURE === "string"
+    ? process.env.EMAIL_SECURE.toLowerCase() === "true"
+    : EMAIL_PORT === 465;
 const SMTP_TIMEOUT = Number(process.env.SMTP_TIMEOUT_MS) || 5000;
 const FALLBACK_FROM =
   process.env.EMAIL_FROM ||
-  process.env.SMTP_FROM ||
-  (SMTP_USER
-    ? `Smart Farmer <${SMTP_USER}>`
-    : GMAIL_USER
-    ? `Smart Farmer <${GMAIL_USER}>`
+  (EMAIL_USER
+    ? `Smart Farmer <${EMAIL_USER}>`
     : "Smart Farmer <no-reply@smartfarmer.dev>");
 
-const hasGoogleCredentials =
-  CLIENT_ID && CLIENT_SECRET && REFRESH_TOKEN && GMAIL_USER;
-const hasSmtpCredentials = SMTP_HOST && SMTP_PORT && SMTP_USER && SMTP_PASS;
+const hasSmtpCredentials = EMAIL_HOST && EMAIL_PORT && EMAIL_USER && EMAIL_PASS;
 
 let cachedEtherealAccount = null;
 
-const createGoogleTransport = async () => {
-  const oAuth2Client = new google.auth.OAuth2(
-    CLIENT_ID,
-    CLIENT_SECRET,
-    REDIRECT_URI
-  );
-  oAuth2Client.setCredentials({ refresh_token: REFRESH_TOKEN });
-
-  const accessToken = await oAuth2Client.getAccessToken();
-
-  return nodemailer.createTransport({
-    service: "gmail",
-    connectionTimeout: SMTP_TIMEOUT,
-    greetingTimeout: SMTP_TIMEOUT,
-    socketTimeout: SMTP_TIMEOUT,
-    auth: {
-      type: "OAuth2",
-      user: GMAIL_USER,
-      clientId: CLIENT_ID,
-      clientSecret: CLIENT_SECRET,
-      refreshToken: REFRESH_TOKEN,
-      accessToken: accessToken?.token || accessToken,
-    },
-  });
-};
-
 const createSmtpTransport = () => {
-  const port = Number(SMTP_PORT) || 587;
-  const secure = SMTP_SECURE || port === 465;
-
   return nodemailer.createTransport({
-    host: SMTP_HOST,
-    port,
-    secure,
+    host: EMAIL_HOST,
+    port: EMAIL_PORT,
+    secure: EMAIL_SECURE,
     connectionTimeout: SMTP_TIMEOUT,
     greetingTimeout: SMTP_TIMEOUT,
     socketTimeout: SMTP_TIMEOUT,
     auth: {
-      user: SMTP_USER,
-      pass: SMTP_PASS,
+      user: EMAIL_USER,
+      pass: EMAIL_PASS,
     },
   });
 };
@@ -97,10 +57,6 @@ const createEtherealTransport = async () => {
 const createTransport = async () => {
   if (hasSmtpCredentials) {
     return createSmtpTransport();
-  }
-
-  if (hasGoogleCredentials) {
-    return createGoogleTransport();
   }
 
   return createEtherealTransport();
