@@ -18,7 +18,7 @@ router.post('/register', validate(registerSchema), async (req, res) => {
     const { name, email, password, phone, location, role } = req.body;
 
     // Check if user already exists
-    const existingUser = await User.findOne({ where: { email } });
+    const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({
         success: false,
@@ -27,7 +27,7 @@ router.post('/register', validate(registerSchema), async (req, res) => {
     }
     // Check if phone is already used
     if (phone) {
-      const existingPhone = await User.findOne({ where: { phone } });
+      const existingPhone = await User.findOne({ phone });
       if (existingPhone) {
         return res.status(400).json({
           success: false,
@@ -84,7 +84,7 @@ router.post('/login', validate(loginSchema), async (req, res) => {
     const { email, password, rememberMe } = req.body;
 
     // Find user by email
-    const user = await User.findOne({ where: { email } });
+    const user = await User.findOne({ email }).select('+password');
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -102,7 +102,8 @@ router.post('/login', validate(loginSchema), async (req, res) => {
     }
 
     // Update last login
-    await user.update({ last_login: new Date() });
+    user.last_login = new Date();
+    await user.save();
 
     // Generate token
     const token = generateToken(user.id);
@@ -157,23 +158,25 @@ router.post('/facebook', async (req, res) => {
 
     // Check if user exists by email or facebook_id
     let user = await User.findOne({ 
-      where: { 
-        [require('sequelize').Op.or]: [
-          { email: email },
-          { facebook_id: facebookId }
-        ]
-      } 
+      $or: [
+        { email },
+        { facebook_id: facebookId }
+      ]
     });
 
     if (user) {
       // Update existing user
-      await user.update({
-        name: name || user.name,
-        profile_picture: profilePicture || user.profile_picture,
-        facebook_id: facebookId,
-        login_method: 'facebook',
-        last_login: new Date()
-      });
+      user = await User.findByIdAndUpdate(
+        user._id,
+        {
+          name: name || user.name,
+          profile_picture: profilePicture || user.profile_picture,
+          facebook_id: facebookId,
+          login_method: 'facebook',
+          last_login: new Date()
+        },
+        { new: true }
+      );
       console.log('Updated existing user:', user.id);
     } else {
       // Create new user with role selection pending
@@ -240,23 +243,25 @@ router.post('/google', async (req, res) => {
 
     // Check if user exists by email or google_id
     let user = await User.findOne({ 
-      where: { 
-        [require('sequelize').Op.or]: [
-          { email: email },
-          { google_id: googleId }
-        ]
-      } 
+      $or: [
+        { email },
+        { google_id: googleId }
+      ]
     });
 
     if (user) {
       // Update existing user
-      await user.update({
-        name: name || user.name,
-        profile_picture: profilePicture || user.profile_picture,
-        google_id: googleId,
-        login_method: 'google',
-        last_login: new Date()
-      });
+      user = await User.findByIdAndUpdate(
+        user._id,
+        {
+          name: name || user.name,
+          profile_picture: profilePicture || user.profile_picture,
+          google_id: googleId,
+          login_method: 'google',
+          last_login: new Date()
+        },
+        { new: true }
+      );
       console.log('Updated existing user:', user.id);
     } else {
       // Create new user with role selection pending
@@ -392,7 +397,7 @@ router.post('/forgot-password', async (req, res) => {
   try {
     const { email } = req.body;
     if (!email) return res.status(400).json({ success: false, message: 'Email is required' });
-    const user = await User.findOne({ where: { email } });
+    const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ success: false, message: 'No user found with this email' });
     // Generate reset token (valid for 1 hour)
     const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
@@ -431,7 +436,7 @@ router.post('/reset-password', async (req, res) => {
     } catch (err) {
       return res.status(400).json({ success: false, message: 'Invalid or expired token' });
     }
-    const user = await User.findByPk(payload.id);
+    const user = await User.findById(payload.id).select('+password');
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
     user.password = password;
     await user.save();
@@ -448,7 +453,7 @@ router.post('/request-otp', async (req, res) => {
     const { email, name } = req.body;
     if (!email) return res.status(400).json({ success: false, message: 'Email is required' });
     // Check if user already exists
-    const existingUser = await User.findOne({ where: { email } });
+    const existingUser = await User.findOne({ email });
     if (existingUser) return res.status(400).json({ success: false, message: 'User with this email already exists' });
     // Generate 6-digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -488,7 +493,7 @@ router.post('/verify-otp', async (req, res) => {
     // Remove OTP after use
     delete otpStore[email];
     // Check if user already exists
-    const existingUser = await User.findOne({ where: { email } });
+    const existingUser = await User.findOne({ email });
     if (existingUser) return res.status(400).json({ success: false, message: 'User with this email already exists' });
     // Create user
     const user = await User.create({
@@ -522,18 +527,18 @@ router.post('/verify-otp', async (req, res) => {
 router.put('/user/profile', authMiddleware, uploadProfileImage.single('profilePicture'), async (req, res) => {
   try {
     const { name, email, phone } = req.body;
-    const user = await User.findByPk(req.user.id);
+    const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
     // Check for unique email
     if (email && email !== user.email) {
-      const existingEmail = await User.findOne({ where: { email } });
+      const existingEmail = await User.findOne({ email });
       if (existingEmail) {
         return res.status(400).json({ success: false, message: 'Email already in use' });
       }
     }
     // Check for unique phone
     if (phone && phone !== user.phone) {
-      const existingPhone = await User.findOne({ where: { phone } });
+      const existingPhone = await User.findOne({ phone });
       if (existingPhone) {
         return res.status(400).json({ success: false, message: 'Phone number already in use' });
       }
@@ -556,12 +561,12 @@ router.put('/user/profile', authMiddleware, uploadProfileImage.single('profilePi
 router.delete('/user/profile', authMiddleware, async (req, res) => {
   try {
     const { password } = req.body;
-    const user = await User.findByPk(req.user.id);
+    const user = await User.findById(req.user.id).select('+password');
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
     if (!password || !(await user.comparePassword(password))) {
       return res.status(400).json({ success: false, message: 'Incorrect password' });
     }
-    await user.destroy();
+    await User.findByIdAndDelete(req.user.id);
     res.json({ success: true, message: 'Profile deleted' });
   } catch (error) {
     console.error('Profile delete error:', error);
@@ -583,7 +588,7 @@ router.post('/select-role', authMiddleware, async (req, res) => {
       });
     }
 
-    const user = await User.findByPk(req.user.id);
+    const user = await User.findById(req.user.id);
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -599,10 +604,12 @@ router.post('/select-role', authMiddleware, async (req, res) => {
     }
 
     // Update user with selected role
-    await user.update({
-      role: role,
+    await User.findByIdAndUpdate(user._id, {
+      role,
       role_selection_pending: false
-    });
+    }, { new: true });
+    
+    const updatedUser = await User.findById(user._id);
 
     console.log('Role selected for user:', user.id, 'Role:', role);
 
@@ -610,7 +617,7 @@ router.post('/select-role', authMiddleware, async (req, res) => {
       success: true,
       message: 'Role selected successfully',
       data: {
-        user: user.toJSON()
+        user: updatedUser.toJSON()
       }
     });
   } catch (error) {

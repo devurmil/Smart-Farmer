@@ -100,10 +100,6 @@ userSchema.methods.toJSON = function() {
 };
 
 // Indexes
-userSchema.index({ email: 1 }, { unique: true });
-userSchema.index({ facebook_id: 1 }, { sparse: true });
-userSchema.index({ google_id: 1 }, { sparse: true });
-
 const User = mongoose.model('User', userSchema);
 
 module.exports = User;
