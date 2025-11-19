@@ -5,7 +5,7 @@ const { validate, registerSchema, loginSchema } = require('../middleware/validat
 const { auth: authMiddleware } = require('../middleware/auth');
 const { uploadProfileImage } = require('../middleware/upload');
 const jwt = require('jsonwebtoken');
-const nodemailer = require('nodemailer');
+const { sendOtpEmail, sendPasswordResetEmail } = require('../services/emailService');
 const router = express.Router();
 
 const otpStore = {};
@@ -402,21 +402,10 @@ router.post('/forgot-password', async (req, res) => {
     // Generate reset token (valid for 1 hour)
     const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
-    // Send email (configure SMTP in .env)
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: process.env.SMTP_PORT,
-      secure: process.env.SMTP_SECURE === 'true',
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
-      }
-    });
-    await transporter.sendMail({
-      from: process.env.SMTP_FROM || process.env.SMTP_USER,
-      to: user.email,
-      subject: 'Reset Your Password',
-      html: `<p>Hello ${user.name},</p><p>Click <a href="${resetUrl}">here</a> to reset your password. This link is valid for 1 hour.</p>`
+    await sendPasswordResetEmail({
+      email: user.email,
+      name: user.name,
+      resetUrl
     });
     res.json({ success: true, message: 'Password reset link sent to your email.' });
   } catch (error) {
@@ -458,22 +447,7 @@ router.post('/request-otp', async (req, res) => {
     // Generate 6-digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     otpStore[email] = { otp, expires: Date.now() + 10 * 60 * 1000 }; // valid for 10 min
-    // Send OTP email
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: process.env.SMTP_PORT,
-      secure: process.env.SMTP_SECURE === 'true',
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
-      }
-    });
-    await transporter.sendMail({
-      from: process.env.SMTP_FROM || process.env.SMTP_USER,
-      to: email,
-      subject: 'Your Smart Farm OTP',
-      html: `<p>Hello${name ? ' ' + name : ''},</p><p>Your OTP for Smart Farm signup is: <b>${otp}</b></p><p>This code is valid for 10 minutes.</p>`
-    });
+    await sendOtpEmail({ email, otp, name });
     res.json({ success: true, message: 'OTP sent to your email.' });
   } catch (error) {
     console.error('Request OTP error:', error);
