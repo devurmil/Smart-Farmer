@@ -63,7 +63,7 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['farmer', 'owner', 'supplier'],
+    enum: ['farmer', 'owner', 'supplier', 'admin'],
     default: 'farmer'
   },
   role_selection_pending: {
