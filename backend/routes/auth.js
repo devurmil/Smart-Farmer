@@ -108,20 +108,17 @@ router.post('/login', validate(loginSchema), async (req, res) => {
     // Generate token
     const token = generateToken(user.id);
 
-    // Only set cookie if rememberMe is false (for fallback browser compatibility)
-    // When rememberMe is true, rely on localStorage token instead
-    if (!rememberMe) {
-      res.cookie('token', token, {
-        httpOnly: true,
-        secure: true,
-        sameSite: 'none',
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-        path: '/',
-      });
-      console.log('Login: Cookie set (rememberMe disabled)');
-    } else {
-      console.log('Login: No cookie set (rememberMe enabled - using token only)');
-    }
+    // Always set secure cookie so cross-origin requests include auth
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+      maxAge: (rememberMe ? 30 : 7) * 24 * 60 * 60 * 1000,
+      path: '/',
+    });
+    console.log(
+      `Login: Cookie set (rememberMe ${rememberMe ? 'enabled - 30d' : 'disabled - 7d'})`
+    );
 
     res.json({
       success: true,
