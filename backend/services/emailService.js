@@ -99,6 +99,13 @@ const createTransport = async () => {
   return createEtherealTransport();
 };
 
+const isConnectionError = (error) =>
+  error &&
+  (error.code === "ETIMEDOUT" ||
+    error.code === "ECONNREFUSED" ||
+    error.code === "ECONNRESET" ||
+    error.command === "CONN");
+
 const sendEmail = async ({ to, subject, html, from }) => {
   try {
     const transport = await createTransport();
@@ -107,19 +114,47 @@ const sendEmail = async ({ to, subject, html, from }) => {
       (transport.options?.auth?.user
         ? `Smart Farmer <${transport.options.auth.user}>`
         : FALLBACK_FROM);
-    const info = await transport.sendMail({
-      from: resolvedFrom,
-      to,
-      subject,
-      html,
-    });
-    if (transport.options?.host === "smtp.ethereal.email") {
-      const previewUrl = nodemailer.getTestMessageUrl(info);
-      if (previewUrl) {
-        console.warn("Email delivered via Ethereal. Preview at:", previewUrl);
+    try {
+      const info = await transport.sendMail({
+        from: resolvedFrom,
+        to,
+        subject,
+        html,
+      });
+      if (transport.options?.host === "smtp.ethereal.email") {
+        const previewUrl = nodemailer.getTestMessageUrl(info);
+        if (previewUrl) {
+          console.warn("Email delivered via Ethereal. Preview at:", previewUrl);
+        }
       }
+      return { success: true };
+    } catch (primaryError) {
+      if (
+        !isConnectionError(primaryError) ||
+        transport.options?.host === "smtp.ethereal.email"
+      ) {
+        throw primaryError;
+      }
+
+      console.warn(
+        `[emailService] Primary transport failed (${primaryError.code}). Falling back to Ethereal.`
+      );
+      const fallbackTransport = await createEtherealTransport();
+      const fallbackInfo = await fallbackTransport.sendMail({
+        from: FALLBACK_FROM,
+        to,
+        subject,
+        html,
+      });
+      const previewUrl = nodemailer.getTestMessageUrl(fallbackInfo);
+      if (previewUrl) {
+        console.warn(
+          "Email delivered via Ethereal fallback. Preview at:",
+          previewUrl
+        );
+      }
+      return { success: true, fallback: true };
     }
-    return { success: true };
   } catch (error) {
     console.error("Email send error:", error);
     throw error;
