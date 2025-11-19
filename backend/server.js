@@ -4,7 +4,7 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const jwt = require('jsonwebtoken');
 const helmet = require('helmet');
-const { connectDatabase } = require('./config/database');
+const { connectDatabase, mongoose } = require('./config/database');
 const models = require('./models');
 const usersRouter = require('./routes/users');
 const equipmentRouter = require('./routes/equipment');
@@ -18,6 +18,35 @@ const maintenanceRouter = require('./routes/maintenance');
 const authRouter = require('./routes/auth');
 
 const app = express();
+
+const mapDbReadyState = (state) => {
+    switch (state) {
+        case 0: return 'disconnected';
+        case 1: return 'connected';
+        case 2: return 'connecting';
+        case 3: return 'disconnecting';
+        default: return 'unknown';
+    }
+};
+
+const buildDbCheckpoint = async () => {
+    const readyState = mongoose.connection.readyState;
+    const checkpoint = {
+        readyState,
+        state: mapDbReadyState(readyState),
+        host: mongoose.connection.host || null,
+        name: mongoose.connection.name || null,
+        timestamp: new Date().toISOString(),
+    };
+
+    if (readyState === 1 && mongoose.connection.db) {
+        const start = Date.now();
+        await mongoose.connection.db.admin().ping();
+        checkpoint.pingMs = Date.now() - start;
+    }
+
+    return checkpoint;
+};
 
 // --- 1. Security and Middleware Configuration ---
 
@@ -101,6 +130,26 @@ app.use('/api/crops', cropsRouter);
 app.use('/api/cost-planning', costPlanningRouter);
 app.use('/api/maintenance', maintenanceRouter);
 
+// --- Database Health Checkpoint ---
+app.get('/api/health/db', async (req, res) => {
+    try {
+        const checkpoint = await buildDbCheckpoint();
+        const healthy = checkpoint.state === 'connected';
+        res.status(healthy ? 200 : 503).json({
+            success: healthy,
+            status: healthy ? 'ok' : 'degraded',
+            checkpoint,
+        });
+    } catch (error) {
+        console.error('DB checkpoint error:', error);
+        res.status(503).json({
+            success: false,
+            status: 'error',
+            message: 'Unable to verify database connectivity',
+            error: error.message,
+        });
+    }
+});
 
 // --- 4. Server Initialization ---
 
