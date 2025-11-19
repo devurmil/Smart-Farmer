@@ -26,11 +26,40 @@ const isValidDatabaseUrl = (url) => {
   }
 };
 
+// Helper function to detect MongoDB URLs
+const isMongoDBUrl = (url) => {
+  if (!url || typeof url !== 'string') return false;
+  return url.startsWith('mongodb://') || url.startsWith('mongodb+srv://');
+};
+
 // Helper function to parse database URL and extract components
 const parseDatabaseUrl = (url) => {
   try {
+    // Check if this is a MongoDB URL
+    if (isMongoDBUrl(url)) {
+      console.error('❌ ERROR: MongoDB connection string detected!');
+      console.error('   This project uses MySQL or PostgreSQL, not MongoDB.');
+      console.error('   Sequelize (the ORM used) does not support MongoDB.');
+      console.error('');
+      console.error('   Please update your DATABASE_URL to use one of these formats:');
+      console.error('   MySQL:    mysql://username:password@host:port/database');
+      console.error('   PostgreSQL: postgresql://username:password@host:port/database');
+      console.error('');
+      console.error('   Your current URL:', url.substring(0, 50) + '...');
+      process.exit(1);
+    }
+    
     const urlObj = new URL(url);
     const isPostgres = urlObj.protocol === 'postgresql:' || urlObj.protocol === 'postgres:';
+    const isMySQL = urlObj.protocol === 'mysql:' || urlObj.protocol === 'mysql2:';
+    
+    // Validate that it's a supported database type
+    if (!isPostgres && !isMySQL) {
+      console.error('❌ ERROR: Unsupported database protocol:', urlObj.protocol);
+      console.error('   This project only supports MySQL or PostgreSQL.');
+      console.error('   Supported protocols: mysql://, mysql2://, postgresql://, postgres://');
+      process.exit(1);
+    }
     
     return {
       protocol: urlObj.protocol,
@@ -39,7 +68,8 @@ const parseDatabaseUrl = (url) => {
       database: urlObj.pathname.slice(1), // Remove leading slash
       username: urlObj.username,
       password: urlObj.password,
-      isPostgres
+      isPostgres,
+      isMySQL
     };
   } catch (error) {
     console.error('❌ Error parsing DATABASE_URL:', error.message);
@@ -58,11 +88,29 @@ if (process.env.DATABASE_URL) {
   // Production: Use DATABASE_URL (Render, Heroku, etc.)
   console.log('📡 Using DATABASE_URL for production database');
   
+  // Check for MongoDB URLs first (before validation)
+  if (isMongoDBUrl(process.env.DATABASE_URL)) {
+    console.error('❌ ERROR: MongoDB connection string detected!');
+    console.error('   This project uses MySQL or PostgreSQL, not MongoDB.');
+    console.error('   Sequelize (the ORM used) does not support MongoDB.');
+    console.error('');
+    console.error('   Please update your DATABASE_URL in Render to use one of these formats:');
+    console.error('   MySQL:    mysql://username:password@host:port/database');
+    console.error('   PostgreSQL: postgresql://username:password@host:port/database');
+    console.error('');
+    console.error('   Example for MySQL:');
+    console.error('   mysql://user:pass@host.example.com:3306/dbname');
+    console.error('');
+    console.error('   Example for PostgreSQL (Supabase):');
+    console.error('   postgresql://postgres:pass@host.pooler.supabase.com:6543/postgres');
+    process.exit(1);
+  }
+  
   // Validate DATABASE_URL format
   if (!isValidDatabaseUrl(process.env.DATABASE_URL)) {
     console.error('❌ Invalid DATABASE_URL format');
-    console.error('   Expected format: postgresql://username:password@host:port/database');
-    console.error('   Your URL:', process.env.DATABASE_URL);
+    console.error('   Expected format: mysql:// or postgresql://username:password@host:port/database');
+    console.error('   Your URL:', process.env.DATABASE_URL.substring(0, 100) + '...');
     process.exit(1);
   }
   
@@ -80,6 +128,7 @@ if (process.env.DATABASE_URL) {
   console.log('     Database:', dbConfig.database);
   console.log('     Username:', dbConfig.username);
   console.log('     Is PostgreSQL:', dbConfig.isPostgres);
+  console.log('     Is MySQL:', dbConfig.isMySQL);
   console.log('     Is Supabase Pooler:', isSupabasePooler(dbConfig.host));
   
   try {
@@ -151,8 +200,13 @@ if (process.env.DATABASE_URL) {
       }
     );
     
-    console.log('   Connection type: Supabase Transaction Pooler');
-    console.log('   Pool settings: max=5, acquire=15s, idle=5s');
+    if (isPooler) {
+      console.log('   Connection type: Supabase Transaction Pooler');
+      console.log('   Pool settings: max=5, acquire=15s, idle=5s');
+    } else {
+      console.log('   Connection type:', dbConfig.isPostgres ? 'PostgreSQL' : 'MySQL');
+      console.log('   Pool settings: max=10, acquire=30s, idle=10s');
+    }
     
   } catch (error) {
     console.error('❌ Error creating Sequelize instance:', error.message);
@@ -233,8 +287,9 @@ const testConnection = async () => {
       console.error('   3. Database credentials are valid');
       console.error('   4. Database exists and is running');
       console.error('   5. DATABASE_URL format is correct');
-      console.error('      Expected: postgresql://username:password@host:port/database');
-      console.error('      Your URL:', process.env.DATABASE_URL);
+      console.error('      Expected: mysql:// or postgresql://username:password@host:port/database');
+      console.error('      Your URL:', process.env.DATABASE_URL.substring(0, 100) + '...');
+      console.error('      Note: MongoDB URLs are NOT supported. Use MySQL or PostgreSQL.');
       
       // Additional pooler-specific checks
       if (process.env.DATABASE_URL && isSupabasePooler(process.env.DATABASE_URL)) {
