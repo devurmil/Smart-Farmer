@@ -1,4 +1,6 @@
 const nodemailer = require("nodemailer");
+const { google } = require("googleapis");
+const fs = require("fs");
 
 const booleanFromEnv = (value, fallback = false) => {
   if (typeof value === "undefined") return fallback;
@@ -41,10 +43,41 @@ const fallbackFrom =
     ? `Smart Farmer <${primaryUser}>`
     : "Smart Farmer <no-reply@smartfarmer.dev>");
 
+const googleClientId =
+  process.env.GOOGLE_CLIENT_ID || process.env.SMTP_GOOGLE_CLIENT_ID;
+const googleClientSecret =
+  process.env.GOOGLE_CLIENT_SECRET || process.env.SMTP_GOOGLE_CLIENT_SECRET;
+const googleRedirectUri =
+  process.env.GOOGLE_REDIRECT_URI ||
+  process.env.SMTP_GOOGLE_REDIRECT_URI ||
+  "https://developers.google.com/oauthplayground";
+const googleRefreshToken =
+  process.env.GOOGLE_REFRESH_TOKEN ||
+  process.env.SMTP_GOOGLE_REFRESH_TOKEN ||
+  (() => {
+    const tokenFile = process.env.GOOGLE_TOKEN_FILE;
+    if (!tokenFile) return undefined;
+    try {
+      const tokenData = JSON.parse(fs.readFileSync(tokenFile, "utf8"));
+      return tokenData.refresh_token;
+    } catch (err) {
+      console.warn("[emailService] Failed to read GOOGLE_TOKEN_FILE:", err.message);
+      return undefined;
+    }
+  })();
+const googleUser =
+  process.env.GOOGLE_EMAIL ||
+  process.env.SMTP_GOOGLE_EMAIL ||
+  primaryUser;
+
+const hasGoogleOauthCredentials =
+  googleClientId && googleClientSecret && googleRefreshToken && googleUser;
+
 const hasPrimaryCredentials =
-  (primaryHost || primaryService || smtpConnectionUrl) &&
-  primaryUser &&
-  primaryPass;
+  hasGoogleOauthCredentials ||
+  ((primaryHost || primaryService || smtpConnectionUrl) &&
+    primaryUser &&
+    primaryPass);
 
 let cachedEtherealAccount = null;
 let primaryTransportPromise = null;
@@ -59,7 +92,69 @@ const logTransportConfig = (label, config) => {
   console.log(`[emailService] ${label}`, safeConfig);
 };
 
+const createGoogleOauthTransport = async () => {
+  if (!hasGoogleOauthCredentials) {
+    throw new Error(
+      "Google OAuth credentials are missing. Provide GOOGLE_CLIENT_ID/SECRET/REFRESH_TOKEN and GOOGLE_EMAIL."
+    );
+  }
+
+  const oAuth2Client = new google.auth.OAuth2(
+    googleClientId,
+    googleClientSecret,
+    googleRedirectUri
+  );
+  oAuth2Client.setCredentials({ refresh_token: googleRefreshToken });
+
+  let accessTokenResponse;
+  try {
+    accessTokenResponse = await oAuth2Client.getAccessToken();
+  } catch (err) {
+    console.error("[emailService] Failed to fetch Google access token:", err);
+    throw err;
+  }
+
+  const accessToken =
+    typeof accessTokenResponse === "string"
+      ? accessTokenResponse
+      : accessTokenResponse?.token;
+
+  if (!accessToken) {
+    throw new Error("Unable to retrieve Google OAuth access token.");
+  }
+
+  const transport = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      type: "OAuth2",
+      user: googleUser,
+      clientId: googleClientId,
+      clientSecret: googleClientSecret,
+      refreshToken: googleRefreshToken,
+      accessToken,
+    },
+    connectionTimeout: smtpTimeout,
+    greetingTimeout: smtpTimeout,
+    socketTimeout: smtpTimeout,
+  });
+
+  logTransportConfig("Using Gmail OAuth2 transport", {
+    service: "gmail",
+    user: "***",
+  });
+
+  return transport;
+};
+
 const createPrimaryTransport = async () => {
+  if (booleanFromEnv(process.env.SMTP_USE_GOOGLE, false) && hasGoogleOauthCredentials) {
+    return createGoogleOauthTransport();
+  }
+
+  if (!primaryPass && hasGoogleOauthCredentials && !smtpConnectionUrl && !primaryService) {
+    return createGoogleOauthTransport();
+  }
+
   if (smtpConnectionUrl) {
     const transport = nodemailer.createTransport(smtpConnectionUrl);
     logTransportConfig("Using SMTP connection URL", {
