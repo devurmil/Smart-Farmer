@@ -4,224 +4,143 @@
 
 Before deploying to Render, you need:
 1. A Render account
-2. A database (PostgreSQL recommended for Render)
-3. Your Smart Farmer backend code
+2. A MongoDB database (Atlas cluster recommended)
+3. Smart Farmer backend code in GitHub/GitLab
 
-## 🗄️ Database Setup
+## 🗄️ Database Setup (MongoDB Atlas)
 
-### Option 1: Render PostgreSQL (Recommended)
-1. Go to [Render Dashboard](https://dashboard.render.com/)
-2. Click "New +" → "PostgreSQL"
-3. Choose a name (e.g., "smart-farmer-db")
-4. Select your plan (Free tier available)
-5. Choose a region close to your users
-6. Click "Create Database"
-7. **Save the connection details** - you'll need them for the next step
-
-### Option 2: External Database
-- **Supabase** (Free PostgreSQL)
-- **PlanetScale** (Free MySQL)
-- **Railway** (Free PostgreSQL)
-
-## 🔧 Environment Variables Setup
-
-### 1. Go to Your Backend Service
-1. In Render Dashboard, click "New +" → "Web Service"
-2. Connect your GitHub repository
-3. Choose the `backend` folder as the root directory
-4. Set build command: `npm install`
-5. Set start command: `npm start`
-
-### 2. Set Environment Variables
-In your Render service dashboard, go to **Environment** → **Environment Variables** and add:
-
-#### Required Variables:
-```bash
-# Database Connection
-DATABASE_URL=postgresql://username:password@host:port/database_name
-
-# JWT Security
-JWT_SECRET=your_super_secure_random_secret_key_here
-
-# Environment
-NODE_ENV=production
-
-# CORS (if needed)
-CORS_ORIGIN=https://your-frontend-domain.com
-```
-
-#### Optional Variables:
-```bash
-# Port (Render sets this automatically)
-PORT=5000
-
-# Logging
-LOG_LEVEL=info
-
-# File Upload (if using Cloudinary)
-CLOUDINARY_CLOUD_NAME=your_cloud_name
-CLOUDINARY_API_KEY=your_api_key
-CLOUDINARY_API_SECRET=your_api_secret
-```
-
-### 3. Example DATABASE_URL Format
-For Render PostgreSQL:
-```
-postgresql://username:password@host:port/database_name
-```
+1. Create an account at [MongoDB Atlas](https://www.mongodb.com/atlas/database).
+2. Create a free cluster (Shared tier is enough for testing).
+3. Create a database user with **Read/Write** access.
+4. In **Network Access**, allow:
+   - Your local IP (for testing), and
+   - `0.0.0.0/0` or Render IP ranges (for production).
+5. Copy the **connection string** (SRV format).
+6. Replace `<username>`, `<password>`, and `<dbname>` accordingly.
 
 Example:
 ```
-postgresql://smartfarmer_user:password123@dpg-abc123-a.oregon-postgres.render.com/smartfarmer_db
+mongodb+srv://smartfarmer_admin:superSecret@cluster0.abcde.mongodb.net/smart_farmer
+```
+
+## 🔧 Environment Variables Setup
+
+### Create / configure the Render service
+1. In Render Dashboard, click **New + → Web Service**.
+2. Connect your repository.
+3. Root directory: `backend`
+4. Build command: `npm install`
+5. Start command: `npm start`
+
+### Required environment variables
+Set these under **Environment → Environment Variables**:
+
+```bash
+# Database
+MONGO_URL=mongodb+srv://username:password@cluster.mongodb.net/smart_farmer
+
+# Authentication
+JWT_SECRET=your_super_secure_random_secret_key_here
+NODE_ENV=production
+FRONTEND_URL=https://your-frontend-domain.com
+
+# Gmail API (OTP emails via HTTPS)
+GOOGLE_EMAIL=your_gmail_address@gmail.com
+GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+GOOGLE_REFRESH_TOKEN=your_google_refresh_token
+GOOGLE_REDIRECT_URI=https://developers.google.com/oauthplayground
+USE_GMAIL_API=true
+```
+
+Optional:
+```bash
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+WEATHER_API_KEY=your_openweather_api_key
 ```
 
 ## 🚀 Deployment Steps
 
-### 1. Automatic Deployment
-1. Connect your GitHub repository
-2. Render will automatically detect changes
-3. Every push to main branch triggers a new deployment
-
-### 2. Manual Deployment
-1. In your service dashboard, click "Manual Deploy"
-2. Choose "Deploy latest commit"
+1. Push your latest code to the default branch.
+2. Render builds automatically; watch the deploy logs.
+3. Once live, hit `https://your-service.onrender.com/api/health/db` to verify Mongo connectivity.
 
 ## 🔍 Troubleshooting
 
-### Common Issues:
+### 1. “MONGO_URL is not set”
+- Render couldn’t find the env var.
+- Set `MONGO_URL` exactly (case-sensitive) and redeploy.
 
-#### 1. "Cannot read properties of null (reading 'replace')"
-**Cause**: DATABASE_URL is not set or has invalid format
-**Solution**: 
-- Set DATABASE_URL environment variable in Render
-- Ensure DATABASE_URL follows correct format
-- Test DATABASE_URL format locally first
+### 2. “Unable to connect to MongoDB”
+- Check that the connection string is correct (username/password/db name).
+- Ensure Atlas allows connections from Render (0.0.0.0/0 during testing).
+- If you rotated credentials, update Render env vars.
 
-#### 2. "Database connection failed"
-**Cause**: Database credentials or connection string incorrect
-**Solution**: 
-- Check DATABASE_URL format
-- Verify database is running
-- Check firewall/network access
+### 3. OTP emails failing
+- Gmail API vars missing or refresh token invalid.
+- Re-run the OAuth flow via Google Playground and update env vars.
 
-#### 3. "JWT_SECRET not set"
-**Cause**: Missing JWT_SECRET environment variable
-**Solution**: Set a secure JWT_SECRET in Render
-
-### 🔧 DATABASE_URL Format Issues
-
-#### Common Format Problems:
-1. **Missing Protocol**: Add `postgresql://` or `mysql://`
-2. **Missing @ Symbol**: Ensure format is `username:password@host`
-3. **Spaces or Line Breaks**: Remove all spaces and line breaks
-4. **Special Characters**: URL encode special characters in password
-
-#### Correct Format Examples:
+### Validate locally before deploying
 ```bash
-# ✅ Correct PostgreSQL format
-DATABASE_URL=postgresql://username:password@host:port/database
-
-# ✅ Correct MySQL format  
-DATABASE_URL=mysql://username:password@host:port/database
-
-# ❌ Wrong formats
-DATABASE_URL=postgresql://username password@host/database  # Space in password
-DATABASE_URL=postgresql://username:password@host          # Missing database
-DATABASE_URL=username:password@host:port/database         # Missing protocol
-```
-
-#### Testing DATABASE_URL Locally:
-```bash
-# Test your DATABASE_URL format before deploying
+# Verify connection string format
 node test-database-url.js
-```
 
-### Debug Steps:
-1. Check Render service logs
-2. Verify environment variables are set
-3. Test database connection locally
-4. Check database server status
-5. Validate DATABASE_URL format
+# Attempt a real connection using mongoose
+node test-database-connection.cjs
+```
 
 ## 📊 Monitoring
 
-### 1. Logs
-- View real-time logs in Render dashboard
-- Set up log forwarding if needed
-
-### 2. Health Checks
-- Monitor service uptime
-- Set up alerts for failures
-
-### 3. Performance
-- Monitor response times
-- Check database query performance
+- **Logs**: Render dashboard → Logs
+- **DB Health**: `GET /api/health/db`
+- **SSE/Realtime**: Ensure cookies are sent (use `withCredentials` on the frontend)
 
 ## 🔒 Security Best Practices
 
-### 1. Environment Variables
-- Never commit secrets to Git
-- Use strong, unique secrets
-- Rotate secrets regularly
+- Never commit `.env` files.
+- Rotate `JWT_SECRET` and database passwords periodically.
+- Limit MongoDB user permissions to only the target database.
+- Keep CORS `FRONTEND_URL` restricted to trusted origins.
 
-### 2. Database Security
-- Use SSL connections
-- Limit database access
-- Regular backups
-
-### 3. API Security
-- Enable CORS properly
-- Use HTTPS only
-- Rate limiting (consider adding)
-
-## 📝 Example .env.local (for reference only)
+## 📝 Example `.env` for production
 
 ```bash
-# Database
-DATABASE_URL=postgresql://user:pass@host:port/db
-
-# JWT
-JWT_SECRET=your_super_secret_key_here
-
-# Environment
+MONGO_URL=mongodb+srv://user:pass@cluster.mongodb.net/smart_farmer
+JWT_SECRET=<generated_random_secret>
 NODE_ENV=production
-
-# CORS
-CORS_ORIGIN=https://yourdomain.com
-
-# Optional: Cloudinary
-CLOUDINARY_CLOUD_NAME=your_cloud_name
-CLOUDINARY_API_KEY=your_api_key
-CLOUDINARY_API_SECRET=your_api_secret
+FRONTEND_URL=https://smart-farmer-three.vercel.app
+GOOGLE_EMAIL=smartfarmer117@gmail.com
+GOOGLE_CLIENT_ID=...
+GOOGLE_CLIENT_SECRET=...
+GOOGLE_REFRESH_TOKEN=...
+GOOGLE_REDIRECT_URI=https://developers.google.com/oauthplayground
+USE_GMAIL_API=true
 ```
 
-## 🎯 Quick Deployment Checklist
+## 🎯 Deployment Checklist
 
-- [ ] Database created and running
-- [ ] DATABASE_URL copied to Render (correct format)
-- [ ] JWT_SECRET set in Render
-- [ ] NODE_ENV=production set
-- [ ] Service deployed successfully
-- [ ] Database connection working
-- [ ] API endpoints responding
-- [ ] Frontend can connect to backend
+- [ ] MongoDB Atlas cluster created and accessible
+- [ ] `MONGO_URL` + Gmail credentials set in Render
+- [ ] Backend deployed without errors
+- [ ] `/api/health/db` returns `success: true`
+- [ ] OTP emails reach inbox (or Gmail API logs success)
+- [ ] Frontend fetches include `credentials: 'include'`
 
 ## 🆘 Need Help?
 
-If you encounter issues:
-
-1. **Check Render Logs**: Service dashboard → Logs
-2. **Verify Environment Variables**: Service dashboard → Environment
-3. **Test Database Connection**: Use database client to test connection
-4. **Check Service Status**: Ensure service is running and healthy
-5. **Test DATABASE_URL Format**: Run `node test-database-url.js` locally
+1. Check Render logs for stack traces.
+2. Re-run `node test-database-connection.cjs` locally.
+3. Verify Atlas network rules and database users.
+4. Confirm env vars (Render Dashboard → Environment) match expectations.
 
 ## 🔗 Useful Links
 
-- [Render Documentation](https://render.com/docs)
-- [PostgreSQL Connection Strings](https://www.postgresql.org/docs/current/libpq-connect.html)
-- [Node.js Environment Variables](https://nodejs.org/docs/latest/api/process.html#processenv)
+- [Render Docs](https://render.com/docs)
+- [MongoDB Atlas Quickstart](https://www.mongodb.com/docs/atlas/getting-started/)
+- [Google OAuth Playground](https://developers.google.com/oauthplayground)
 
 ---
 
-**Remember**: Never commit sensitive information like database passwords or JWT secrets to your Git repository!
+**Remember**: never store secrets in Git. Use Render’s environment variable manager for production credentials.

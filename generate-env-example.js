@@ -19,17 +19,11 @@ console.log('# Smart Farmer Backend Environment Variables');
 console.log('# ==========================================\n');
 
 console.log('# Database Configuration');
-console.log('# For local development:');
-console.log('DB_HOST=localhost');
-console.log('DB_PORT=3306');
-console.log('DB_NAME=smart_farmer');
-console.log('DB_USER=root');
-console.log('DB_PASSWORD=your_mysql_password');
-console.log('DB_DIALECT=mysql\n');
-
-console.log('# For production (Render, Heroku, etc.):');
-console.log('# DATABASE_URL=postgresql://username:password@host:port/database_name');
-console.log('# Example: DATABASE_URL=postgresql://smartfarmer_user:pass123@dpg-abc123-a.oregon-postgres.render.com/smartfarmer_db\n');
+console.log('# Local development (MongoDB):');
+console.log('MONGO_URL=mongodb://localhost:27017/smart_farmer');
+console.log('# Production / MongoDB Atlas:');
+console.log('# MONGO_URL=mongodb+srv://username:password@cluster.mongodb.net/smart_farmer');
+console.log('# DATABASE_URL can be used instead of MONGO_URL if preferred\n');
 
 console.log('# JWT Configuration');
 console.log(`JWT_SECRET=${jwtSecret}`);
@@ -40,8 +34,14 @@ console.log('NODE_ENV=development');
 console.log('PORT=5000');
 console.log('HOST=0.0.0.0\n');
 
-console.log('# CORS Configuration');
-console.log('CORS_ORIGIN=http://localhost:3000\n');
+console.log('# Gmail API (OTP + transactional email via Gmail API)');
+console.log('GOOGLE_EMAIL=your_gmail_address@gmail.com');
+console.log('GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com');
+console.log('GOOGLE_CLIENT_SECRET=your_google_client_secret');
+console.log('GOOGLE_REFRESH_TOKEN=your_google_refresh_token');
+console.log('GOOGLE_REDIRECT_URI=https://developers.google.com/oauthplayground');
+console.log('USE_GMAIL_API=true');
+console.log('# Or set GOOGLE_TOKEN_FILE=./token.json if you store the refresh token on disk\n');
 
 console.log('# Optional: Cloudinary (for image uploads)');
 console.log('# CLOUDINARY_CLOUD_NAME=your_cloud_name');
@@ -54,7 +54,7 @@ console.log('# ==========================================');
 console.log('# Set these in Render dashboard Environment Variables:\n');
 
 console.log('# Required for production:');
-console.log('DATABASE_URL=your_database_connection_string');
+console.log('MONGO_URL=your_mongodb_connection_string');
 console.log(`JWT_SECRET=${jwtSecret}`);
 console.log('NODE_ENV=production\n');
 
@@ -63,9 +63,9 @@ console.log('CORS_ORIGIN=https://your-frontend-domain.com\n');
 
 console.log('🎯 Next Steps:');
 console.log('1. Copy the variables above to your .env file');
-console.log('2. For Render deployment, set DATABASE_URL and JWT_SECRET in dashboard');
-console.log('3. Create a PostgreSQL database in Render');
+console.log('2. Provision a MongoDB database (MongoDB Atlas or self-hosted)');
+console.log('3. Set MONGO_URL and JWT_SECRET in your hosting provider (Render) dashboard');
 console.log('4. Deploy your backend service');
-console.log('5. Test the connection\n');
+console.log('5. Run `node test-database-connection.cjs` to verify connectivity\n');
 
-console.log('📚 See RENDER_DEPLOYMENT_GUIDE.md for detailed instructions');
+console.log('📚 See RENDER_DEPLOYMENT_GUIDE.md and MONGODB_MIGRATION_GUIDE.md for detailed instructions');

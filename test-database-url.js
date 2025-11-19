@@ -1,108 +1,81 @@
 #!/usr/bin/env node
 
 /**
- * Test and validate DATABASE_URL format
- * Run this script to check if your DATABASE_URL is properly formatted
+ * Validate MongoDB connection strings (MONGO_URL / DATABASE_URL)
  */
 
 require('dotenv').config();
 
-console.log('🔍 Testing DATABASE_URL format...\n');
+console.log('🔍 Testing MongoDB connection string...\n');
 
-// Check if DATABASE_URL exists
-if (!process.env.DATABASE_URL) {
-  console.log('❌ DATABASE_URL is not set');
-  console.log('   Please set the DATABASE_URL environment variable');
+const mongoUrl = process.env.MONGO_URL || process.env.DATABASE_URL;
+
+if (!mongoUrl) {
+  console.log('❌ Neither MONGO_URL nor DATABASE_URL is set.');
+  console.log('   Add one of the following to your environment variables:');
+  console.log('   MONGO_URL=mongodb://localhost:27017/smart_farmer');
+  console.log('   MONGO_URL=mongodb+srv://username:password@cluster.mongodb.net/smart_farmer');
   process.exit(1);
 }
 
-const databaseUrl = process.env.DATABASE_URL;
-console.log('📡 DATABASE_URL found:', databaseUrl ? 'Yes' : 'No');
+const isMongoProtocol =
+  mongoUrl.startsWith('mongodb://') || mongoUrl.startsWith('mongodb+srv://');
 
-// Test URL parsing
+if (!isMongoProtocol) {
+  console.log('❌ Connection string must start with mongodb:// or mongodb+srv://');
+  console.log('   Current value:', mongoUrl.split('://')[0] + '://...');
+  process.exit(1);
+}
+
+const normalizeForUrl = (value) =>
+  value.replace(/^mongodb(\+srv)?:\/\//, 'http://');
+
 try {
-  const url = new URL(databaseUrl);
-  
-  console.log('\n✅ URL parsing successful!');
-  console.log('   Protocol:', url.protocol);
-  console.log('   Username:', url.username || 'Not set');
-  console.log('   Password:', url.password ? '***' : 'Not set');
-  console.log('   Hostname:', url.hostname);
-  console.log('   Port:', url.port || 'Default');
-  console.log('   Database:', url.pathname.slice(1) || 'Not set');
-  
-  // Check if it's a valid database URL
-  const isValidProtocol = ['postgresql:', 'postgres:', 'mysql:', 'mariadb:'].includes(url.protocol);
-  
-  if (!isValidProtocol) {
-    console.log('\n⚠️  Warning: Protocol might not be supported');
-    console.log('   Supported protocols: postgresql:, postgres:, mysql:, mariadb:');
+  const parsed = new URL(normalizeForUrl(mongoUrl));
+  const protocol = mongoUrl.startsWith('mongodb+srv://')
+    ? 'mongodb+srv:'
+    : 'mongodb:';
+
+  console.log('✅ Connection string detected!');
+  console.log('   Protocol:', protocol);
+  console.log('   Username:', parsed.username || 'Not set');
+  console.log('   Password:', parsed.password ? '***' : 'Not set');
+  console.log('   Hostname:', parsed.hostname || 'Not set');
+  console.log('   Port:', parsed.port || 'Default');
+  console.log(
+    '   Database:',
+    parsed.pathname && parsed.pathname !== '/'
+      ? parsed.pathname.slice(1)
+      : 'Not set'
+  );
+
+  if (!parsed.username || !parsed.password) {
+    console.log('\n⚠️  Warning: Username or password missing.');
+    console.log('   Atlas/SRV URLs typically require both.');
   }
-  
-  if (!url.username) {
-    console.log('\n⚠️  Warning: No username in DATABASE_URL');
+
+  if (!parsed.pathname || parsed.pathname === '/') {
+    console.log('\n⚠️  Warning: Database name missing.');
+    console.log(
+      '   Append your DB name to the URL, e.g., mongodb://user:pass@host/dbname'
+    );
   }
-  
-  if (!url.password) {
-    console.log('\n⚠️  Warning: No password in DATABASE_URL');
-  }
-  
-  if (!url.pathname || url.pathname === '/') {
-    console.log('\n⚠️  Warning: No database name specified');
-  }
-  
-  // Test connection components
-  const hasRequiredComponents = url.username && url.password && url.hostname && url.pathname && url.pathname !== '/';
-  
-  if (hasRequiredComponents) {
-    console.log('\n🎉 DATABASE_URL appears to be valid!');
-    console.log('   All required components are present');
-  } else {
-    console.log('\n❌ DATABASE_URL is missing required components');
-    console.log('   Required: username, password, hostname, database name');
-  }
-  
-  // Show example format
-  console.log('\n📝 Expected format:');
-  console.log('   postgresql://username:password@hostname:port/database_name');
-  console.log('   mysql://username:password@hostname:port/database_name');
-  
-  // Show your current format
-  console.log('\n🔍 Your current format:');
-  console.log(`   ${url.protocol}//${url.username || 'username'}:${url.password ? '***' : 'password'}@${url.hostname}${url.port ? ':' + url.port : ''}${url.pathname}`);
-  
+
+  console.log('\n🎉 Connection string looks valid.');
+  console.log(
+    '   Run `node test-database-connection.cjs` to verify connectivity.'
+  );
 } catch (error) {
-  console.log('\n❌ Failed to parse DATABASE_URL');
+  console.log('\n❌ Failed to parse MongoDB connection string.');
   console.log('   Error:', error.message);
-  console.log('\n📝 Please check your DATABASE_URL format');
-  console.log('   Example: postgresql://username:password@hostname:port/database_name');
-  
-  // Try to identify common issues
-  if (databaseUrl.includes(' ')) {
-    console.log('\n⚠️  Issue detected: URL contains spaces');
-    console.log('   Remove any spaces from your DATABASE_URL');
-  }
-  
-  if (databaseUrl.includes('\\n') || databaseUrl.includes('\\r')) {
-    console.log('\n⚠️  Issue detected: URL contains line breaks');
-    console.log('   Remove any line breaks from your DATABASE_URL');
-  }
-  
-  if (!databaseUrl.includes('://')) {
-    console.log('\n⚠️  Issue detected: Missing protocol');
-    console.log('   Add protocol (e.g., postgresql://) to your DATABASE_URL');
-  }
-  
-  if (!databaseUrl.includes('@')) {
-    console.log('\n⚠️  Issue detected: Missing @ symbol');
-    console.log('   Add @ symbol after username:password in your DATABASE_URL');
-  }
-  
+  console.log('\n🔧 Tips:');
+  console.log('   - Ensure the URL contains no spaces or line breaks.');
+  console.log('   - Keep special characters URL-encoded.');
+  console.log('   - Include a database name at the end.');
   process.exit(1);
 }
 
 console.log('\n🎯 Next steps:');
-console.log('   1. If all checks passed, your DATABASE_URL is ready');
-console.log('   2. If warnings appeared, review and fix the issues');
-console.log('   3. Deploy to Render with the corrected DATABASE_URL');
-console.log('   4. Check Render logs for connection status');
+console.log('   1. If the details above look correct, you can deploy.');
+console.log('   2. Otherwise, fix the issues and re-run this script.');
+console.log('   3. Use MongoDB Atlas or a self-hosted Mongo server as needed.');

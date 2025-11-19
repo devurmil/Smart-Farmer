@@ -1,15 +1,10 @@
 require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
 
+const mongoUrl = process.env.MONGO_URL || process.env.DATABASE_URL;
+
 const config = {
-  // Database Configuration
   database: {
-    url: process.env.DATABASE_URL,
-    host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT || 3306,
-    name: process.env.DB_NAME || 'smart_farmer',
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
-    dialect: process.env.DB_DIALECT || 'mysql'
+    url: mongoUrl,
   },
 
   // Server Configuration
@@ -47,7 +42,7 @@ const validateConfig = () => {
   // Check production requirements
   if (config.server.isProduction) {
     if (!config.database.url) {
-      errors.push('DATABASE_URL is required in production');
+      errors.push('MONGO_URL (or DATABASE_URL) is required in production');
     }
     if (!config.jwt.secret || config.jwt.secret === 'your-secret-key') {
       errors.push('JWT_SECRET must be set in production');
@@ -56,8 +51,8 @@ const validateConfig = () => {
 
   // Check development requirements
   if (!config.server.isProduction) {
-    if (!config.database.host || !config.database.name || !config.database.user) {
-      errors.push('DB_HOST, DB_NAME, and DB_USER are required for local development');
+    if (!config.database.url) {
+      errors.push('Set MONGO_URL for local development (e.g., mongodb://localhost:27017/smart_farmer)');
     }
   }
 
@@ -65,18 +60,20 @@ const validateConfig = () => {
     console.error('❌ Configuration validation failed:');
     errors.forEach(error => console.error(`   - ${error}`));
     
-    if (config.server.isProduction) {
-      console.error('\n🔧 For Render deployment, set these environment variables:');
-      console.error('   DATABASE_URL=your_database_connection_string');
-      console.error('   JWT_SECRET=your_secure_jwt_secret');
-      console.error('   NODE_ENV=production');
-    } else {
-      console.error('\n🔧 For local development, check your .env file:');
-      console.error('   DB_HOST=localhost');
-      console.error('   DB_NAME=smart_farmer');
-      console.error('   DB_USER=root');
-      console.error('   DB_PASSWORD=your_password');
-    }
+    const guidance = config.server.isProduction
+      ? [
+          '\n🔧 For Render deployment, set these environment variables:',
+          '   MONGO_URL=your_mongodb_connection_string',
+          '   JWT_SECRET=your_secure_jwt_secret',
+          '   NODE_ENV=production',
+        ]
+      : [
+          '\n🔧 For local development, add to your .env file:',
+          '   MONGO_URL=mongodb://localhost:27017/smart_farmer',
+          '   JWT_SECRET=your_secure_jwt_secret',
+        ];
+
+    guidance.forEach((line) => console.error(line));
     
     process.exit(1);
   }

@@ -1,6 +1,6 @@
 # Smart Farm India - Backend API
 
-A comprehensive backend API for the Smart Farm India application, built with Node.js, Express.js, and MySQL.
+A comprehensive backend API for the Smart Farm India application, built with Node.js, Express.js, and MongoDB (Mongoose).
 
 ## 🚀 Features
 
@@ -15,8 +15,8 @@ A comprehensive backend API for the Smart Farm India application, built with Nod
 
 ## 📋 Prerequisites
 
-- Node.js (v16 or higher)
-- MySQL (v8.0 or higher)
+- Node.js (v18 or higher recommended)
+- MongoDB (local server or MongoDB Atlas cluster)
 - npm or yarn
 
 ## 🛠️ Installation
@@ -40,11 +40,9 @@ A comprehensive backend API for the Smart Farm India application, built with Nod
    Update the `.env` file with your configuration:
    ```env
    # Database Configuration
-   DB_HOST=localhost
-   DB_PORT=3306
-   DB_NAME=smart_farm_db
-   DB_USER=root
-   DB_PASSWORD=your_password
+   MONGO_URL=mongodb://localhost:27017/smart_farmer
+   # For MongoDB Atlas use:
+   # MONGO_URL=mongodb+srv://username:password@cluster.mongodb.net/smart_farmer
 
    # JWT Configuration
    JWT_SECRET=your_super_secret_jwt_key_here
@@ -59,6 +57,13 @@ A comprehensive backend API for the Smart Farm India application, built with Nod
    CLOUDINARY_API_KEY=your_api_key
    CLOUDINARY_API_SECRET=your_api_secret
 
+   # Gmail API (used for OTP emails)
+   GOOGLE_EMAIL=your_gmail@example.com
+   GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
+   GOOGLE_CLIENT_SECRET=your_google_client_secret
+   GOOGLE_REFRESH_TOKEN=your_google_refresh_token
+   GOOGLE_REDIRECT_URI=https://developers.google.com/oauthplayground
+
    # Weather API Configuration
    WEATHER_API_KEY=your_openweather_api_key
 
@@ -68,10 +73,9 @@ A comprehensive backend API for the Smart Farm India application, built with Nod
 
 4. **Database Setup**
    
-   Create a MySQL database:
-   ```sql
-   CREATE DATABASE smart_farm_db;
-   ```
+   - Install and start MongoDB locally (`brew services start mongodb-community` on macOS or run `mongod` manually), **or**
+   - Create a MongoDB Atlas cluster and whitelist your IP / Render region.
+   - Update `MONGO_URL` with the connection string.
 
 5. **Start the server**
    ```bash
@@ -142,88 +146,17 @@ http://localhost:5000/api
 | GET | `/cost-planning/:id` | Get specific cost plan | Private |
 | DELETE | `/cost-planning/:id` | Delete cost plan | Private |
 
-## 🗄️ Database Schema
+## 🗄️ Data Models
 
-### Users Table
-```sql
-- id (UUID, Primary Key)
-- name (VARCHAR)
-- email (VARCHAR, Unique)
-- password (VARCHAR, Hashed)
-- profile_picture (TEXT)
-- login_method (ENUM: email, facebook, google)
-- is_verified (BOOLEAN)
-- phone (VARCHAR)
-- location (JSON)
-- last_login (DATETIME)
-- created_at, updated_at (TIMESTAMPS)
-```
+The backend uses Mongoose schemas located in `backend/models`. Key models include:
 
-### Farms Table
-```sql
-- id (UUID, Primary Key)
-- user_id (UUID, Foreign Key)
-- name (VARCHAR)
-- location (JSON)
-- area_hectares (DECIMAL)
-- area_acres (DECIMAL)
-- soil_type (VARCHAR)
-- irrigation_type (ENUM)
-- farm_type (ENUM)
-- description (TEXT)
-- is_active (BOOLEAN)
-- created_at, updated_at (TIMESTAMPS)
-```
+- `User` – authentication, profile, roles
+- `Farm`, `Crop`, `Equipment`, `Maintenance` – core farm resources
+- `Supply`, `SupplyOrder` – supplier marketplace
+- `Booking` – equipment booking with live status stream
+- `DiseaseDetection`, `WeatherData`, `CostPlan` – analytics datasets
 
-### Crops Table
-```sql
-- id (UUID, Primary Key)
-- farm_id (UUID, Foreign Key)
-- user_id (UUID, Foreign Key)
-- crop_type (VARCHAR)
-- variety (VARCHAR)
-- planting_date (DATE)
-- expected_harvest_date (DATE)
-- actual_harvest_date (DATE)
-- area_hectares (DECIMAL)
-- area_acres (DECIMAL)
-- status (ENUM)
-- growth_stage (VARCHAR)
-- expected_yield (DECIMAL)
-- actual_yield (DECIMAL)
-- cost_per_hectare (DECIMAL)
-- revenue_per_hectare (DECIMAL)
-- notes (TEXT)
-- weather_conditions (JSON)
-- is_active (BOOLEAN)
-- created_at, updated_at (TIMESTAMPS)
-```
-
-### Disease Detections Table
-```sql
-- id (UUID, Primary Key)
-- user_id (UUID, Foreign Key)
-- crop_id (UUID, Foreign Key)
-- farm_id (UUID, Foreign Key)
-- crop_type (VARCHAR)
-- image_url (TEXT)
-- image_public_id (VARCHAR)
-- detected_disease (VARCHAR)
-- confidence_score (DECIMAL)
-- severity_level (ENUM)
-- treatment_recommended (TEXT)
-- pesticide_recommended (TEXT)
-- prevention_tips (TEXT)
-- treatment_applied (BOOLEAN)
-- treatment_date (DATE)
-- treatment_notes (TEXT)
-- follow_up_required (BOOLEAN)
-- follow_up_date (DATE)
-- location (JSON)
-- weather_conditions (JSON)
-- is_verified (BOOLEAN)
-- created_at, updated_at (TIMESTAMPS)
-```
+Each schema defines its relationships and indexes; refer to the files for exact fields.
 
 ## 🔧 Configuration
 
@@ -231,19 +164,17 @@ http://localhost:5000/api
 
 | Variable | Description | Required |
 |----------|-------------|----------|
-| `DB_HOST` | MySQL host | Yes |
-| `DB_PORT` | MySQL port | Yes |
-| `DB_NAME` | Database name | Yes |
-| `DB_USER` | Database user | Yes |
-| `DB_PASSWORD` | Database password | Yes |
+| `MONGO_URL` | MongoDB connection string (local or Atlas) | Yes |
 | `JWT_SECRET` | JWT secret key | Yes |
 | `JWT_EXPIRES_IN` | JWT expiration time | No |
+| `GOOGLE_EMAIL` | Gmail sender for OTP email | Yes |
+| `GOOGLE_CLIENT_ID` | Google OAuth client ID | Yes |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth client secret | Yes |
+| `GOOGLE_REFRESH_TOKEN` | Google OAuth refresh token | Yes |
 | `PORT` | Server port | No |
 | `NODE_ENV` | Environment | No |
-| `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name | Yes |
-| `CLOUDINARY_API_KEY` | Cloudinary API key | Yes |
-| `CLOUDINARY_API_SECRET` | Cloudinary API secret | Yes |
-| `WEATHER_API_KEY` | OpenWeather API key | No |
+| `CLOUDINARY_*` | Cloudinary credentials | Optional |
+| `WEATHER_API_KEY` | OpenWeather API key | Optional |
 | `FRONTEND_URL` | Frontend URL for CORS | Yes |
 
 ## 🚦 Running Tests
@@ -298,7 +229,7 @@ npm test
 - **Input Validation** - Joi-based request validation
 - **JWT Authentication** - Secure token-based auth
 - **Password Hashing** - bcrypt for password security
-- **SQL Injection Prevention** - Sequelize ORM protection
+- **Query Sanitization** - Mongoose schema validation and sanitization
 
 ## 📊 Monitoring
 
