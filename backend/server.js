@@ -27,14 +27,22 @@ app.use(helmet());
 // CORS Configuration: This is crucial for cookie-based authentication
 const allowedOrigins = [
     'http://localhost:8080', // Local frontend
-    'https://smart-farmer-three.vercel.app' // Vercel deployed frontend
+    'https://smart-farmer-three.vercel.app', // Vercel deployed frontend
+    'https://smart-farmer-cyyz.onrender.com', // Render backend (for direct access/tests)
 ];
 
 const corsOptions = {
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+        callback(new Error(`Not allowed by CORS: ${origin}`));
+    },
     credentials: true,
 };
+
 app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 // Middleware to parse JSON bodies and cookies
 app.use(express.json());
