@@ -14,6 +14,7 @@ const SMTP_PORT = process.env.SMTP_PORT;
 const SMTP_USER = process.env.SMTP_USER;
 const SMTP_PASS = process.env.SMTP_PASS;
 const SMTP_SECURE = (process.env.SMTP_SECURE || "").toLowerCase() === "true";
+const SMTP_TIMEOUT = Number(process.env.SMTP_TIMEOUT_MS) || 5000;
 const FALLBACK_FROM =
   process.env.EMAIL_FROM ||
   process.env.SMTP_FROM ||
@@ -41,6 +42,9 @@ const createGoogleTransport = async () => {
 
   return nodemailer.createTransport({
     service: "gmail",
+    connectionTimeout: SMTP_TIMEOUT,
+    greetingTimeout: SMTP_TIMEOUT,
+    socketTimeout: SMTP_TIMEOUT,
     auth: {
       type: "OAuth2",
       user: GMAIL_USER,
@@ -60,6 +64,9 @@ const createSmtpTransport = () => {
     host: SMTP_HOST,
     port,
     secure,
+    connectionTimeout: SMTP_TIMEOUT,
+    greetingTimeout: SMTP_TIMEOUT,
+    socketTimeout: SMTP_TIMEOUT,
     auth: {
       user: SMTP_USER,
       pass: SMTP_PASS,
