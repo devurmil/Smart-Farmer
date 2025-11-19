@@ -1,40 +1,133 @@
 const nodemailer = require("nodemailer");
 
-const EMAIL_HOST = process.env.EMAIL_HOST || "smtp.gmail.com";
-const EMAIL_PORT = Number(process.env.EMAIL_PORT) || 465;
-const EMAIL_USER = process.env.EMAIL_USER;
-const EMAIL_PASS = process.env.EMAIL_PASS;
-const EMAIL_SECURE =
-  typeof process.env.EMAIL_SECURE === "string"
-    ? process.env.EMAIL_SECURE.toLowerCase() === "true"
-    : EMAIL_PORT === 465;
-const SMTP_TIMEOUT = Number(process.env.SMTP_TIMEOUT_MS) || 5000;
-const FALLBACK_FROM =
+const booleanFromEnv = (value, fallback = false) => {
+  if (typeof value === "undefined") return fallback;
+  if (typeof value === "boolean") return value;
+  return ["1", "true", "yes", "on"].includes(value.toLowerCase());
+};
+
+const numberFromEnv = (value, fallback) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const primaryHost =
+  process.env.SMTP_HOST || process.env.EMAIL_HOST || "smtp.gmail.com";
+const primaryPort =
+  numberFromEnv(process.env.SMTP_PORT, undefined) ||
+  numberFromEnv(process.env.EMAIL_PORT, 465);
+const primaryUser =
+  process.env.SMTP_USER || process.env.EMAIL_USER || process.env.ADMIN_MAIL;
+const primaryPass = process.env.SMTP_PASS || process.env.EMAIL_PASS;
+const primaryService =
+  process.env.SMTP_SERVICE || process.env.EMAIL_SERVICE || undefined;
+const smtpSecure =
+  typeof process.env.SMTP_SECURE !== "undefined"
+    ? booleanFromEnv(process.env.SMTP_SECURE)
+    : typeof process.env.EMAIL_SECURE !== "undefined"
+    ? booleanFromEnv(process.env.EMAIL_SECURE)
+    : primaryPort === 465;
+const smtpConnectionUrl =
+  process.env.SMTP_URL || process.env.SMTP_CONNECTION_URL || undefined;
+const smtpTimeout = numberFromEnv(process.env.SMTP_TIMEOUT_MS, 7000);
+const allowEtherealFallback = !booleanFromEnv(
+  process.env.DISABLE_ETHEREAL_FALLBACK,
+  false
+);
+const fallbackFrom =
+  process.env.SMTP_FROM ||
   process.env.EMAIL_FROM ||
-  (EMAIL_USER
-    ? `Smart Farmer <${EMAIL_USER}>`
+  (primaryUser
+    ? `Smart Farmer <${primaryUser}>`
     : "Smart Farmer <no-reply@smartfarmer.dev>");
 
-const hasSmtpCredentials = EMAIL_HOST && EMAIL_PORT && EMAIL_USER && EMAIL_PASS;
+const hasPrimaryCredentials =
+  (primaryHost || primaryService || smtpConnectionUrl) &&
+  primaryUser &&
+  primaryPass;
 
 let cachedEtherealAccount = null;
+let primaryTransportPromise = null;
 
-const createSmtpTransport = () => {
-  return nodemailer.createTransport({
-    host: EMAIL_HOST,
-    port: EMAIL_PORT,
-    secure: EMAIL_SECURE,
-    connectionTimeout: SMTP_TIMEOUT,
-    greetingTimeout: SMTP_TIMEOUT,
-    socketTimeout: SMTP_TIMEOUT,
+const sanitizeHost = (value) =>
+  typeof value === "string" ? value.replace(/:\/\/.*@/, "://***:***@") : value;
+
+const logTransportConfig = (label, config) => {
+  const safeConfig = { ...config };
+  if (safeConfig.auth?.user) safeConfig.auth.user = "***";
+  if (safeConfig.auth?.pass) safeConfig.auth.pass = "***";
+  console.log(`[emailService] ${label}`, safeConfig);
+};
+
+const createPrimaryTransport = async () => {
+  if (smtpConnectionUrl) {
+    const transport = nodemailer.createTransport(smtpConnectionUrl);
+    logTransportConfig("Using SMTP connection URL", {
+      url: sanitizeHost(smtpConnectionUrl),
+    });
+    return transport;
+  }
+
+  if (!hasPrimaryCredentials) {
+    throw new Error(
+      "Missing SMTP credentials. Please set SMTP_HOST/PORT/USER/PASS (or SMTP_URL)."
+    );
+  }
+
+  if (primaryService) {
+    const serviceTransport = nodemailer.createTransport({
+      service: primaryService,
+      auth: {
+        user: primaryUser,
+        pass: primaryPass,
+      },
+      pool: booleanFromEnv(process.env.SMTP_POOL, true),
+      maxConnections: numberFromEnv(process.env.SMTP_MAX_CONNECTIONS, 3),
+      connectionTimeout: smtpTimeout,
+      greetingTimeout: smtpTimeout,
+      socketTimeout: smtpTimeout,
+    });
+    logTransportConfig("Using SMTP service transport", {
+      service: primaryService,
+      pool: serviceTransport.options.pool,
+    });
+    return serviceTransport;
+  }
+
+  const hostTransport = nodemailer.createTransport({
+    host: primaryHost,
+    port: primaryPort,
+    secure: smtpSecure,
+    pool: booleanFromEnv(process.env.SMTP_POOL, true),
+    maxConnections: numberFromEnv(process.env.SMTP_MAX_CONNECTIONS, 3),
+    connectionTimeout: smtpTimeout,
+    greetingTimeout: smtpTimeout,
+    socketTimeout: smtpTimeout,
+    tls: booleanFromEnv(process.env.SMTP_TLS_INSECURE, false)
+      ? { rejectUnauthorized: false }
+      : undefined,
     auth: {
-      user: EMAIL_USER,
-      pass: EMAIL_PASS,
+      user: primaryUser,
+      pass: primaryPass,
     },
   });
+
+  logTransportConfig("Using SMTP host transport", {
+    host: primaryHost,
+    port: primaryPort,
+    secure: smtpSecure,
+    pool: hostTransport.options.pool,
+  });
+  return hostTransport;
 };
 
 const createEtherealTransport = async () => {
+  if (!allowEtherealFallback) {
+    throw new Error(
+      "Ethereal fallback is disabled and primary transport is unavailable."
+    );
+  }
+
   if (!cachedEtherealAccount) {
     cachedEtherealAccount = await nodemailer.createTestAccount();
     console.warn(
@@ -47,6 +140,9 @@ const createEtherealTransport = async () => {
     host: "smtp.ethereal.email",
     port: 587,
     secure: false,
+    connectionTimeout: smtpTimeout,
+    greetingTimeout: smtpTimeout,
+    socketTimeout: smtpTimeout,
     auth: {
       user: cachedEtherealAccount.user,
       pass: cachedEtherealAccount.pass,
@@ -54,70 +150,95 @@ const createEtherealTransport = async () => {
   });
 };
 
-const createTransport = async () => {
-  if (hasSmtpCredentials) {
-    return createSmtpTransport();
-  }
+const resetPrimaryTransport = () => {
+  primaryTransportPromise = null;
+};
 
-  return createEtherealTransport();
+const getPrimaryTransport = async () => {
+  if (!primaryTransportPromise) {
+    primaryTransportPromise = createPrimaryTransport()
+      .then(async (transport) => {
+        try {
+          await transport.verify();
+        } catch (verifyError) {
+          console.warn(
+            "[emailService] SMTP verify failed, transport will be retried per-send.",
+            verifyError.code || verifyError.message
+          );
+        }
+        return transport;
+      })
+      .catch((error) => {
+        resetPrimaryTransport();
+        throw error;
+      });
+  }
+  return primaryTransportPromise;
 };
 
 const isConnectionError = (error) =>
   error &&
   (error.code === "ETIMEDOUT" ||
+    error.code === "EAI_AGAIN" ||
     error.code === "ECONNREFUSED" ||
     error.code === "ECONNRESET" ||
+    error.code === "ENOTFOUND" ||
     error.command === "CONN");
 
 const sendEmail = async ({ to, subject, html, from }) => {
   try {
-    const transport = await createTransport();
+    let transport;
+    try {
+      transport = await getPrimaryTransport();
+    } catch (setupError) {
+      console.error("[emailService] Unable to init primary transport:", setupError);
+      transport = null;
+    }
+
     const resolvedFrom =
       from ||
-      (transport.options?.auth?.user
+      (transport?.options?.auth?.user
         ? `Smart Farmer <${transport.options.auth.user}>`
-        : FALLBACK_FROM);
-    try {
-      const info = await transport.sendMail({
+        : fallbackFrom);
+
+    const attemptSend = async (activeTransport, viaFallback = false) => {
+      const info = await activeTransport.sendMail({
         from: resolvedFrom,
         to,
         subject,
         html,
       });
-      if (transport.options?.host === "smtp.ethereal.email") {
+
+      if (activeTransport.options?.host === "smtp.ethereal.email") {
         const previewUrl = nodemailer.getTestMessageUrl(info);
         if (previewUrl) {
-          console.warn("Email delivered via Ethereal. Preview at:", previewUrl);
+          console.warn(
+            `Email delivered via Ethereal${viaFallback ? " fallback" : ""}. Preview at:`,
+            previewUrl
+          );
         }
       }
-      return { success: true };
-    } catch (primaryError) {
-      if (
-        !isConnectionError(primaryError) ||
-        transport.options?.host === "smtp.ethereal.email"
-      ) {
-        throw primaryError;
-      }
 
-      console.warn(
-        `[emailService] Primary transport failed (${primaryError.code}). Falling back to Ethereal.`
-      );
-      const fallbackTransport = await createEtherealTransport();
-      const fallbackInfo = await fallbackTransport.sendMail({
-        from: FALLBACK_FROM,
-        to,
-        subject,
-        html,
-      });
-      const previewUrl = nodemailer.getTestMessageUrl(fallbackInfo);
-      if (previewUrl) {
+      return { success: true, fallback: viaFallback };
+    };
+
+    if (transport) {
+      try {
+        return await attemptSend(transport, false);
+      } catch (primaryError) {
+        if (!isConnectionError(primaryError)) {
+          throw primaryError;
+        }
+
         console.warn(
-          "Email delivered via Ethereal fallback. Preview at:",
-          previewUrl
+          `[emailService] Primary transport failed (${primaryError.code || primaryError.message}).`
         );
+        resetPrimaryTransport();
       }
-      return { success: true, fallback: true };
     }
+
+    const fallbackTransport = await createEtherealTransport();
+    return await attemptSend(fallbackTransport, true);
   } catch (error) {
     console.error("Email send error:", error);
     throw error;
