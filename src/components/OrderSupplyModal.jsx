@@ -68,8 +68,8 @@ const OrderSupplyModal = ({ supply, onClose, onOrderSuccess }) => {
   const totalPrice = supply.price * parseInt(form.quantity || 1);
 
   const modalBody = (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
-      <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100000] p-4">
+      <div className="relative z-[100001] bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-xl font-semibold">Order Supply</h2>
           <Button
