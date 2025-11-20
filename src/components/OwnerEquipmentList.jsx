@@ -104,6 +104,32 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
     );
   };
 
+  const extractBookingUserInfo = (booking) => {
+    const source = booking?.user || booking?.userId || booking?.userInfo || null;
+    if (!source) {
+      return {
+        name: 'Unknown Farmer',
+        email: null,
+        phone: null,
+        raw: null,
+      };
+    }
+    if (typeof source === 'string') {
+      return {
+        name: source,
+        email: null,
+        phone: null,
+        raw: source,
+      };
+    }
+    return {
+      name: source.name || source.fullName || source.email || source._id || 'Unknown Farmer',
+      email: source.email || null,
+      phone: source.phone || null,
+      raw: source,
+    };
+  };
+
   // Helper function to separate active and historical bookings
   const separateBookings = (bookings) => {
     if (!Array.isArray(bookings)) return { active: [], history: [] };
@@ -577,12 +603,13 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
                                 {active.map((booking, activeIdx) => {
                                   const bookingId = getBookingId(booking, activeIdx);
                                   const bookingApiId = getBookingApiId(booking);
+                                  const bookingUser = extractBookingUserInfo(booking);
                                   return (
                                   <div key={bookingId} className="bg-white rounded p-2 border border-blue-200">
                                     <div className="flex justify-between items-start mb-2">
                                       <div className="flex-1">
                                         <div className="font-medium text-sm">{booking.startDate} to {booking.endDate}</div>
-                                        <div className="text-xs text-gray-500">Farmer: {booking.user?.name || booking.userId}</div>
+                                        <div className="text-xs text-gray-500">Farmer: {bookingUser.name}</div>
                                       </div>
                                       <div className="flex-shrink-0">
                                         <span className={`inline-block px-2 py-1 rounded text-xs font-semibold ${
@@ -693,11 +720,11 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
                                     
                                     {/* Contact Info */}
                                     <div className="text-xs text-gray-600 mt-2">
-                                      {booking.user?.email && (
-                                        <div>Email: <a href={`mailto:${booking.user.email}`} className="text-blue-600 underline">{booking.user.email}</a></div>
+                                      {bookingUser.email && (
+                                        <div>Email: <a href={`mailto:${bookingUser.email}`} className="text-blue-600 underline">{bookingUser.email}</a></div>
                                       )}
-                                      {booking.user?.phone && (
-                                        <div>Phone: <a href={`tel:${booking.user.phone}`} className="text-blue-600 underline">{booking.user.phone}</a></div>
+                                      {bookingUser.phone && (
+                                        <div>Phone: <a href={`tel:${bookingUser.phone}`} className="text-blue-600 underline">{bookingUser.phone}</a></div>
                                       )}
                                     </div>
                                   </div>
@@ -732,12 +759,13 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
                                 <div className="p-3 border-t border-gray-200 space-y-2">
                                   {history.map((booking, historyIdx) => {
                                     const bookingId = getBookingId(booking, historyIdx);
+                                    const bookingUser = extractBookingUserInfo(booking);
                                     return (
                                     <div key={bookingId} className="bg-white rounded p-2 border border-gray-200">
                                       <div className="flex justify-between items-start mb-2">
                                         <div className="flex-1">
                                           <div className="font-medium text-sm">{booking.startDate} to {booking.endDate}</div>
-                                          <div className="text-xs text-gray-500">Farmer: {booking.user?.name || booking.userId}</div>
+                                          <div className="text-xs text-gray-500">Farmer: {bookingUser.name}</div>
                                         </div>
                                         <div className="flex-shrink-0">
                                           <span className={`inline-block px-2 py-1 rounded text-xs font-semibold ${
@@ -763,11 +791,11 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
                                       
                                       {/* Contact Info */}
                                       <div className="text-xs text-gray-600 mt-2">
-                                        {booking.user?.email && (
-                                          <div>Email: <a href={`mailto:${booking.user.email}`} className="text-blue-600 underline">{booking.user.email}</a></div>
+                                        {bookingUser.email && (
+                                          <div>Email: <a href={`mailto:${bookingUser.email}`} className="text-blue-600 underline">{bookingUser.email}</a></div>
                                         )}
-                                        {booking.user?.phone && (
-                                          <div>Phone: <a href={`tel:${booking.user.phone}`} className="text-blue-600 underline">{booking.user.phone}</a></div>
+                                        {bookingUser.phone && (
+                                          <div>Phone: <a href={`tel:${bookingUser.phone}`} className="text-blue-600 underline">{bookingUser.phone}</a></div>
                                         )}
                                       </div>
                                     </div>

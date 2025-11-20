@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
 import axios from 'axios';
 import { Container, Box, Typography, TextField, Button, Alert, FormControlLabel, Checkbox } from '@mui/material';
+import { getBackendUrl } from '@/lib/utils';
 
 const LoginPage = () => {
   const [form, setForm] = useState({ email: '', password: '' });
@@ -33,7 +34,7 @@ const LoginPage = () => {
     setLoading(true);
     setError('');
     try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+      const backendUrl = getBackendUrl();
       const res = await axios.post(`${backendUrl}/api/auth/login`, {
         ...form,
         rememberMe: rememberMe
