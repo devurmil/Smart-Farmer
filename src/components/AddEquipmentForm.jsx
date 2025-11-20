@@ -107,9 +107,14 @@ const AddEquipmentForm = ({ onEquipmentAdded, isAdmin = false, owners = [], onCl
               className="h-12 w-full px-4 text-lg border-2 border-border focus:border-primary rounded-lg bg-background text-foreground"
             >
               <option value="">Select Owner</option>
-              {owners.map(owner => (
-                <option key={owner.id} value={owner.id}>{owner.name} ({owner.email})</option>
-              ))}
+              {owners.map(owner => {
+                const ownerValue = owner.id || owner._id || owner.userId || owner.ownerId || '';
+                return (
+                  <option key={ownerValue || owner.email} value={ownerValue}>
+                    {owner.name} ({owner.email})
+                  </option>
+                );
+              })}
             </select>
           </div>
         )}

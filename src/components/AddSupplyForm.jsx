@@ -157,9 +157,14 @@ const AddSupplyForm = ({ onSupplyAdded, isAdmin = false, suppliers = [], onClose
                 className="h-12 w-full px-4 text-lg border-2 border-border focus:border-primary rounded-lg bg-background text-foreground"
               >
                 <option value="">Select Supplier</option>
-                {suppliers.map(supplier => (
-                  <option key={supplier.id} value={supplier.id}>{supplier.name} ({supplier.email})</option>
-                ))}
+                {suppliers.map(supplier => {
+                  const supplierValue = supplier.id || supplier._id || supplier.userId || '';
+                  return (
+                    <option key={supplierValue || supplier.email} value={supplierValue}>
+                      {supplier.name} ({supplier.email})
+                    </option>
+                  );
+                })}
               </select>
             </div>
           )}

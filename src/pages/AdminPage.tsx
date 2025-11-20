@@ -70,8 +70,21 @@ interface Supply {
 
 const emptyUser: UserForm = { name: '', email: '', phone: '', role: 'farmer', password: '' };
 
+const resolveId = (value: any, fallback: string = ''): string => {
+  if (!value) return fallback;
+  if (typeof value === 'string') return value;
+  return (
+    value.id ||
+    value._id ||
+    value.userId ||
+    value.ownerId ||
+    value.supplierId ||
+    fallback
+  );
+};
+
 const AdminPage: React.FC = () => {
-  const { user } = useUser(); // Remove token, only use user
+  const { user, token } = useUser();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -121,12 +134,21 @@ const AdminPage: React.FC = () => {
   const [equipmentFilter, setEquipmentFilter] = useState('');
   const [supplyFilter, setSupplyFilter] = useState('');
 
+  const buildAuthHeaders = (extraHeaders: Record<string, string> = {}) => {
+    const headers: Record<string, string> = { ...extraHeaders };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    return headers;
+  };
+
   const fetchUsers = async () => {
     setLoading(true);
     setError(null);
     try {
       const res = await fetch(`${getBackendUrl()}/api/users`, {
         credentials: 'include',
+        headers: buildAuthHeaders(),
       });
       const data = await res.json();
       if (!data.success) throw new Error(data.message || 'Failed to fetch users');
@@ -155,6 +177,7 @@ const AdminPage: React.FC = () => {
       const res = await fetch(`${getBackendUrl()}/api/users/${id}`, {
         method: 'DELETE',
         credentials: 'include',
+        headers: buildAuthHeaders(),
       });
       const data = await res.json();
       if (!data.success) throw new Error(data.message || 'Failed to delete user');
@@ -183,11 +206,17 @@ const AdminPage: React.FC = () => {
     try {
       const res = await fetch(`${getBackendUrl()}/api/users/${editUser.id}`, {
         method: 'PUT',
-        headers: {
+        headers: buildAuthHeaders({
           'Content-Type': 'application/json',
-        },
+        }),
         credentials: 'include',
-        body: JSON.stringify(editUser),
+        body: JSON.stringify({
+          name: editUser.name,
+          email: editUser.email,
+          phone: editUser.phone,
+          role: editUser.role,
+          password: editUser.password,
+        }),
       });
       const data = await res.json();
       if (!data.success) throw new Error(data.message || 'Failed to update user');
@@ -220,9 +249,9 @@ const AdminPage: React.FC = () => {
     try {
       const res = await fetch(`${getBackendUrl()}/api/users`, {
         method: 'POST',
-        headers: {
+        headers: buildAuthHeaders({
           'Content-Type': 'application/json',
-        },
+        }),
         credentials: 'include',
         body: JSON.stringify(addUser),
       });
@@ -245,6 +274,7 @@ const AdminPage: React.FC = () => {
     try {
       const res = await fetch(`${getBackendUrl()}/api/equipment?limit=1000`, {
         credentials: 'include',
+        headers: buildAuthHeaders(),
       });
       const data = await res.json();
       
@@ -268,6 +298,7 @@ const AdminPage: React.FC = () => {
     try {
       const res = await fetch(`${getBackendUrl()}/api/supplies?limit=1000`, {
         credentials: 'include',
+        headers: buildAuthHeaders(),
       });
       const data = await res.json();
       
@@ -276,9 +307,14 @@ const AdminPage: React.FC = () => {
         // Fetch supplier details for each supply
         const suppliesWithSuppliers = await Promise.all(
           (data.data || []).map(async (supply: Supply) => {
+            const supplierId = resolveId(supply.supplierId || supply.supplier);
+            if (!supplierId) {
+              return { ...supply, supplier: null };
+            }
             try {
-              const supplierRes = await fetch(`${getBackendUrl()}/api/users/${supply.supplierId}`, {
+              const supplierRes = await fetch(`${getBackendUrl()}/api/users/${supplierId}`, {
                 credentials: 'include',
+                headers: buildAuthHeaders(),
               });
               const supplierData = await supplierRes.json();
               return { ...supply, supplier: supplierData.success ? supplierData.data : null };
@@ -300,7 +336,8 @@ const AdminPage: React.FC = () => {
 
   // Edit equipment
   const handleEditEquipment = (equipment: Equipment) => {
-    setEditEquipment(equipment);
+    const normalizedOwnerId = resolveId(equipment.ownerId || equipment.owner, '');
+    setEditEquipment({ ...equipment, ownerId: normalizedOwnerId });
     setShowEditEquipment(true);
   };
 
@@ -311,9 +348,9 @@ const AdminPage: React.FC = () => {
     try {
       const res = await fetch(`${getBackendUrl()}/api/equipment/${editEquipment.id}`, {
         method: 'PUT',
-        headers: {
+        headers: buildAuthHeaders({
           'Content-Type': 'application/json',
-        },
+        }),
         credentials: 'include',
         body: JSON.stringify({
           name: editEquipment.name,
@@ -344,6 +381,7 @@ const AdminPage: React.FC = () => {
       const res = await fetch(`${getBackendUrl()}/api/equipment/${id}`, {
         method: 'DELETE',
         credentials: 'include',
+        headers: buildAuthHeaders(),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Failed to delete equipment');
@@ -365,6 +403,7 @@ const AdminPage: React.FC = () => {
       const res = await fetch(`${getBackendUrl()}/api/supplies/${id}`, {
         method: 'DELETE',
         credentials: 'include',
+        headers: buildAuthHeaders(),
       });
       const data = await res.json();
       if (!data.success) throw new Error(data.message || 'Failed to delete supply');
@@ -380,7 +419,8 @@ const AdminPage: React.FC = () => {
 
   // Edit supply
   const handleEditSupply = (supply: Supply) => {
-    setEditSupply(supply);
+    const normalizedSupplierId = resolveId(supply.supplierId || supply.supplier, '');
+    setEditSupply({ ...supply, supplierId: normalizedSupplierId });
     setShowEditSupply(true);
   };
 
@@ -391,9 +431,9 @@ const AdminPage: React.FC = () => {
     try {
       const res = await fetch(`${getBackendUrl()}/api/supplies/${editSupply.id}`, {
         method: 'PUT',
-        headers: {
+        headers: buildAuthHeaders({
           'Content-Type': 'application/json',
-        },
+        }),
         credentials: 'include',
         body: JSON.stringify({
           name: editSupply.name,
@@ -429,8 +469,10 @@ const AdminPage: React.FC = () => {
       setContentError(null);
       try {
         // Fetch farms
-        const farmsRes = await fetch(`${getBackendUrl()}/api/farms?user_id=${contentUser.id}`, {
+        const contentUserId = encodeURIComponent(resolveId(contentUser, ''));
+        const farmsRes = await fetch(`${getBackendUrl()}/api/farms?user_id=${contentUserId}`, {
           credentials: 'include',
+          headers: buildAuthHeaders(),
         });
         const farmsData = await farmsRes.json();
         if (!farmsData.success) {
@@ -439,8 +481,9 @@ const AdminPage: React.FC = () => {
         setFarms(farmsData.data?.farms || []);
         
         // Fetch equipment
-        const equipRes = await fetch(`${getBackendUrl()}/api/equipment?user_id=${contentUser.id}`, {
+        const equipRes = await fetch(`${getBackendUrl()}/api/equipment?user_id=${contentUserId}`, {
           credentials: 'include',
+          headers: buildAuthHeaders(),
         });
         const equipData = await equipRes.json();
         console.log('Equipment API response:', equipData);
@@ -453,8 +496,9 @@ const AdminPage: React.FC = () => {
         setEquipment(equipmentData);
         
         // Fetch supplies
-        const supplyRes = await fetch(`${getBackendUrl()}/api/supplies?user_id=${contentUser.id}`, {
+        const supplyRes = await fetch(`${getBackendUrl()}/api/supplies?user_id=${contentUserId}`, {
           credentials: 'include',
+          headers: buildAuthHeaders(),
         });
         const supplyData = await supplyRes.json();
         console.log('Supplies API response:', supplyData);
@@ -638,7 +682,7 @@ const AdminPage: React.FC = () => {
                     </div>
                   ) : (
                     filteredUsers.map((user) => (
-                      <div key={user.id} className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors">
+                      <div key={resolveId(user, user.email)} className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors">
                         <div className="flex items-center justify-between">
                           <div className="flex-1">
                             <h3 className="font-medium text-gray-900">{user.name}</h3>
@@ -735,7 +779,7 @@ const AdminPage: React.FC = () => {
                     </div>
                   ) : (
                     filteredEquipment.map((equipment) => (
-                      <div key={equipment.id} className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors">
+                      <div key={resolveId(equipment, equipment.name)} className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors">
                         <div className="flex items-center space-x-3">
                           <div className="flex-shrink-0">
                             {equipment.imageUrl ? (
@@ -828,7 +872,7 @@ const AdminPage: React.FC = () => {
                     </div>
                   ) : (
                     filteredSupplies.map((supply) => (
-                      <div key={supply.id} className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors">
+                      <div key={resolveId(supply, supply.name)} className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors">
                         <div className="flex items-center space-x-3">
                           <div className="flex-shrink-0">
                             {supply.imageUrl ? (
@@ -961,7 +1005,7 @@ const AdminPage: React.FC = () => {
                   ) : (
                     <div className="space-y-2">
                       {farms.map((farm: any) => (
-                        <div key={farm.id} className="bg-white rounded p-3">
+                        <div key={resolveId(farm, farm.name)} className="bg-white rounded p-3">
                           <p className="font-medium text-gray-900">{farm.name}</p>
                           <p className="text-sm text-gray-500">{farm.location?.address || 'No address'}</p>
                         </div>
@@ -982,7 +1026,7 @@ const AdminPage: React.FC = () => {
                   ) : (
                     <div className="space-y-2">
                       {equipment.map((eq: any) => (
-                        <div key={eq.id} className="bg-white rounded p-3">
+                        <div key={resolveId(eq, eq.name)} className="bg-white rounded p-3">
                           <p className="font-medium text-gray-900">{eq.name || eq.type || 'Equipment'}</p>
                           <p className="text-sm text-gray-500">{eq.type}</p>
                           <p className="text-sm text-green-600">₹{eq.price}/day</p>
@@ -1005,7 +1049,7 @@ const AdminPage: React.FC = () => {
                   ) : (
                     <div className="space-y-2">
                       {supplies.map((supply: any) => (
-                        <div key={supply.id} className="bg-white rounded p-3">
+                        <div key={resolveId(supply, supply.name)} className="bg-white rounded p-3">
                           <p className="font-medium text-gray-900">{supply.name || supply.type || 'Supply'}</p>
                           <p className="text-sm text-gray-500 capitalize">{supply.category}</p>
                           <p className="text-sm text-purple-600">₹{supply.price}/{supply.unit}</p>
@@ -1359,9 +1403,14 @@ const AdminPage: React.FC = () => {
                   onChange={e => setEditEquipment({ ...editEquipment, ownerId: e.target.value })}
                 >
                   <option value="">Select Owner</option>
-                  {users.filter(user => user.role === 'owner').map(owner => (
-                    <option key={owner.id} value={owner.id}>{owner.name}</option>
-                  ))}
+                  {users.filter(user => user.role === 'owner').map(owner => {
+                    const ownerValue = resolveId(owner, owner.email || owner.name);
+                    return (
+                      <option key={ownerValue} value={ownerValue}>
+                        {owner.name}
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
               <div className="flex items-center space-x-3">
@@ -1496,9 +1545,14 @@ const AdminPage: React.FC = () => {
                   onChange={e => setEditSupply({ ...editSupply, supplierId: e.target.value })}
                 >
                   <option value="">Select Supplier</option>
-                  {users.filter(user => user.role === 'supplier').map(supplier => (
-                    <option key={supplier.id} value={supplier.id}>{supplier.name}</option>
-                  ))}
+                  {users.filter(user => user.role === 'supplier').map(supplier => {
+                    const supplierValue = resolveId(supplier, supplier.email || supplier.name);
+                    return (
+                      <option key={supplierValue} value={supplierValue}>
+                        {supplier.name}
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
               <div className="flex items-center space-x-3">
