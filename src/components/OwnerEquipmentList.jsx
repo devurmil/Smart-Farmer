@@ -16,6 +16,7 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedEquipment, setSelectedEquipment] = useState(null);
+  const [selectedEquipmentId, setSelectedEquipmentId] = useState(null);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -44,7 +45,12 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
 
   const getBookingId = (booking, fallbackIndex = 0) => {
     if (!booking) return null;
-    return booking.id || booking._id || `${booking.equipmentId || 'booking'}-${booking.startDate || 'start'}-${fallbackIndex}`;
+    return booking.id || booking._id || booking.bookingId || booking.booking_id || `${booking.equipmentId || 'booking'}-${booking.startDate || 'start'}-${fallbackIndex}`;
+  };
+
+  const getBookingApiId = (booking) => {
+    if (!booking) return null;
+    return booking.id || booking._id || booking.bookingId || booking.booking_id || booking.referenceId || booking.reference_id || null;
   };
 
   // Helper function to separate active and historical bookings
@@ -256,16 +262,19 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
   }, [equipment]);
 
   const handleView = (item) => {
-    setSelectedEquipment(item);
-    setIsViewOpen(true);
     const equipmentId = getEquipmentId(item);
+    setSelectedEquipment(item);
+    setSelectedEquipmentId(equipmentId);
+    setIsViewOpen(true);
     if (equipmentId && !bookingData[equipmentId]) {
       fetchBookings(equipmentId);
     }
   };
 
   const handleEdit = (item) => {
+    const equipmentId = getEquipmentId(item);
     setSelectedEquipment(item);
+    setSelectedEquipmentId(equipmentId);
     setEditForm({
       name: item.name,
       type: item.type,
@@ -276,7 +285,9 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
   };
 
   const handleDelete = (item) => {
+    const equipmentId = getEquipmentId(item);
     setSelectedEquipment(item);
+    setSelectedEquipmentId(equipmentId);
     setIsDeleteOpen(true);
   };
 
@@ -285,9 +296,8 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
     setIsUpdating(true);
     
     try {
-      const equipmentId = getEquipmentId(selectedEquipment);
-      if (!equipmentId) throw new Error('Missing equipment identifier');
-      const response = await fetch(`${getBackendUrl()}/api/equipment/${equipmentId}`, {
+      if (!selectedEquipmentId) throw new Error('Missing equipment identifier');
+      const response = await fetch(`${getBackendUrl()}/api/equipment/${selectedEquipmentId}`, {
         method: 'PUT',
         credentials: 'include',
         headers: {
@@ -312,9 +322,8 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
     setIsDeleting(true);
     
     try {
-      const equipmentId = getEquipmentId(selectedEquipment);
-      if (!equipmentId) throw new Error('Missing equipment identifier');
-      const response = await fetch(`${getBackendUrl()}/api/equipment/${equipmentId}`, {
+      if (!selectedEquipmentId) throw new Error('Missing equipment identifier');
+      const response = await fetch(`${getBackendUrl()}/api/equipment/${selectedEquipmentId}`, {
         method: 'DELETE',
         credentials: 'include',
         headers: buildAuthHeaders()
@@ -503,7 +512,7 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
                               <div className="space-y-2">
                                 {active.map((booking, activeIdx) => {
                                   const bookingId = getBookingId(booking, activeIdx);
-                                  const bookingApiId = booking.id || booking._id;
+                                  const bookingApiId = getBookingApiId(booking);
                                   return (
                                   <div key={bookingId} className="bg-white rounded p-2 border border-blue-200">
                                     <div className="flex justify-between items-start mb-2">

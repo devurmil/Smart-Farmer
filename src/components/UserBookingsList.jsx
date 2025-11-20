@@ -27,6 +27,19 @@ const UserBookingsList = () => {
     return [];
   };
 
+  const resolveBookingId = (booking) => {
+    if (!booking) return null;
+    return (
+      booking.id ||
+      booking._id ||
+      booking.bookingId ||
+      booking.booking_id ||
+      booking.referenceId ||
+      booking.reference_id ||
+      null
+    );
+  };
+
   const fetchUserBookings = async () => {
     if (!user) {
       console.log('No user found, skipping fetchUserBookings');
@@ -127,9 +140,11 @@ const UserBookingsList = () => {
     console.log('SSE connection status changed to:', isConnected);
   }, [isConnected]);
 
-  const handleCancelBooking = async (bookingId) => {
+  const handleCancelBooking = async (booking) => {
+    const bookingId = resolveBookingId(booking);
     if (!bookingId) {
-      alert('Unable to cancel booking: missing booking ID.');
+      console.error('Missing booking identifier for cancellation', booking);
+      alert('Unable to cancel this booking because it is missing a valid ID. Please refresh and try again.');
       return;
     }
 
@@ -290,8 +305,8 @@ const UserBookingsList = () => {
       )}
       
       {bookings.map((booking, index) => {
-        const bookingKey = booking.id || booking._id || `${booking.equipmentId || 'booking'}-${booking.startDate}-${index}`;
-        const bookingIdentifier = booking.id || booking._id;
+        const bookingIdentifier = resolveBookingId(booking);
+        const bookingKey = bookingIdentifier || `${booking.equipmentId || 'booking'}-${booking.startDate || 'start'}-${index}`;
         return (
         <Card key={bookingKey} className="overflow-hidden">
           <CardContent className="p-4">
@@ -340,7 +355,7 @@ const UserBookingsList = () => {
               {/* Cancel button - only show for pending and approved bookings */}
               {(booking.status === 'pending' || booking.status === 'approved') && (
                 <button
-                  onClick={() => handleCancelBooking(bookingIdentifier)}
+                  onClick={() => handleCancelBooking(booking)}
                   className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors"
                   title="Cancel this booking"
                 >
@@ -350,7 +365,7 @@ const UserBookingsList = () => {
               {/* Decline button - only show for pending and approved bookings */}
               {(booking.status === 'pending' || booking.status === 'approved') && (
                 <button
-                  onClick={() => handleCancelBooking(bookingIdentifier)}
+                  onClick={() => handleCancelBooking(booking)}
                   className="flex items-center gap-1 px-3 py-1 border border-red-600 bg-white text-red-600 hover:bg-red-50 text-xs rounded font-semibold shadow-sm transition-colors"
                   title="Delete this booking"
                 >
