@@ -12,6 +12,21 @@ const UserBookingsList = () => {
   const [error, setError] = useState('');
   const [notification, setNotification] = useState('');
 
+  const buildAuthHeaders = () => {
+    if (token) {
+      return {
+        Authorization: `Bearer ${token}`,
+      };
+    }
+    return {};
+  };
+
+  const parseBookingsResponse = (data) => {
+    if (Array.isArray(data?.data)) return data.data;
+    if (Array.isArray(data)) return data;
+    return [];
+  };
+
   const fetchUserBookings = async () => {
     if (!user) {
       console.log('No user found, skipping fetchUserBookings');
@@ -27,7 +42,8 @@ const UserBookingsList = () => {
       const url = `${backendUrl}/api/booking/user`;
       
       const response = await fetch(url, {
-        credentials: 'include'
+        credentials: 'include',
+        headers: buildAuthHeaders()
       });
       
       if (!response.ok) {
@@ -39,7 +55,7 @@ const UserBookingsList = () => {
       const data = await response.json();
       console.log('Received bookings data:', data);
       
-      setBookings(Array.isArray(data) ? data : []);
+      setBookings(parseBookingsResponse(data));
     } catch (err) {
       console.error('Error fetching user bookings:', err);
       setError('Failed to fetch your bookings: ' + err.message);
@@ -112,6 +128,11 @@ const UserBookingsList = () => {
   }, [isConnected]);
 
   const handleCancelBooking = async (bookingId) => {
+    if (!bookingId) {
+      alert('Unable to cancel booking: missing booking ID.');
+      return;
+    }
+
     if (!confirm('Are you sure you want to cancel this booking?')) return;
     
     try {
@@ -122,7 +143,8 @@ const UserBookingsList = () => {
        console.log('Testing server connectivity...');
        try {
          const testResponse = await fetch(`${getBackendUrl()}/api/booking/user`, {
-           credentials: 'include'
+           credentials: 'include',
+           headers: buildAuthHeaders()
          });
          console.log('Server connectivity test - Status:', testResponse.status);
          if (!testResponse.ok) {
@@ -141,7 +163,8 @@ const UserBookingsList = () => {
          method: 'DELETE',
          credentials: 'include',
          headers: {
-           'Content-Type': 'application/json'
+           'Content-Type': 'application/json',
+           ...buildAuthHeaders()
          }
        });
       
@@ -266,8 +289,11 @@ const UserBookingsList = () => {
         </div>
       )}
       
-      {bookings.map((booking) => (
-        <Card key={booking.id} className="overflow-hidden">
+      {bookings.map((booking, index) => {
+        const bookingKey = booking.id || booking._id || `${booking.equipmentId || 'booking'}-${booking.startDate}-${index}`;
+        const bookingIdentifier = booking.id || booking._id;
+        return (
+        <Card key={bookingKey} className="overflow-hidden">
           <CardContent className="p-4">
             <div className="flex justify-between items-start mb-3">
               <div className="flex-1">
@@ -314,7 +340,7 @@ const UserBookingsList = () => {
               {/* Cancel button - only show for pending and approved bookings */}
               {(booking.status === 'pending' || booking.status === 'approved') && (
                 <button
-                  onClick={() => handleCancelBooking(booking.id)}
+                  onClick={() => handleCancelBooking(bookingIdentifier)}
                   className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors"
                   title="Cancel this booking"
                 >
@@ -324,7 +350,7 @@ const UserBookingsList = () => {
               {/* Decline button - only show for pending and approved bookings */}
               {(booking.status === 'pending' || booking.status === 'approved') && (
                 <button
-                  onClick={() => handleCancelBooking(booking.id)}
+                  onClick={() => handleCancelBooking(bookingIdentifier)}
                   className="flex items-center gap-1 px-3 py-1 border border-red-600 bg-white text-red-600 hover:bg-red-50 text-xs rounded font-semibold shadow-sm transition-colors"
                   title="Delete this booking"
                 >
@@ -334,7 +360,7 @@ const UserBookingsList = () => {
             </div>
           </CardContent>
         </Card>
-      ))}
+      );})}
     </div>
   );
 };

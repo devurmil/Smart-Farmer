@@ -70,11 +70,11 @@ const OrderSupplyModal = ({ supply, onClose, onOrderSuccess }) => {
   const modalBody = (
     <div
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4"
-      style={{ zIndex: 2147483647 }}
+      style={{ zIndex: 999999999, position: 'fixed' }}
     >
       <div
         className="relative bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto shadow-xl"
-        style={{ zIndex: 2147483648 }}
+        style={{ zIndex: 1000000000 }}
       >
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-xl font-semibold">Order Supply</h2>

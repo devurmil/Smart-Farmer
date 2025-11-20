@@ -84,6 +84,11 @@
   }
 }
 
+body, #root, #__next {
+  isolation: isolate;
+}
+
+
 @layer base {
   * {
     @apply border-border;

@@ -37,6 +37,16 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
   // Collapsible history state
   const [collapsedHistory, setCollapsedHistory] = useState({});
 
+  const getEquipmentId = (equipmentItem) => {
+    if (!equipmentItem) return null;
+    return equipmentItem.id || equipmentItem._id || equipmentItem.equipmentId || equipmentItem.slug || null;
+  };
+
+  const getBookingId = (booking, fallbackIndex = 0) => {
+    if (!booking) return null;
+    return booking.id || booking._id || `${booking.equipmentId || 'booking'}-${booking.startDate || 'start'}-${fallbackIndex}`;
+  };
+
   // Helper function to separate active and historical bookings
   const separateBookings = (bookings) => {
     if (!Array.isArray(bookings)) return { active: [], history: [] };
@@ -110,8 +120,9 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
       console.log('Response data:', data);
       
       if (data.success) {
-        setEquipment(Array.isArray(data.data) ? data.data : []);
-        setTotal(data.total || 0);
+        const equipmentArray = Array.isArray(data.data) ? data.data : Array.isArray(data) ? data : [];
+        setEquipment(equipmentArray);
+        setTotal(data.total ?? equipmentArray.length ?? 0);
       } else {
         setEquipment([]);
         setTotal(0);
@@ -131,6 +142,10 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
 
   // Fetch bookings for each equipment
   const fetchBookings = async (equipmentId) => {
+    if (!equipmentId) {
+      console.warn('fetchBookings called without equipmentId');
+      return;
+    }
     setBookingLoading((prev) => ({ ...prev, [equipmentId]: true }));
     try {
       const res = await fetch(`${getBackendUrl()}/api/booking/equipment/${equipmentId}`, {
@@ -232,8 +247,9 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
   useEffect(() => {
     if (equipment.length > 0) {
       equipment.forEach((item) => {
-        if (!bookingData[item.id]) {
-          fetchBookings(item.id);
+        const equipmentId = getEquipmentId(item);
+        if (equipmentId && !bookingData[equipmentId]) {
+          fetchBookings(equipmentId);
         }
       });
     }
@@ -242,8 +258,9 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
   const handleView = (item) => {
     setSelectedEquipment(item);
     setIsViewOpen(true);
-    if (!bookingData[item.id]) {
-      fetchBookings(item.id);
+    const equipmentId = getEquipmentId(item);
+    if (equipmentId && !bookingData[equipmentId]) {
+      fetchBookings(equipmentId);
     }
   };
 
@@ -268,7 +285,9 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
     setIsUpdating(true);
     
     try {
-      const response = await fetch(`${getBackendUrl()}/api/equipment/${selectedEquipment.id}`, {
+      const equipmentId = getEquipmentId(selectedEquipment);
+      if (!equipmentId) throw new Error('Missing equipment identifier');
+      const response = await fetch(`${getBackendUrl()}/api/equipment/${equipmentId}`, {
         method: 'PUT',
         credentials: 'include',
         headers: {
@@ -293,7 +312,9 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
     setIsDeleting(true);
     
     try {
-      const response = await fetch(`${getBackendUrl()}/api/equipment/${selectedEquipment.id}`, {
+      const equipmentId = getEquipmentId(selectedEquipment);
+      if (!equipmentId) throw new Error('Missing equipment identifier');
+      const response = await fetch(`${getBackendUrl()}/api/equipment/${equipmentId}`, {
         method: 'DELETE',
         credentials: 'include',
         headers: buildAuthHeaders()
@@ -390,8 +411,12 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
         </div>
       )}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {equipment.map((item) => (
-          <Card key={item.id} className="overflow-hidden">
+        {equipment.map((item, idx) => {
+          const equipmentId = getEquipmentId(item) || `equipment-${idx}`;
+          const itemBookings = bookingData[equipmentId] || [];
+          const isBookingLoading = bookingLoading[equipmentId];
+          return (
+          <Card key={equipmentId} className="overflow-hidden">
             {item.imageUrl && (
               <div className="aspect-video overflow-hidden">
                 <img
@@ -451,20 +476,20 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
                     Available
                   </span>
                   <span className="text-xs text-gray-500">
-                    {bookingData[item.id] ? bookingData[item.id].length : 0} bookings
+                    {itemBookings.length}
                   </span>
                 </div>
                 
                 {/* Bookings Section */}
                 <div className="mt-4">
-                  {bookingLoading[item.id] ? (
+                  {isBookingLoading ? (
                     <div className="flex items-center text-gray-500 text-sm">
                       <Loader2 className="w-4 h-4 animate-spin mr-2" />
                       Loading Bookings...
                     </div>
-                  ) : bookingData[item.id] ? (
+                  ) : itemBookings ? (
                     (() => {
-                      const { active, history } = separateBookings(bookingData[item.id]);
+                      const { active, history } = separateBookings(itemBookings);
                       
                       return (
                         <div className="space-y-3">
@@ -476,8 +501,11 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
                                 Active Bookings ({active.length})
                               </div>
                               <div className="space-y-2">
-                                {active.map((booking) => (
-                                  <div key={booking.id} className="bg-white rounded p-2 border border-blue-200">
+                                {active.map((booking, activeIdx) => {
+                                  const bookingId = getBookingId(booking, activeIdx);
+                                  const bookingApiId = booking.id || booking._id;
+                                  return (
+                                  <div key={bookingId} className="bg-white rounded p-2 border border-blue-200">
                                     <div className="flex justify-between items-start mb-2">
                                       <div className="flex-1">
                                         <div className="font-medium text-sm">{booking.startDate} to {booking.endDate}</div>
@@ -502,12 +530,13 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
                                             className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded"
                                             title="Approve this booking"
                                             onClick={async () => {
-                                              await fetch(`${getBackendUrl()}/api/booking/${booking.id}/approve`, {
+                                              if (!bookingApiId) return;
+                                              await fetch(`${getBackendUrl()}/api/booking/${bookingApiId}/approve`, {
                                                 method: 'PATCH',
                                                 credentials: 'include',
                                                 headers: buildAuthHeaders()
                                               });
-                                              fetchBookings(item.id);
+                                              fetchBookings(equipmentId);
                                             }}
                                           >
                                             ✓ Approve
@@ -516,12 +545,13 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
                                             className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded"
                                             title="Decline this booking"
                                             onClick={async () => {
-                                              await fetch(`${getBackendUrl()}/api/booking/${booking.id}/decline`, {
+                                              if (!bookingApiId) return;
+                                              await fetch(`${getBackendUrl()}/api/booking/${bookingApiId}/decline`, {
                                                 method: 'PATCH',
                                                 credentials: 'include',
                                                 headers: buildAuthHeaders()
                                               });
-                                              fetchBookings(item.id);
+                                              fetchBookings(equipmentId);
                                             }}
                                           >
                                             ✗ Decline
@@ -530,12 +560,13 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
                                             className="px-2 py-1 bg-gray-600 hover:bg-gray-700 text-white text-xs rounded"
                                             title="Delete this booking"
                                             onClick={async () => {
-                                              await fetch(`${getBackendUrl()}/api/booking/${booking.id}`, {
+                                              if (!bookingApiId) return;
+                                              await fetch(`${getBackendUrl()}/api/booking/${bookingApiId}`, {
                                                 method: 'DELETE',
                                                 credentials: 'include',
                                                 headers: buildAuthHeaders()
                                               });
-                                              fetchBookings(item.id);
+                                              fetchBookings(equipmentId);
                                             }}
                                           >
                                             🗑 Delete
@@ -547,12 +578,13 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
                                           <button
                                             className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded"
                                             onClick={async () => {
-                                              await fetch(`${getBackendUrl()}/api/booking/${booking.id}/complete`, {
+                                              if (!bookingApiId) return;
+                                              await fetch(`${getBackendUrl()}/api/booking/${bookingApiId}/complete`, {
                                                 method: 'PATCH',
                                                 credentials: 'include',
                                                 headers: buildAuthHeaders()
                                               });
-                                              fetchBookings(item.id);
+                                              fetchBookings(equipmentId);
                                             }}
                                           >
                                             ✓ Complete
@@ -561,12 +593,13 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
                                             className="px-2 py-1 bg-gray-600 hover:bg-gray-700 text-white text-xs rounded"
                                             title="Delete this booking"
                                             onClick={async () => {
-                                              await fetch(`${getBackendUrl()}/api/booking/${booking.id}`, {
+                                              if (!bookingApiId) return;
+                                              await fetch(`${getBackendUrl()}/api/booking/${bookingApiId}`, {
                                                 method: 'DELETE',
                                                 credentials: 'include',
                                                 headers: buildAuthHeaders()
                                               });
-                                              fetchBookings(item.id);
+                                              fetchBookings(equipmentId);
                                             }}
                                           >
                                             🗑 Delete
@@ -585,7 +618,7 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
                                       )}
                                     </div>
                                   </div>
-                                ))}
+                                );})}
                               </div>
                             </div>
                           )}
@@ -594,11 +627,11 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
                           {history.length > 0 && (
                             <div className="bg-gray-50 rounded-lg border border-gray-200">
                               <button
-                                onClick={() => toggleHistory(item.id)}
+                                onClick={() => toggleHistory(equipmentId)}
                                 className="w-full p-3 flex items-center justify-between text-left hover:bg-gray-100 transition-colors"
                               >
                                 <div className="flex items-center">
-                                  {collapsedHistory[item.id] ? (
+                                  {collapsedHistory[equipmentId] ? (
                                     <ChevronRight className="w-4 h-4 mr-2 text-gray-500" />
                                   ) : (
                                     <ChevronDown className="w-4 h-4 mr-2 text-gray-500" />
@@ -608,14 +641,16 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
                                   </span>
                                 </div>
                                 <span className="text-xs text-gray-500">
-                                  {collapsedHistory[item.id] ? 'Click to expand' : 'Click to collapse'}
+                                  {collapsedHistory[equipmentId] ? 'Click to expand' : 'Click to collapse'}
                                 </span>
                               </button>
                               
-                              {!collapsedHistory[item.id] && (
+                              {!collapsedHistory[equipmentId] && (
                                 <div className="p-3 border-t border-gray-200 space-y-2">
-                                  {history.map((booking) => (
-                                    <div key={booking.id} className="bg-white rounded p-2 border border-gray-200">
+                                  {history.map((booking, historyIdx) => {
+                                    const bookingId = getBookingId(booking, historyIdx);
+                                    return (
+                                    <div key={bookingId} className="bg-white rounded p-2 border border-gray-200">
                                       <div className="flex justify-between items-start mb-2">
                                         <div className="flex-1">
                                           <div className="font-medium text-sm">{booking.startDate} to {booking.endDate}</div>
@@ -653,7 +688,7 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
                                         )}
                                       </div>
                                     </div>
-                                  ))}
+                                    );})}
                                 </div>
                               )}
                             </div>
@@ -673,7 +708,7 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
               </div>
             </CardContent>
           </Card>
-        ))}
+        );})}
       </div>
       {/* Pagination Controls (bottom) */}
       {totalPages > 1 && (
@@ -690,6 +725,7 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>Equipment Details</DialogTitle>
+              <DialogDescription>Review the selected equipment information and booking status.</DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               {selectedEquipment.imageUrl && (
@@ -736,6 +772,7 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>Edit Equipment</DialogTitle>
+              <DialogDescription>Update the details of your equipment listing.</DialogDescription>
             </DialogHeader>
             <form onSubmit={handleEditSubmit} className="space-y-4">
               <div className="space-y-2">
