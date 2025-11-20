@@ -59,7 +59,16 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
     }));
   };
 
-  const fetchEquipment = async () => {
+  const buildAuthHeaders = () => {
+    if (token) {
+      return {
+        Authorization: `Bearer ${token}`,
+      };
+    }
+    return {};
+  };
+
+  const fetchEquipment = async (pageParam = page) => {
     setLoading(true);
     setError('');
     try {
@@ -71,7 +80,7 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
       if (user?.role === 'admin') {
         url = `${getBackendUrl()}/api/equipment`;
       } else if (user?.role === 'owner') {
-        url = `${getBackendUrl()}/api/equipment/owner?page=${page}&limit=${limit}&t=${Date.now()}`;
+        url = `${getBackendUrl()}/api/equipment/owner?page=${pageParam}&limit=${limit}&t=${Date.now()}`;
       } else {
         console.log('User role not admin or owner, aborting fetch');
         setEquipment([]);
@@ -85,7 +94,7 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
       
       const response = await fetch(url, {
         credentials: 'include',
-        headers: {}
+        headers: buildAuthHeaders()
       });
       
       console.log('Response status:', response.status);
@@ -126,11 +135,16 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
     try {
       const res = await fetch(`${getBackendUrl()}/api/booking/equipment/${equipmentId}`, {
         credentials: 'include',
-        headers: {}
+        headers: buildAuthHeaders()
       });
       if (!res.ok) throw new Error('Failed to fetch bookings');
       const data = await res.json();
-      setBookingData((prev) => ({ ...prev, [equipmentId]: data }));
+      const bookingsArray = Array.isArray(data?.data)
+        ? data.data
+        : Array.isArray(data)
+          ? data
+          : [];
+      setBookingData((prev) => ({ ...prev, [equipmentId]: bookingsArray }));
     } catch {
       setBookingData((prev) => ({ ...prev, [equipmentId]: [] }));
     } finally {
@@ -212,7 +226,7 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
     if (user) {
       fetchEquipment();
     }
-  }, [user, refreshTrigger]);
+  }, [user, refreshTrigger, page]);
 
   // Fetch bookings for all equipment when equipment list loads
   useEffect(() => {
@@ -258,7 +272,8 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
         method: 'PUT',
         credentials: 'include',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          ...buildAuthHeaders(),
         },
         body: JSON.stringify(editForm)
       });
@@ -281,7 +296,7 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
       const response = await fetch(`${getBackendUrl()}/api/equipment/${selectedEquipment.id}`, {
         method: 'DELETE',
         credentials: 'include',
-        headers: {}
+        headers: buildAuthHeaders()
       });
       
       if (!response.ok) throw new Error('Failed to delete equipment');
@@ -490,7 +505,7 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
                                               await fetch(`${getBackendUrl()}/api/booking/${booking.id}/approve`, {
                                                 method: 'PATCH',
                                                 credentials: 'include',
-                                                headers: {}
+                                                headers: buildAuthHeaders()
                                               });
                                               fetchBookings(item.id);
                                             }}
@@ -504,7 +519,7 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
                                               await fetch(`${getBackendUrl()}/api/booking/${booking.id}/decline`, {
                                                 method: 'PATCH',
                                                 credentials: 'include',
-                                                headers: {}
+                                                headers: buildAuthHeaders()
                                               });
                                               fetchBookings(item.id);
                                             }}
@@ -518,7 +533,7 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
                                               await fetch(`${getBackendUrl()}/api/booking/${booking.id}`, {
                                                 method: 'DELETE',
                                                 credentials: 'include',
-                                                headers: {}
+                                                headers: buildAuthHeaders()
                                               });
                                               fetchBookings(item.id);
                                             }}
@@ -535,7 +550,7 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
                                               await fetch(`${getBackendUrl()}/api/booking/${booking.id}/complete`, {
                                                 method: 'PATCH',
                                                 credentials: 'include',
-                                                headers: {}
+                                                headers: buildAuthHeaders()
                                               });
                                               fetchBookings(item.id);
                                             }}
@@ -549,7 +564,7 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
                                               await fetch(`${getBackendUrl()}/api/booking/${booking.id}`, {
                                                 method: 'DELETE',
                                                 credentials: 'include',
-                                                headers: {}
+                                                headers: buildAuthHeaders()
                                               });
                                               fetchBookings(item.id);
                                             }}
