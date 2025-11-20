@@ -248,7 +248,12 @@ exports.approveBooking = async (req, res) => {
     // Mark equipment as unavailable
     const equipment = await Equipment.findById(booking.equipmentId);
     if (equipment) {
-      equipment.available = false;
+      const hasActiveBookings = await Booking.exists({
+        equipmentId: booking.equipmentId,
+        status: { $in: ['approved', 'pending'] },
+        _id: { $ne: booking._id }
+      });
+      equipment.available = !hasActiveBookings;
       await equipment.save();
     }
     
@@ -299,7 +304,12 @@ exports.completeBooking = async (req, res) => {
     // Mark equipment as available again
     const equipment = await Equipment.findById(booking.equipmentId);
     if (equipment) {
-      equipment.available = true;
+      const hasActiveBookings = await Booking.exists({
+        equipmentId: booking.equipmentId,
+        status: { $in: ['approved', 'pending'] },
+        _id: { $ne: booking._id }
+      });
+      equipment.available = !hasActiveBookings;
       await equipment.save();
     }
     
@@ -410,6 +420,17 @@ exports.cancelBooking = async (req, res) => {
     await booking.save();
     console.log('Booking cancelled successfully');
     
+    // Recalculate equipment availability
+    const equipment = await Equipment.findById(booking.equipmentId);
+    if (equipment) {
+      const hasActiveBookings = await Booking.exists({
+        equipmentId: booking.equipmentId,
+        status: { $in: ['approved', 'pending'] }
+      });
+      equipment.available = !hasActiveBookings;
+      await equipment.save();
+    }
+    
     // Send real-time notification to the equipment owner
     if (global.sseClients && global.sseClients.has(booking.ownerId.toString())) {
       const ownerRes = global.sseClients.get(booking.ownerId.toString());
@@ -475,6 +496,17 @@ exports.deleteBooking = async (req, res) => {
     console.log('Authorization passed, deleting booking...');
     await Booking.findByIdAndDelete(req.params.id);
     console.log('Booking deleted successfully');
+    
+    // Recalculate equipment availability
+    const equipment = await Equipment.findById(booking.equipmentId);
+    if (equipment) {
+      const hasActiveBookings = await Booking.exists({
+        equipmentId: booking.equipmentId,
+        status: { $in: ['approved', 'pending'] }
+      });
+      equipment.available = !hasActiveBookings;
+      await equipment.save();
+    }
     res.json({ message: 'Booking deleted successfully' });
   } catch (err) {
     console.error('Delete booking error:', err);
