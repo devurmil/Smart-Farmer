@@ -48,6 +48,28 @@ const UserBookingsList = () => {
     return [];
   };
 
+  const getEquipmentDetails = (booking) => {
+    const source = booking?.equipment || booking?.equipmentId || {};
+    const name = source.name || booking?.equipmentName || 'Equipment';
+    const type = source.type || booking?.equipmentType || 'Unknown Type';
+    const price = source.price ?? booking?.equipmentPrice ?? 0;
+    const description = source.description || booking?.equipmentDescription || '';
+    return { name, type, price, description };
+  };
+
+  const formatDate = (value) => {
+    if (!value) return 'N/A';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return value;
+    }
+    return date.toLocaleDateString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
   const resolveBookingId = (booking) => {
     if (!booking) return null;
     return (
@@ -328,19 +350,20 @@ const UserBookingsList = () => {
       {bookings.map((booking, index) => {
         const bookingIdentifier = resolveBookingId(booking);
         const bookingKey = bookingIdentifier || `${booking.equipmentId || 'booking'}-${booking.startDate || 'start'}-${index}`;
+        const equipmentDetails = getEquipmentDetails(booking);
         return (
         <Card key={bookingKey} className="overflow-hidden">
           <CardContent className="p-4">
             <div className="flex justify-between items-start mb-3">
               <div className="flex-1">
                 <h3 className="font-semibold text-lg text-gray-900">
-                  {booking.equipment?.name || 'Equipment'}
+                  {equipmentDetails.name}
                 </h3>
                 <p className="text-sm text-gray-600">
-                  {booking.equipment?.type || 'Unknown Type'}
+                  {equipmentDetails.type}
                 </p>
                 <p className="text-sm text-green-600 font-medium">
-                  ₹{booking.equipment?.price || 0} / day
+                  ₹{equipmentDetails.price} / day
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -354,23 +377,23 @@ const UserBookingsList = () => {
             <div className="grid grid-cols-2 gap-4 mb-3">
               <div>
                 <p className="text-xs text-gray-500">Start Date</p>
-                <p className="font-medium">{booking.startDate}</p>
+                <p className="font-medium">{formatDate(booking.startDate)}</p>
               </div>
               <div>
                 <p className="text-xs text-gray-500">End Date</p>
-                <p className="font-medium">{booking.endDate}</p>
+                <p className="font-medium">{formatDate(booking.endDate)}</p>
               </div>
             </div>
 
-            {booking.equipment?.description && (
+            {equipmentDetails.description && (
               <p className="text-sm text-gray-700 mb-3">
-                {booking.equipment.description}
+                {equipmentDetails.description}
               </p>
             )}
 
             <div className="flex justify-between items-center">
               <div className="text-xs text-gray-500">
-                Booking ID: {booking.id}
+                Booking ID: {bookingIdentifier || 'N/A'}
               </div>
               
               {/* Cancel button - only show for pending and approved bookings */}
