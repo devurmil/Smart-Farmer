@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useUser } from '../contexts/UserContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,11 +34,16 @@ const OrderSupplyModal = ({ supply, onClose, onOrderSuccess }) => {
     console.log('OrderSupplyModal - Token:', token ? 'Present' : 'Not Present');
 
     try {
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       const response = await fetch(`${getBackendUrl()}/api/supplies/${supply.id}/order`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers,
         credentials: 'include',
         body: JSON.stringify(form),
       });
@@ -61,8 +67,8 @@ const OrderSupplyModal = ({ supply, onClose, onOrderSuccess }) => {
 
   const totalPrice = supply.price * parseInt(form.quantity || 1);
 
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+  const modalBody = (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
       <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-xl font-semibold">Order Supply</h2>
@@ -200,6 +206,12 @@ const OrderSupplyModal = ({ supply, onClose, onOrderSuccess }) => {
       </div>
     </div>
   );
+
+  if (typeof document === 'undefined') {
+    return null;
+  }
+
+  return createPortal(modalBody, document.body);
 };
 
 export default OrderSupplyModal; 
