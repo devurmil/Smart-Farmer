@@ -336,7 +336,6 @@ const EquipmentBookingModal = ({ equipment, onClose, onBookingSuccess, startDate
             </div>
           </form>
         </div>
-        </div>
       </div>
     </div>
   );

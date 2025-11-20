@@ -49,11 +49,22 @@ const globalSSEManager = {
 
 const getStoredToken = (): string | null => {
   if (typeof window === 'undefined') return null;
-  try {
-    return localStorage.getItem('auth_token');
-  } catch {
-    return null;
+  const storageSources = [localStorage, sessionStorage];
+  const tokenKeys = ['auth_token', 'token', 'jwt', 'access_token'];
+  for (const storage of storageSources) {
+    try {
+      if (!storage) continue;
+      for (const key of tokenKeys) {
+        const value = storage.getItem(key);
+        if (value) {
+          return value.replace(/^"(.*)"$/, '$1');
+        }
+      }
+    } catch {
+      // ignore
+    }
   }
+  return null;
 };
 
 export const useSSE = (options: UseSSEOptions = {}) => {
@@ -74,6 +85,11 @@ export const useSSE = (options: UseSSEOptions = {}) => {
     try {
       const backendUrl = await getBackendUrl();
       const authToken = token || getStoredToken();
+      if (!authToken) {
+        console.warn('SSE connect aborted: missing auth token');
+        connectingRef.current = false;
+        return;
+      }
       const urlObj = new URL(`${backendUrl}/api/booking/stream`);
       if (authToken) {
         urlObj.searchParams.set('token', authToken);

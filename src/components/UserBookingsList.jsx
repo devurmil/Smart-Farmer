@@ -17,7 +17,17 @@ const UserBookingsList = () => {
       return token;
     }
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('auth_token');
+      const storageSources = [localStorage, sessionStorage];
+      const tokenKeys = ['auth_token', 'token', 'jwt', 'access_token'];
+      for (const storage of storageSources) {
+        if (!storage) continue;
+        for (const key of tokenKeys) {
+          const value = storage.getItem(key);
+          if (value) {
+            return value.replace(/^"(.*)"$/, '$1'); // strip accidental quotes
+          }
+        }
+      }
     }
     return null;
   };

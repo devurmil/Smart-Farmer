@@ -128,9 +128,14 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 
         if (res.ok && data?.success && data.data?.user) {
           const normalizedUser = normalizeUser(data.data.user);
+          const responseToken = data?.data?.token;
           setUser(normalizedUser);
           if (normalizedUser) {
             safeSetLocalStorage('user_data', JSON.stringify(normalizedUser));
+          }
+          if (responseToken) {
+            setToken(responseToken);
+            safeSetLocalStorage('auth_token', responseToken);
           }
         } else if (res.status === 401) {
           setUser(null);

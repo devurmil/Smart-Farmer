@@ -312,10 +312,18 @@ router.post('/google', async (req, res) => {
 // @access  Private
 router.get('/me', auth, async (req, res) => {
   try {
+    const tokenFromCookie = req.cookies?.token || null;
+    const tokenFromHeader = req.header('Authorization')?.startsWith('Bearer ')
+      ? req.header('Authorization')?.replace('Bearer ', '')
+      : null;
+    const tokenFromQuery = req.query?.token || null;
+    const activeToken = tokenFromCookie || tokenFromHeader || tokenFromQuery || null;
+
     res.json({
       success: true,
       data: {
-        user: req.user.toJSON()
+        user: req.user.toJSON(),
+        token: activeToken
       }
     });
   } catch (error) {
