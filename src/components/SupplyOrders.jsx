@@ -12,6 +12,23 @@ const SupplyOrders = ({ userRole }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  const buildAuthHeaders = () => {
+    if (token) {
+      return {
+        Authorization: `Bearer ${token}`,
+      };
+    }
+    return {};
+  };
+
+  const normalizeOrder = (order) => {
+    if (!order) return order;
+    return {
+      ...order,
+      id: order.id || order._id,
+    };
+  };
+
   useEffect(() => {
     const fetchOrders = async () => {
       if (!user) return;
@@ -24,11 +41,12 @@ const SupplyOrders = ({ userRole }) => {
       try {
         const response = await fetch(`${getBackendUrl()}/api/supplies/orders`, {
           credentials: 'include',
-          headers: {}
+          headers: buildAuthHeaders(),
         });
         if (!response.ok) throw new Error('Failed to fetch orders');
         const data = await response.json();
-        setOrders(data);
+        const rawOrders = Array.isArray(data) ? data : data?.data || [];
+        setOrders(rawOrders.map(normalizeOrder));
       } catch (err) {
         setError('Failed to fetch orders');
       } finally {
@@ -43,7 +61,8 @@ const SupplyOrders = ({ userRole }) => {
       const response = await fetch(`${getBackendUrl()}/api/supplies/orders/${orderId}/status`, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          ...buildAuthHeaders(),
         },
         credentials: 'include',
         body: JSON.stringify({ status: newStatus }),
@@ -52,9 +71,9 @@ const SupplyOrders = ({ userRole }) => {
       if (!response.ok) throw new Error('Failed to update order status');
 
       // Update local state
-      setOrders(orders.map(order =>
-        order.id === orderId ? { ...order, status: newStatus } : order
-      ));
+      setOrders((prev) =>
+        prev.map((order) => (order.id === orderId ? { ...order, status: newStatus } : order))
+      );
     } catch (err) {
       alert('Failed to update order status: ' + err.message);
     }
@@ -117,13 +136,16 @@ const SupplyOrders = ({ userRole }) => {
 
   return (
     <div className="space-y-4">
-      {orders.map((order) => (
-        <div key={order.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+      {orders.map((order) => {
+        const displayName =
+          userRole === 'supplier' ? order.buyerId?.name : order.supplierId?.name;
+        return (
+          <div key={order.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
                 <h3 className="text-lg font-semibold">
-                  {userRole === 'supplier' ? order.buyer?.name : order.seller?.name}
+                      {displayName || 'N/A'}
                 </h3>
                 <Badge className={getStatusColor(order.status)}>
                   {getStatusIcon(order.status)} {order.status}
@@ -132,10 +154,11 @@ const SupplyOrders = ({ userRole }) => {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
                 <div>
-                  <span className="font-medium">Supply:</span> {order.supply?.name}
+                  <span className="font-medium">Supply:</span> {order.supplyId?.name || 'N/A'}
                 </div>
                 <div>
-                  <span className="font-medium">Quantity:</span> {order.quantity} {order.supply?.unit}
+                  <span className="font-medium">Quantity:</span> {order.quantity}{' '}
+                  {order.supplyId?.unit || ''}
                 </div>
                 <div>
                   <span className="font-medium">Total Price:</span> ₹{order.totalPrice}
@@ -168,7 +191,7 @@ const SupplyOrders = ({ userRole }) => {
             </div>
             
             {/* Status Update (for suppliers only) */}
-            {userRole === 'supplier' && order.status !== 'delivered' && order.status !== 'cancelled' && (
+              {userRole === 'supplier' && order.status !== 'delivered' && order.status !== 'cancelled' && (
               <div className="ml-4">
                 <Select
                   value={order.status}
@@ -188,8 +211,9 @@ const SupplyOrders = ({ userRole }) => {
               </div>
             )}
           </div>
-        </div>
-      ))}
+          </div>
+        );
+      })}
     </div>
   );
 };

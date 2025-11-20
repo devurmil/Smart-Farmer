@@ -56,10 +56,11 @@ const AddSupplyForm = ({ onSupplyAdded, isAdmin = false, suppliers = [], onClose
       });
       if (image) formData.append('image', image);
       
-      const headers = {};
-      if (token) {
-        // Using cookie-based authentication
-      }
+      const headers = token
+        ? {
+            Authorization: `Bearer ${token}`,
+          }
+        : {};
       
       const response = await fetch(`${getBackendUrl()}/api/supplies`, {
         method: 'POST',

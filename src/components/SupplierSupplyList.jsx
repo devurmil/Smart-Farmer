@@ -11,6 +11,23 @@ const SupplierSupplyList = ({ refreshTrigger }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  const buildAuthHeaders = () => {
+    if (token) {
+      return {
+        Authorization: `Bearer ${token}`,
+      };
+    }
+    return {};
+  };
+
+  const normalizeSupply = (supply) => {
+    if (!supply) return supply;
+    return {
+      ...supply,
+      id: supply.id || supply._id,
+    };
+  };
+
   useEffect(() => {
     const fetchSupplies = async () => {
       setLoading(true);
@@ -36,11 +53,12 @@ const SupplierSupplyList = ({ refreshTrigger }) => {
         
         const response = await fetch(url, {
           credentials: 'include',
-          headers: {}
+          headers: buildAuthHeaders()
         });
         if (!response.ok) throw new Error('Failed to fetch supplies');
         const data = await response.json();
-        setSupplies(data.data || data);
+        const rawSupplies = Array.isArray(data) ? data : data.data || [];
+        setSupplies(rawSupplies.map(normalizeSupply));
       } catch (err) {
         setError('Failed to fetch supplies');
       } finally {
@@ -57,13 +75,13 @@ const SupplierSupplyList = ({ refreshTrigger }) => {
       const response = await fetch(`${getBackendUrl()}/api/supplies/${supplyId}`, {
         method: 'DELETE',
         credentials: 'include',
-        headers: {}
+        headers: buildAuthHeaders()
       });
 
       if (!response.ok) throw new Error('Failed to delete supply');
 
       // Remove from local state
-      setSupplies(supplies.filter(supply => supply.id !== supplyId));
+      setSupplies((prev) => prev.filter((supply) => supply.id !== supplyId));
     } catch (err) {
       alert('Failed to delete supply: ' + err.message);
     }

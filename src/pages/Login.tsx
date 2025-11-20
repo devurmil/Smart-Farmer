@@ -54,7 +54,7 @@ const Login = () => {
       if (response.ok && data && data.success && data.data && data.data.user) {
         // Success - user logged in
         console.log('Login successful:', data);
-        login(data.data.user);
+        login(data.data.user, data.data.token);
         navigate('/');
       } else {
         // Error from backend or unexpected response
