@@ -25,12 +25,29 @@ const EquipmentList = () => {
   const [equipment, setEquipment] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [openBookingId, setOpenBookingId] = useState(null);
+  const [openBookingEquipment, setOpenBookingEquipment] = useState(null);
   const [refresh, setRefresh] = useState(false);
   const [dateRange, setDateRange] = useState({ startDate: '', endDate: '' });
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
-  const [showDateFilter, setShowDateFilter] = useState(false);
+  const [expandedId, setExpandedId] = useState(null);
+
+  const buildAuthHeaders = () => {
+    if (token) {
+      return {
+        Authorization: `Bearer ${token}`,
+      };
+    }
+    return {};
+  };
+
+  const normalizeEquipment = (items) => {
+    if (!Array.isArray(items)) return [];
+    return items.map((item) => ({
+      ...item,
+      id: item.id || item._id,
+    }));
+  };
 
   useEffect(() => {
     const fetchEquipment = async () => {
@@ -43,11 +60,12 @@ const EquipmentList = () => {
         }
         const response = await fetch(url, {
           credentials: 'include',
-          headers: {}
+          headers: buildAuthHeaders()
         });
         if (!response.ok) throw new Error('Failed to fetch equipment');
         const data = await response.json();
-        setEquipment(data.data || data); // Ensure equipment is always an array
+        const list = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
+        setEquipment(normalizeEquipment(list));
       } catch (err) {
         setError('Failed to fetch equipment');
       } finally {
@@ -64,9 +82,9 @@ const EquipmentList = () => {
     setDateRange({ ...dateRange, [e.target.name]: e.target.value });
   };
 
-  const handleBookingClose = () => setOpenBookingId(null);
+  const handleBookingClose = () => setOpenBookingEquipment(null);
   const handleBookingSuccess = () => {
-    setOpenBookingId(null);
+    setOpenBookingEquipment(null);
     setRefresh((r) => !r);
   };
 
@@ -329,9 +347,10 @@ const EquipmentList = () => {
                   <Button
                     variant="outline"
                     className="flex-1 border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+                    onClick={() => setExpandedId((prev) => (prev === item.id ? null : item.id))}
                   >
                     <Eye className="w-4 h-4 mr-2" />
-                    Details
+                    {expandedId === item.id ? 'Hide Details' : 'Details'}
                   </Button>
                   <Button
                     className={`flex-1 ${
@@ -339,7 +358,7 @@ const EquipmentList = () => {
                         ? 'bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white'
                         : 'bg-gray-400 cursor-not-allowed text-gray-200'
                     }`}
-                    onClick={() => item.available && setOpenBookingId(item.id)}
+                    onClick={() => item.available && setOpenBookingEquipment(item)}
                     disabled={!item.available}
                   >
                     <Calendar className="w-4 h-4 mr-2" />
@@ -349,6 +368,35 @@ const EquipmentList = () => {
                     }
                   </Button>
                 </div>
+
+                {expandedId === item.id && (
+                  <div className="mt-4 border-t border-emerald-100 pt-4 space-y-2 text-sm text-emerald-900">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4" />
+                      <span>{item.location || 'Location shared after booking'}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4" />
+                      <span>Added: {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : 'N/A'}</span>
+                    </div>
+                    {item.owner?.name && (
+                      <div className="flex items-center gap-2">
+                        <Star className="w-4 h-4 text-yellow-500" />
+                        <span>Owner: {item.owner.name}</span>
+                      </div>
+                    )}
+                    {item.features && Array.isArray(item.features) && item.features.length > 0 && (
+                      <div>
+                        <p className="font-semibold">Key Features:</p>
+                        <ul className="list-disc list-inside text-emerald-800">
+                          {item.features.slice(0, 3).map((feature, idx) => (
+                            <li key={idx}>{feature}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </CardContent>
 
@@ -357,14 +405,14 @@ const EquipmentList = () => {
       </div>
 
       {/* Booking Modal - render once at root, not inside a card */}
-      {openBookingId && (
+      {openBookingEquipment && (
         <EquipmentBookingModal
-          equipment={(filteredEquipment || []).find(e => e.id === openBookingId)}
+          equipment={openBookingEquipment}
           onClose={handleBookingClose}
           onBookingSuccess={handleBookingSuccess}
           startDate={dateRange.startDate}
           endDate={dateRange.endDate}
-          available={(filteredEquipment || []).find(e => e.id === openBookingId)?.available}
+          available={openBookingEquipment?.available}
         />
       )}
 
