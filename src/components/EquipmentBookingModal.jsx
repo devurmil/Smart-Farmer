@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useUser } from '../contexts/UserContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -67,6 +68,15 @@ const EquipmentBookingModal = ({ equipment, onClose, onBookingSuccess, startDate
     return true;
   };
 
+  const buildAuthHeaders = () => {
+    if (token) {
+      return {
+        Authorization: `Bearer ${token}`,
+      };
+    }
+    return {};
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -85,7 +95,8 @@ const EquipmentBookingModal = ({ equipment, onClose, onBookingSuccess, startDate
         method: 'POST',
         credentials: 'include',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          ...buildAuthHeaders(),
         },
         body: JSON.stringify({
           equipmentId: equipment.id,
@@ -122,8 +133,8 @@ const EquipmentBookingModal = ({ equipment, onClose, onBookingSuccess, startDate
   const totalCost = calculateTotalCost();
   const days = form.startDate && form.endDate ? Math.ceil((new Date(form.endDate) - new Date(form.startDate)) / (1000 * 60 * 60 * 24)) : 0;
 
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+  const modalContent = (
+    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[9999] p-4 backdrop-blur-sm">
       <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[95vh] overflow-y-auto shadow-2xl">
         {/* Header */}
         <div className="relative bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-8 rounded-t-2xl">
@@ -322,6 +333,12 @@ const EquipmentBookingModal = ({ equipment, onClose, onBookingSuccess, startDate
       </div>
     </div>
   );
+
+  if (typeof document === 'undefined') {
+    return null;
+  }
+
+  return createPortal(modalContent, document.body);
 };
 
 export default EquipmentBookingModal; 

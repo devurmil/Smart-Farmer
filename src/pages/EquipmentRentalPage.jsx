@@ -42,15 +42,24 @@ const EquipmentRentalPage = () => {
     fetchOwnerStats();
   };
 
+  const buildAuthHeaders = () => {
+    if (token) {
+      return {
+        Authorization: `Bearer ${token}`,
+      };
+    }
+    return {};
+  };
+
   const fetchOwnerStats = async () => {
     if (!user || user?.role !== 'owner') return;
     try {
-      const equipmentResponse = await fetch(`${getBackendUrl()}/api/equipment/owner`, { credentials: 'include', headers: {} });
+      const equipmentResponse = await fetch(`${getBackendUrl()}/api/equipment/owner`, { credentials: 'include', headers: buildAuthHeaders() });
       if (equipmentResponse.ok) {
         const equipmentData = await equipmentResponse.json();
         setOwnerStats(prev => ({ ...prev, totalEquipment: equipmentData.data ? equipmentData.data.length : 0 }));
       }
-      const bookingsResponse = await fetch(`${getBackendUrl()}/api/booking/owner`, { credentials: 'include', headers: {} });
+      const bookingsResponse = await fetch(`${getBackendUrl()}/api/booking/owner`, { credentials: 'include', headers: buildAuthHeaders() });
       if (bookingsResponse.ok) {
         const bookingsData = await bookingsResponse.json();
         const bookings = bookingsData.data || [];
@@ -76,7 +85,7 @@ const EquipmentRentalPage = () => {
   const fetchFarmerStats = async () => {
     if (!user || user?.role === 'owner') return;
     try {
-      const equipmentResponse = await fetch(`${getBackendUrl()}/api/equipment`, { credentials: 'include' });
+      const equipmentResponse = await fetch(`${getBackendUrl()}/api/equipment`, { credentials: 'include', headers: buildAuthHeaders() });
       if (equipmentResponse.ok) {
         const equipmentData = await equipmentResponse.json();
         const equipmentArray = equipmentData.success && Array.isArray(equipmentData.data) ? equipmentData.data : Array.isArray(equipmentData) ? equipmentData : [];
@@ -84,7 +93,7 @@ const EquipmentRentalPage = () => {
         const avgPrice = totalEquipment > 0 ? Math.round(equipmentArray.reduce((sum, e) => sum + (parseFloat(e.price) || 0), 0) / totalEquipment) : 0;
         setFarmerStats(prev => ({ ...prev, availableEquipment: totalEquipment, avgPrice }));
       }
-      const bookingsResponse = await fetch(`${getBackendUrl()}/api/booking/user`, { credentials: 'include' });
+      const bookingsResponse = await fetch(`${getBackendUrl()}/api/booking/user`, { credentials: 'include', headers: buildAuthHeaders() });
       if (bookingsResponse.ok) {
         const bookingsData = await bookingsResponse.json();
         const myBookings = Array.isArray(bookingsData) ? bookingsData.length : 0;
@@ -106,16 +115,24 @@ const EquipmentRentalPage = () => {
   }, [user, refreshTrigger]);
 
   return (
-    <div className="min-h-screen relative" style={{ backgroundImage: `url(${equipmentMainBg})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
-      <div className="absolute inset-0 bg-black/30"></div>
+    <div className="min-h-screen relative bg-slate-950">
+      <div
+        className="absolute inset-0 bg-cover bg-center bg-fixed"
+        style={{ backgroundImage: `url(${equipmentMainBg})` }}
+      ></div>
+      <div className="absolute inset-0 bg-gradient-to-b from-slate-950/95 via-slate-900/90 to-slate-950/92 backdrop-blur-sm"></div>
       <div className="relative z-10">
         {/* Hero Section */}
-        <div className="relative overflow-hidden" style={{ backgroundImage: `url(${equipmentSectionBg})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
-          <div className="absolute inset-0 bg-black/60"></div>
-          <div className="relative px-6 py-16 mx-auto max-w-7xl">
+        <div className="relative overflow-hidden rounded-b-3xl shadow-[0_20px_60px_rgba(0,0,0,0.45)] mx-auto max-w-7xl">
+          <div
+            className="absolute inset-0 bg-cover bg-center scale-105 transform"
+            style={{ backgroundImage: `url(${equipmentSectionBg})` }}
+          ></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-emerald-950/90 via-emerald-900/85 to-emerald-950/88 backdrop-blur-[2px]"></div>
+          <div className="relative px-6 py-16 md:py-20 mx-auto max-w-6xl">
             <div className="text-center">
               <div className="flex justify-center mb-6">
-                <div className="p-3 bg-white/20 backdrop-blur-sm rounded-full border border-white/30">
+                <div className="p-3 bg-white/20 backdrop-blur-lg rounded-full border border-white/30 shadow-lg">
                   <Tractor className="w-12 h-12 text-white" />
                 </div>
               </div>
@@ -128,7 +145,7 @@ const EquipmentRentalPage = () => {
                   : 'Access modern agricultural equipment on-demand. Boost your farming efficiency without the upfront investment'
                 }
               </p>
-              <div className="flex justify-center gap-8 text-white/90">
+              <div className="flex justify-center flex-wrap gap-6 text-white/90">
                 <div className="flex items-center gap-2">
                   <Shield className="w-5 h-5" />
                   <span>Verified Equipment</span>
