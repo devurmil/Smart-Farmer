@@ -55,7 +55,9 @@ app.use(helmet());
 
 // CORS Configuration: This is crucial for cookie-based authentication
 const allowedOrigins = [
-    'http://localhost:8080', // Local frontend
+    'http://localhost:8080', // Local frontend (legacy port)
+    'http://localhost:5173', // Vite dev server
+    'http://127.0.0.1:5173', // Explicit loopback for some browsers
     'https://smart-farmer-three.vercel.app', // Vercel deployed frontend
     'https://smart-farmer-cyyz.onrender.com', // Render backend (for direct access/tests)
 ];
