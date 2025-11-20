@@ -38,19 +38,70 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
   // Collapsible history state
   const [collapsedHistory, setCollapsedHistory] = useState({});
 
+  const normalizeId = (value) => {
+    if (!value) return null;
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (!trimmed || trimmed === 'undefined' || trimmed === 'null') return null;
+      return trimmed;
+    }
+    if (typeof value === 'object') {
+      if (value.$oid) return value.$oid;
+      if (value._id) return normalizeId(value._id);
+      if (value.id) return normalizeId(value.id);
+      if (typeof value.toString === 'function') {
+        const toStringValue = value.toString();
+        if (toStringValue && toStringValue !== '[object Object]') return toStringValue;
+      }
+    }
+    return null;
+  };
+
   const getEquipmentId = (equipmentItem) => {
     if (!equipmentItem) return null;
-    return equipmentItem.id || equipmentItem._id || equipmentItem.equipmentId || equipmentItem.slug || null;
+    return (
+      normalizeId(equipmentItem.id) ||
+      normalizeId(equipmentItem._id) ||
+      normalizeId(equipmentItem.equipmentId) ||
+      normalizeId(equipmentItem.slug) ||
+      null
+    );
   };
 
   const getBookingId = (booking, fallbackIndex = 0) => {
     if (!booking) return null;
-    return booking.id || booking._id || booking.bookingId || booking.booking_id || `${booking.equipmentId || 'booking'}-${booking.startDate || 'start'}-${fallbackIndex}`;
+    return (
+      normalizeId(booking.id) ||
+      normalizeId(booking._id) ||
+      normalizeId(booking.bookingId) ||
+      normalizeId(booking.booking_id) ||
+      `${normalizeId(booking.equipmentId) || 'booking'}-${booking.startDate || 'start'}-${fallbackIndex}`
+    );
   };
 
   const getBookingApiId = (booking) => {
     if (!booking) return null;
-    return booking.id || booking._id || booking.bookingId || booking.booking_id || booking.referenceId || booking.reference_id || null;
+    return (
+      normalizeId(booking.id) ||
+      normalizeId(booking._id) ||
+      normalizeId(booking.bookingId) ||
+      normalizeId(booking.booking_id) ||
+      normalizeId(booking.referenceId) ||
+      normalizeId(booking.reference_id) ||
+      null
+    );
+  };
+
+  const getEquipmentIdFromBookingPayload = (bookingPayload) => {
+    if (!bookingPayload) return null;
+    if (typeof bookingPayload === 'string') return bookingPayload;
+    return (
+      normalizeId(bookingPayload.equipmentId) ||
+      normalizeId(bookingPayload.equipment_id) ||
+      normalizeId(bookingPayload.equipment?.id) ||
+      normalizeId(bookingPayload.equipment?._id) ||
+      null
+    );
   };
 
   // Helper function to separate active and historical bookings
@@ -152,9 +203,14 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
       console.warn('fetchBookings called without equipmentId');
       return;
     }
-    setBookingLoading((prev) => ({ ...prev, [equipmentId]: true }));
+    const trimmedId = equipmentId.trim();
+    if (!trimmedId || trimmedId === 'undefined' || trimmedId === 'null') {
+      console.warn('fetchBookings received invalid equipmentId:', equipmentId);
+      return;
+    }
+    setBookingLoading((prev) => ({ ...prev, [trimmedId]: true }));
     try {
-      const res = await fetch(`${getBackendUrl()}/api/booking/equipment/${equipmentId}`, {
+      const res = await fetch(`${getBackendUrl()}/api/booking/equipment/${trimmedId}`, {
         credentials: 'include',
         headers: buildAuthHeaders()
       });
@@ -165,11 +221,11 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
         : Array.isArray(data)
           ? data
           : [];
-      setBookingData((prev) => ({ ...prev, [equipmentId]: bookingsArray }));
+      setBookingData((prev) => ({ ...prev, [trimmedId]: bookingsArray }));
     } catch {
-      setBookingData((prev) => ({ ...prev, [equipmentId]: [] }));
+      setBookingData((prev) => ({ ...prev, [trimmedId]: [] }));
     } finally {
-      setBookingLoading((prev) => ({ ...prev, [equipmentId]: false }));
+      setBookingLoading((prev) => ({ ...prev, [trimmedId]: false }));
     }
   };
 
@@ -181,8 +237,9 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
       // Refresh equipment list to show new bookings
       fetchEquipment();
       // Refresh bookings for the specific equipment
-      if (data.booking && data.booking.equipmentId) {
-        fetchBookings(data.booking.equipmentId);
+      const equipmentId = getEquipmentIdFromBookingPayload(data.booking);
+      if (equipmentId) {
+        fetchBookings(equipmentId);
       }
       setTimeout(() => setNotification(''), 5000);
     },
@@ -192,8 +249,9 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
       // Refresh equipment list
       fetchEquipment();
       // Refresh bookings for the specific equipment
-      if (data.booking && data.booking.equipmentId) {
-        fetchBookings(data.booking.equipmentId);
+      const equipmentId = getEquipmentIdFromBookingPayload(data.booking);
+      if (equipmentId) {
+        fetchBookings(equipmentId);
       }
       setTimeout(() => setNotification(''), 5000);
     },
@@ -203,8 +261,9 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
       // Refresh equipment list
       fetchEquipment();
       // Refresh bookings for the specific equipment
-      if (data.booking && data.booking.equipmentId) {
-        fetchBookings(data.booking.equipmentId);
+      const equipmentId = getEquipmentIdFromBookingPayload(data.booking);
+      if (equipmentId) {
+        fetchBookings(equipmentId);
       }
       setTimeout(() => setNotification(''), 5000);
     },
@@ -214,8 +273,9 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
       // Refresh equipment list
       fetchEquipment();
       // Refresh bookings for the specific equipment
-      if (data.booking && data.booking.equipmentId) {
-        fetchBookings(data.booking.equipmentId);
+      const equipmentId = getEquipmentIdFromBookingPayload(data.booking);
+      if (equipmentId) {
+        fetchBookings(equipmentId);
       }
       setTimeout(() => setNotification(''), 5000);
     },
@@ -225,8 +285,9 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
       // Refresh equipment list
       fetchEquipment();
       // Refresh bookings for the specific equipment
-      if (data.booking && data.booking.equipmentId) {
-        fetchBookings(data.booking.equipmentId);
+      const equipmentId = getEquipmentIdFromBookingPayload(data.booking);
+      if (equipmentId) {
+        fetchBookings(equipmentId);
       }
       setTimeout(() => setNotification(''), 5000);
     },
@@ -236,8 +297,9 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
       // Refresh equipment list
       fetchEquipment();
       // Refresh bookings for the specific equipment
-      if (data.booking && data.booking.equipmentId) {
-        fetchBookings(data.booking.equipmentId);
+      const equipmentId = getEquipmentIdFromBookingPayload(data.booking);
+      if (equipmentId) {
+        fetchBookings(equipmentId);
       }
       setTimeout(() => setNotification(''), 5000);
     }
@@ -421,11 +483,13 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
       )}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {equipment.map((item, idx) => {
-          const equipmentId = getEquipmentId(item) || `equipment-${idx}`;
-          const itemBookings = bookingData[equipmentId] || [];
-          const isBookingLoading = bookingLoading[equipmentId];
+          const equipmentId = getEquipmentId(item);
+          const uiKey = equipmentId || `equipment-${idx}`;
+          const collapseKey = equipmentId || uiKey;
+          const itemBookings = equipmentId ? bookingData[equipmentId] || [] : [];
+          const isBookingLoading = equipmentId ? bookingLoading[equipmentId] : false;
           return (
-          <Card key={equipmentId} className="overflow-hidden">
+          <Card key={uiKey} className="overflow-hidden">
             {item.imageUrl && (
               <div className="aspect-video overflow-hidden">
                 <img
@@ -545,7 +609,9 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
                                                 credentials: 'include',
                                                 headers: buildAuthHeaders()
                                               });
-                                              fetchBookings(equipmentId);
+                                              if (equipmentId) {
+                                                fetchBookings(equipmentId);
+                                              }
                                             }}
                                           >
                                             ✓ Approve
@@ -560,7 +626,9 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
                                                 credentials: 'include',
                                                 headers: buildAuthHeaders()
                                               });
-                                              fetchBookings(equipmentId);
+                                              if (equipmentId) {
+                                                fetchBookings(equipmentId);
+                                              }
                                             }}
                                           >
                                             ✗ Decline
@@ -575,7 +643,9 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
                                                 credentials: 'include',
                                                 headers: buildAuthHeaders()
                                               });
-                                              fetchBookings(equipmentId);
+                                              if (equipmentId) {
+                                                fetchBookings(equipmentId);
+                                              }
                                             }}
                                           >
                                             🗑 Delete
@@ -593,7 +663,9 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
                                                 credentials: 'include',
                                                 headers: buildAuthHeaders()
                                               });
-                                              fetchBookings(equipmentId);
+                                              if (equipmentId) {
+                                                fetchBookings(equipmentId);
+                                              }
                                             }}
                                           >
                                             ✓ Complete
@@ -608,7 +680,9 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
                                                 credentials: 'include',
                                                 headers: buildAuthHeaders()
                                               });
-                                              fetchBookings(equipmentId);
+                                              if (equipmentId) {
+                                                fetchBookings(equipmentId);
+                                              }
                                             }}
                                           >
                                             🗑 Delete
@@ -636,11 +710,11 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
                           {history.length > 0 && (
                             <div className="bg-gray-50 rounded-lg border border-gray-200">
                               <button
-                                onClick={() => toggleHistory(equipmentId)}
+                                onClick={() => toggleHistory(collapseKey)}
                                 className="w-full p-3 flex items-center justify-between text-left hover:bg-gray-100 transition-colors"
                               >
                                 <div className="flex items-center">
-                                  {collapsedHistory[equipmentId] ? (
+                                  {collapsedHistory[collapseKey] ? (
                                     <ChevronRight className="w-4 h-4 mr-2 text-gray-500" />
                                   ) : (
                                     <ChevronDown className="w-4 h-4 mr-2 text-gray-500" />
@@ -650,11 +724,11 @@ const OwnerEquipmentList = ({ refreshTrigger }) => {
                                   </span>
                                 </div>
                                 <span className="text-xs text-gray-500">
-                                  {collapsedHistory[equipmentId] ? 'Click to expand' : 'Click to collapse'}
+                                  {collapsedHistory[collapseKey] ? 'Click to expand' : 'Click to collapse'}
                                 </span>
                               </button>
                               
-                              {!collapsedHistory[equipmentId] && (
+                              {!collapsedHistory[collapseKey] && (
                                 <div className="p-3 border-t border-gray-200 space-y-2">
                                   {history.map((booking, historyIdx) => {
                                     const bookingId = getBookingId(booking, historyIdx);
