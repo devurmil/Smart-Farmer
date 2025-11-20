@@ -33,11 +33,16 @@ const OrderSupplyModal = ({ supply, onClose, onOrderSuccess }) => {
     console.log('OrderSupplyModal - Token:', token ? 'Present' : 'Not Present');
 
     try {
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       const response = await fetch(`${getBackendUrl()}/api/supplies/${supply.id}/order`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers,
         credentials: 'include',
         body: JSON.stringify(form),
       });

@@ -15,6 +15,23 @@ const SupplyList = () => {
   const [openOrderModal, setOpenOrderModal] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('all');
 
+  const buildAuthHeaders = () => {
+    if (token) {
+      return {
+        Authorization: `Bearer ${token}`,
+      };
+    }
+    return {};
+  };
+
+  const normalizeSupply = (supply) => {
+    if (!supply) return supply;
+    return {
+      ...supply,
+      id: supply.id || supply._id,
+    };
+  };
+
   useEffect(() => {
     const fetchSupplies = async () => {
       if (!user) return;
@@ -27,11 +44,12 @@ const SupplyList = () => {
       try {
         const response = await fetch(`${getBackendUrl()}/api/supplies`, {
           credentials: 'include',
-          headers: {}
+          headers: buildAuthHeaders()
         });
         if (!response.ok) throw new Error('Failed to fetch supplies');
         const data = await response.json();
-        setSupplies(data.data || data);
+        const rawSupplies = Array.isArray(data) ? data : data.data || [];
+        setSupplies(rawSupplies.map(normalizeSupply));
       } catch (err) {
         setError('Failed to fetch supplies');
       } finally {
