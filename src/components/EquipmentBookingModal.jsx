@@ -135,20 +135,15 @@ const EquipmentBookingModal = ({ equipment, onClose, onBookingSuccess, startDate
 
   const modalContent = (
     <div
-      className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 backdrop-blur-sm"
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4"
       style={{ zIndex: 100000 }}
     >
       <div
-        className="bg-white rounded-2xl max-w-2xl w-full max-h-[95vh] overflow-y-auto shadow-2xl relative"
+        className="bg-white rounded-lg max-w-2xl w-full max-h-[95vh] overflow-y-auto relative"
         style={{ zIndex: 100001 }}
       >
-        <div
-          className="absolute -inset-0.5 bg-gradient-to-r from-emerald-400 to-green-500 rounded-2xl blur opacity-40 pointer-events-none"
-          aria-hidden="true"
-        ></div>
-        <div className="relative">
         {/* Header */}
-        <div className="relative bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-8 rounded-t-2xl">
+        <div className="relative bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-8 rounded-t-lg">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-white bg-opacity-20 rounded-full">

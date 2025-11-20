@@ -68,11 +68,15 @@ const OrderSupplyModal = ({ supply, onClose, onOrderSuccess }) => {
   const totalPrice = supply.price * parseInt(form.quantity || 1);
 
   const modalBody = (
-    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[99999] p-4 backdrop-blur-sm">
-      <div className="relative bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl">
-        <div className="pointer-events-none absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-emerald-400 to-green-500 blur opacity-50"></div>
-        <div className="relative">
-          <div className="flex items-center justify-between p-6 border-b">
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4"
+      style={{ zIndex: 100000 }}
+    >
+      <div
+        className="relative bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto"
+        style={{ zIndex: 100001 }}
+      >
+        <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-xl font-semibold">Order Supply</h2>
           <Button
             variant="ghost"
@@ -82,7 +86,7 @@ const OrderSupplyModal = ({ supply, onClose, onOrderSuccess }) => {
           >
             <X className="h-4 w-4" />
           </Button>
-          </div>
+        </div>
 
         <div className="p-6">
           {success && (
@@ -204,7 +208,6 @@ const OrderSupplyModal = ({ supply, onClose, onOrderSuccess }) => {
               </Button>
             </div>
           </form>
-        </div>
         </div>
       </div>
     </div>
