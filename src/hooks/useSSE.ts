@@ -47,8 +47,17 @@ const globalSSEManager = {
   }
 };
 
+const getStoredToken = (): string | null => {
+  if (typeof window === 'undefined') return null;
+  try {
+    return localStorage.getItem('auth_token');
+  } catch {
+    return null;
+  }
+};
+
 export const useSSE = (options: UseSSEOptions = {}) => {
-  const { user } = useUser();
+  const { user, token } = useUser();
   const [isConnected, setIsConnected] = useState(false);
   const connectingRef = useRef(false);
 
@@ -64,7 +73,12 @@ export const useSSE = (options: UseSSEOptions = {}) => {
 
     try {
       const backendUrl = await getBackendUrl();
-      const url = `${backendUrl}/api/booking/stream`;
+      const authToken = token || getStoredToken();
+      const urlObj = new URL(`${backendUrl}/api/booking/stream`);
+      if (authToken) {
+        urlObj.searchParams.set('token', authToken);
+      }
+      const url = urlObj.toString();
       
       // Close existing connection if any
       if (globalSSEManager.eventSource) {
@@ -139,7 +153,7 @@ export const useSSE = (options: UseSSEOptions = {}) => {
       console.error('Error establishing SSE connection:', error);
       connectingRef.current = false;
     }
-  }, [user]);
+  }, [user, token]);
 
   const disconnect = useCallback(() => {
     if (globalSSEManager.eventSource) {

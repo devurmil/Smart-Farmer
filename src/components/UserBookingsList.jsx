@@ -12,10 +12,21 @@ const UserBookingsList = () => {
   const [error, setError] = useState('');
   const [notification, setNotification] = useState('');
 
-  const buildAuthHeaders = () => {
+  const getStoredToken = () => {
     if (token) {
+      return token;
+    }
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('auth_token');
+    }
+    return null;
+  };
+
+  const buildAuthHeaders = () => {
+    const authToken = getStoredToken();
+    if (authToken) {
       return {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${authToken}`,
       };
     }
     return {};
