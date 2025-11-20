@@ -134,8 +134,14 @@ const EquipmentBookingModal = ({ equipment, onClose, onBookingSuccess, startDate
   const days = form.startDate && form.endDate ? Math.ceil((new Date(form.endDate) - new Date(form.startDate)) / (1000 * 60 * 60 * 24)) : 0;
 
   const modalContent = (
-    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[99999] p-4 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[95vh] overflow-y-auto shadow-2xl relative">
+    <div
+      className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 backdrop-blur-sm"
+      style={{ zIndex: 100000 }}
+    >
+      <div
+        className="bg-white rounded-2xl max-w-2xl w-full max-h-[95vh] overflow-y-auto shadow-2xl relative"
+        style={{ zIndex: 100001 }}
+      >
         <div
           className="absolute -inset-0.5 bg-gradient-to-r from-emerald-400 to-green-500 rounded-2xl blur opacity-40 pointer-events-none"
           aria-hidden="true"
