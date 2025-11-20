@@ -3,7 +3,7 @@ const { User } = require('../models');
 
 const auth = async (req, res, next) => {
   try {
-    // Get token from HTTP-only cookie first, then fallback to Authorization header for deployment compatibility
+    // Get token from HTTP-only cookie first, then fallback to Authorization header or query param for deployment compatibility
     let token = req.cookies?.token;
     
     // Fallback to Authorization header if cookie not present (for cross-origin deployment issues)
@@ -12,6 +12,11 @@ const auth = async (req, res, next) => {
       if (authHeader?.startsWith('Bearer ')) {
         token = authHeader.replace('Bearer ', '');
       }
+    }
+
+    // Final fallback: token passed as query param (needed for SSE/EventSource where headers can't be set)
+    if (!token && req.query?.token) {
+      token = req.query.token;
     }
     
     if (!token) {
