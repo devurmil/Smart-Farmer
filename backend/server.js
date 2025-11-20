@@ -59,6 +59,7 @@ const allowedOrigins = [
     'http://localhost:5173', // Vite dev server
     'http://127.0.0.1:5173', // Explicit loopback for some browsers
     'https://smart-farmer-three.vercel.app', // Vercel deployed frontend
+    'https://www.smart-farmer-three.vercel.app', // Alternate Vercel domain
     'https://smart-farmer-cyyz.onrender.com', // Render backend (for direct access/tests)
 ];
 

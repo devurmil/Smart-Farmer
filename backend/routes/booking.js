@@ -24,9 +24,10 @@ router.get('/stream', authMiddleware, (req, res) => {
     'http://localhost:8080',
     'http://localhost:5173',
     'http://127.0.0.1:5173',
-    'https://smart-farmer-three.vercel.app'
+    'https://smart-farmer-three.vercel.app',
+    'https://www.smart-farmer-three.vercel.app',
   ];
-  
+
   const corsOrigin = allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
   
   res.writeHead(200, {
