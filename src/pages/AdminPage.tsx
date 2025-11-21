@@ -152,7 +152,13 @@ const AdminPage: React.FC = () => {
       });
       const data = await res.json();
       if (!data.success) throw new Error(data.message || 'Failed to fetch users');
-      setUsers(data.data.users);
+      const normalizedUsers: User[] = (data.data.users || []).map((u: any) => ({
+        ...u,
+        id: u.id || u._id,
+      }));
+      setUsers(normalizedUsers);
+      // Ensure supplies re-use the latest user data for supplier details
+      fetchAllSupplies(normalizedUsers);
     } catch (err: any) {
       setError(err.message || 'Error fetching users');
     } finally {
@@ -296,7 +302,7 @@ const AdminPage: React.FC = () => {
   };
 
   // Fetch all supplies for admin
-  const fetchAllSupplies = async () => {
+  const fetchAllSupplies = async (userList: User[] = users) => {
     setSuppliesLoading(true);
     setSuppliesError(null);
     try {
@@ -308,30 +314,26 @@ const AdminPage: React.FC = () => {
       
       // Handle the new structured response
       if (data.success) {
-        // Normalize supplies and attach supplier details
-        const baseSupplies: Supply[] = (data.data || []).map((s: any) => ({
-          ...s,
-          id: s.id || s._id,
-        }));
-
-        const suppliesWithSuppliers = await Promise.all(
-          baseSupplies.map(async (supply: Supply) => {
-            const supplierId = resolveId(supply.supplierId || supply.supplier);
-            if (!supplierId) {
-              return { ...supply, supplier: null };
-            }
-            try {
-              const supplierRes = await fetch(`${getBackendUrl()}/api/users/${supplierId}`, {
-                credentials: 'include',
-                headers: buildAuthHeaders(),
-              });
-              const supplierData = await supplierRes.json();
-              return { ...supply, supplier: supplierData.success ? supplierData.data : null };
-            } catch {
-              return { ...supply, supplier: null };
-            }
-          })
+        const userLookup = new Map(
+          (userList || []).map((u) => [resolveId(u, u.email || u.name), u])
         );
+
+        // Normalize supplies and attach supplier details without extra API calls
+        const suppliesWithSuppliers: Supply[] = (data.data || []).map((s: any) => {
+          const normalizedSupply: Supply = {
+            ...s,
+            id: s.id || s._id,
+          };
+          const supplierId = resolveId(
+            normalizedSupply.supplierId || normalizedSupply.supplier
+          );
+          return {
+            ...normalizedSupply,
+            supplier: supplierId ? userLookup.get(supplierId) || null : null,
+            supplierId,
+          };
+        });
+
         setAllSupplies(suppliesWithSuppliers);
       } else {
         throw new Error(data.message || 'Failed to fetch supplies');
@@ -348,38 +350,6 @@ const AdminPage: React.FC = () => {
     const normalizedOwnerId = resolveId(equipment.ownerId || equipment.owner, '');
     setEditEquipment({ ...equipment, ownerId: normalizedOwnerId });
     setShowEditEquipment(true);
-  };
-
-  const submitEditEquipment = async () => {
-    if (!editEquipment || !editEquipment.id) return;
-    setActionLoading(true);
-    setActionError(null);
-    try {
-      const res = await fetch(`${getBackendUrl()}/api/equipment/${editEquipment.id}`, {
-        method: 'PUT',
-        headers: buildAuthHeaders({
-          'Content-Type': 'application/json',
-        }),
-        credentials: 'include',
-        body: JSON.stringify({
-          name: editEquipment.name,
-          type: editEquipment.type,
-          price: editEquipment.price,
-          description: editEquipment.description,
-          available: editEquipment.available,
-          ownerId: editEquipment.ownerId
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Failed to update equipment');
-      setShowEditEquipment(false);
-      setEditEquipment(null);
-      fetchAllEquipment();
-    } catch (err: any) {
-      setActionError(err.message || 'Error updating equipment');
-    } finally {
-      setActionLoading(false);
-    }
   };
 
   // Delete equipment
@@ -431,6 +401,37 @@ const AdminPage: React.FC = () => {
     const normalizedSupplierId = resolveId(supply.supplierId || supply.supplier, '');
     setEditSupply({ ...supply, supplierId: normalizedSupplierId });
     setShowEditSupply(true);
+  };
+  const submitEditEquipment = async () => {
+    if (!editEquipment || !editEquipment.id) return;
+    setActionLoading(true);
+    setActionError(null);
+    try {
+      const res = await fetch(`${getBackendUrl()}/api/equipment/${editEquipment.id}`, {
+        method: 'PUT',
+        headers: buildAuthHeaders({
+          'Content-Type': 'application/json',
+        }),
+        credentials: 'include',
+        body: JSON.stringify({
+          name: editEquipment.name,
+          type: editEquipment.type,
+          price: editEquipment.price,
+          description: editEquipment.description,
+          available: editEquipment.available,
+          ownerId: editEquipment.ownerId
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Failed to update equipment');
+      setShowEditEquipment(false);
+      setEditEquipment(null);
+      fetchAllEquipment();
+    } catch (err: any) {
+      setActionError(err.message || 'Error updating equipment');
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const submitEditSupply = async () => {
