@@ -23,6 +23,18 @@ if (missingEnv.length) {
 }
 
 const sendEmail = async ({ to, subject, html, from }) => {
+  // In development, log the email to console instead of sending
+  if (process.env.NODE_ENV === 'development') {
+    console.log('=================================================');
+    console.log('📧 DEVELOPMENT MODE - EMAIL MOCK');
+    console.log(`To: ${to}`);
+    console.log(`Subject: ${subject}`);
+    console.log('Content:');
+    console.log(html.replace(/<[^>]*>/g, ' ')); // Strip HTML tags for readable log
+    console.log('=================================================');
+    return { success: true, provider: "mock", id: "mock-id-" + Date.now() };
+  }
+
   try {
     const resolvedFrom = from || defaultFrom;
     const result = await sendViaGmailApi({ to, subject, html, from: resolvedFrom });

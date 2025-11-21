@@ -19,15 +19,23 @@ import { format } from 'date-fns';
 import { CalendarIcon, Plus, Search, Filter, Edit, Trash2, CheckCircle, Clock, AlertTriangle, Wrench } from 'lucide-react';
 
 interface Equipment {
-  id: number;
+  id?: number | string;
+  _id?: string;
   name: string;
   type: string;
   available: boolean;
 }
 
+const getEquipmentId = (equipment: Equipment): string | null => {
+  if (!equipment) return null;
+  if (equipment.id != null) return equipment.id.toString();
+  if (equipment._id != null) return equipment._id.toString();
+  return null;
+};
+
 interface MaintenanceRecord {
-  id: number;
-  equipmentId: number;
+  id: string;
+  equipmentId: string;
   equipment?: Equipment;
   type: 'routine' | 'repair' | 'inspection' | 'upgrade' | 'emergency';
   scheduledDate: string;
@@ -48,7 +56,7 @@ const MaintenancePage: React.FC = () => {
   const [equipmentList, setEquipmentList] = useState<Equipment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Form states
   const [selectedEquipment, setSelectedEquipment] = useState<string>('');
   const [maintenanceType, setMaintenanceType] = useState<string>('');
@@ -58,7 +66,7 @@ const MaintenancePage: React.FC = () => {
   const [technician, setTechnician] = useState('');
   const [cost, setCost] = useState<string>('');
   const [notes, setNotes] = useState('');
-  
+
   // UI states
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -79,26 +87,35 @@ const MaintenancePage: React.FC = () => {
         api.get('/maintenance/records'),
         api.get('/equipment/owner')
       ]);
-      
+
       console.log('Maintenance response:', maintenanceResponse.data);
       console.log('Equipment response:', equipmentResponse.data);
-      
+
       // Handle maintenance records response structure
-      const maintenanceData = maintenanceResponse.data.success 
-        ? maintenanceResponse.data.data 
+      const maintenanceData = maintenanceResponse.data.success
+        ? maintenanceResponse.data.data
         : maintenanceResponse.data;
-      
+
       console.log('Processed maintenance data:', maintenanceData);
-      
-      // Ensure it's an array
-      const finalMaintenanceData = Array.isArray(maintenanceData) ? maintenanceData : [];
+
+      // Ensure it's an array and normalize ID field
+      const finalMaintenanceData = Array.isArray(maintenanceData)
+        ? maintenanceData.map(record => ({
+          ...record,
+          id: record._id || record.id,
+          equipmentId: record.equipmentId?._id || record.equipmentId,
+          equipment: record.equipmentId && typeof record.equipmentId === 'object'
+            ? { ...record.equipmentId, id: record.equipmentId._id || record.equipmentId.id }
+            : record.equipment
+        }))
+        : [];
       setMaintenanceRecords(finalMaintenanceData);
-      
+
       // Handle equipment response structure
       const equipmentData = equipmentResponse.data.data || equipmentResponse.data;
       const finalEquipmentData = Array.isArray(equipmentData) ? equipmentData : [];
       setEquipmentList(finalEquipmentData);
-      
+
       console.log('Final maintenance records:', finalMaintenanceData);
       console.log('Final equipment list:', finalEquipmentData);
     } catch (err) {
@@ -120,7 +137,7 @@ const MaintenancePage: React.FC = () => {
 
     try {
       const maintenanceData = {
-        equipmentId: parseInt(selectedEquipment),
+        equipmentId: selectedEquipment,
         type: maintenanceType,
         scheduledDate: format(scheduledDate, 'yyyy-MM-dd'),
         description,
@@ -140,14 +157,14 @@ const MaintenancePage: React.FC = () => {
     }
   };
 
-  const handleUpdateStatus = async (recordId: number, newStatus: string) => {
+  const handleUpdateStatus = async (recordId: string, newStatus: string) => {
     try {
       const updateData: any = { status: newStatus };
-      
+
       if (newStatus === 'completed') {
         updateData.completedDate = new Date().toISOString();
       }
-      
+
       await api.put(`/maintenance/${recordId}/status`, updateData);
       fetchData();
     } catch (err: any) {
@@ -180,7 +197,7 @@ const MaintenancePage: React.FC = () => {
     }
   };
 
-  const handleDeleteRecord = async (recordId: number) => {
+  const handleDeleteRecord = async (recordId: string) => {
     if (!confirm('Are you sure you want to delete this maintenance record?')) return;
 
     try {
@@ -237,12 +254,12 @@ const MaintenancePage: React.FC = () => {
   // Filter records
   const filteredRecords = (maintenanceRecords || []).filter(record => {
     const matchesSearch = record.equipment?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         record.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         record.technician?.toLowerCase().includes(searchTerm.toLowerCase());
-    
+      record.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      record.technician?.toLowerCase().includes(searchTerm.toLowerCase());
+
     const matchesStatus = statusFilter === 'all' || record.status === statusFilter;
     const matchesType = typeFilter === 'all' || record.type === typeFilter;
-    
+
     return matchesSearch && matchesStatus && matchesType;
   });
 
@@ -308,15 +325,20 @@ const MaintenancePage: React.FC = () => {
                     <SelectValue placeholder="Select equipment" />
                   </SelectTrigger>
                   <SelectContent>
-                    {equipmentList.map((equipment) => (
-                      <SelectItem key={equipment.id} value={equipment.id.toString()}>
-                        {equipment.name} ({equipment.type})
-                      </SelectItem>
-                    ))}
+                    {equipmentList
+                      .filter(equipment => getEquipmentId(equipment) !== null)
+                      .map((equipment) => {
+                        const id = getEquipmentId(equipment);
+                        return (
+                          <SelectItem key={id} value={id!}>
+                            {equipment.name} ({equipment.type})
+                          </SelectItem>
+                        );
+                      })}
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div>
                 <Label htmlFor="type">Maintenance Type *</Label>
                 <Select value={maintenanceType} onValueChange={setMaintenanceType}>
@@ -332,7 +354,7 @@ const MaintenancePage: React.FC = () => {
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div>
                 <Label htmlFor="date">Scheduled Date *</Label>
                 <Popover>
@@ -352,7 +374,7 @@ const MaintenancePage: React.FC = () => {
                   </PopoverContent>
                 </Popover>
               </div>
-              
+
               <div>
                 <Label htmlFor="description">Description</Label>
                 <Textarea
@@ -361,7 +383,7 @@ const MaintenancePage: React.FC = () => {
                   placeholder="Describe the maintenance work needed"
                 />
               </div>
-              
+
               <div>
                 <Label htmlFor="priority">Priority</Label>
                 <Select value={priority} onValueChange={setPriority}>
@@ -376,7 +398,7 @@ const MaintenancePage: React.FC = () => {
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div>
                 <Label htmlFor="technician">Technician</Label>
                 <Input
@@ -385,7 +407,7 @@ const MaintenancePage: React.FC = () => {
                   placeholder="Technician name"
                 />
               </div>
-              
+
               <div>
                 <Label htmlFor="cost">Estimated Cost</Label>
                 <Input
@@ -395,7 +417,7 @@ const MaintenancePage: React.FC = () => {
                   placeholder="0.00"
                 />
               </div>
-              
+
               <div>
                 <Label htmlFor="notes">Notes</Label>
                 <Textarea
@@ -404,7 +426,7 @@ const MaintenancePage: React.FC = () => {
                   placeholder="Additional notes"
                 />
               </div>
-              
+
               <div className="flex gap-2">
                 <Button onClick={handleScheduleMaintenance} className="flex-1">
                   Schedule
@@ -527,10 +549,10 @@ const MaintenancePage: React.FC = () => {
         </CardHeader>
         <CardContent>
           {filteredRecords.length === 0 ? (
-                         <div className="text-center py-8">
-               <Wrench className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-               <p className="text-muted-foreground">No maintenance records found</p>
-             </div>
+            <div className="text-center py-8">
+              <Wrench className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">No maintenance records found</p>
+            </div>
           ) : (
             <div className="space-y-4">
               {filteredRecords.map((record) => (
@@ -549,7 +571,7 @@ const MaintenancePage: React.FC = () => {
                           {record.priority}
                         </Badge>
                       </div>
-                      
+
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm text-muted-foreground">
                         <div>
                           <span className="font-medium">Type:</span> {record.type}
@@ -564,18 +586,18 @@ const MaintenancePage: React.FC = () => {
                           <span className="font-medium">Cost:</span> {record.cost ? `$${record.cost}` : 'Not specified'}
                         </div>
                       </div>
-                      
+
                       {record.description && (
                         <p className="text-sm mt-2">{record.description}</p>
                       )}
-                      
+
                       {record.completedDate && (
                         <p className="text-sm text-green-600 mt-1">
                           Completed: {format(new Date(record.completedDate), 'MMM dd, yyyy')}
                         </p>
                       )}
                     </div>
-                    
+
                     <div className="flex items-center gap-2 ml-4">
                       {record.status === 'scheduled' && (
                         <>
@@ -595,7 +617,7 @@ const MaintenancePage: React.FC = () => {
                           </Button>
                         </>
                       )}
-                      
+
                       {record.status === 'in-progress' && (
                         <Button
                           size="sm"
@@ -605,7 +627,7 @@ const MaintenancePage: React.FC = () => {
                           Complete
                         </Button>
                       )}
-                      
+
                       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
                         <DialogTrigger asChild>
                           <Button
@@ -631,12 +653,12 @@ const MaintenancePage: React.FC = () => {
                                   {editingRecord.equipment?.name || `Equipment ${editingRecord.equipmentId}`}
                                 </p>
                               </div>
-                              
+
                               <div>
                                 <Label htmlFor="edit-type">Type</Label>
-                                <Select 
-                                  value={editingRecord.type} 
-                                  onValueChange={(value) => setEditingRecord({...editingRecord, type: value as any})}
+                                <Select
+                                  value={editingRecord.type}
+                                  onValueChange={(value) => setEditingRecord({ ...editingRecord, type: value as any })}
                                 >
                                   <SelectTrigger>
                                     <SelectValue />
@@ -650,29 +672,29 @@ const MaintenancePage: React.FC = () => {
                                   </SelectContent>
                                 </Select>
                               </div>
-                              
+
                               <div>
                                 <Label htmlFor="edit-date">Scheduled Date</Label>
                                 <Input
                                   type="date"
                                   value={editingRecord.scheduledDate}
-                                  onChange={(e) => setEditingRecord({...editingRecord, scheduledDate: e.target.value})}
+                                  onChange={(e) => setEditingRecord({ ...editingRecord, scheduledDate: e.target.value })}
                                 />
                               </div>
-                              
+
                               <div>
                                 <Label htmlFor="edit-description">Description</Label>
                                 <Textarea
                                   value={editingRecord.description || ''}
-                                  onChange={(e) => setEditingRecord({...editingRecord, description: e.target.value})}
+                                  onChange={(e) => setEditingRecord({ ...editingRecord, description: e.target.value })}
                                 />
                               </div>
-                              
+
                               <div>
                                 <Label htmlFor="edit-priority">Priority</Label>
-                                <Select 
-                                  value={editingRecord.priority} 
-                                  onValueChange={(value) => setEditingRecord({...editingRecord, priority: value as any})}
+                                <Select
+                                  value={editingRecord.priority}
+                                  onValueChange={(value) => setEditingRecord({ ...editingRecord, priority: value as any })}
                                 >
                                   <SelectTrigger>
                                     <SelectValue />
@@ -685,42 +707,42 @@ const MaintenancePage: React.FC = () => {
                                   </SelectContent>
                                 </Select>
                               </div>
-                              
+
                               <div>
                                 <Label htmlFor="edit-technician">Technician</Label>
                                 <Input
                                   value={editingRecord.technician || ''}
-                                  onChange={(e) => setEditingRecord({...editingRecord, technician: e.target.value})}
+                                  onChange={(e) => setEditingRecord({ ...editingRecord, technician: e.target.value })}
                                 />
                               </div>
-                              
+
                               <div>
                                 <Label htmlFor="edit-cost">Cost</Label>
                                 <Input
                                   type="number"
                                   value={editingRecord.cost || ''}
-                                  onChange={(e) => setEditingRecord({...editingRecord, cost: parseFloat(e.target.value) || undefined})}
+                                  onChange={(e) => setEditingRecord({ ...editingRecord, cost: parseFloat(e.target.value) || undefined })}
                                 />
                               </div>
-                              
+
                               <div>
                                 <Label htmlFor="edit-notes">Notes</Label>
                                 <Textarea
                                   value={editingRecord.notes || ''}
-                                  onChange={(e) => setEditingRecord({...editingRecord, notes: e.target.value})}
+                                  onChange={(e) => setEditingRecord({ ...editingRecord, notes: e.target.value })}
                                 />
                               </div>
-                              
+
                               <div className="flex gap-2">
                                 <Button onClick={handleEditRecord} className="flex-1">
                                   Update
                                 </Button>
-                                <Button 
-                                  variant="outline" 
+                                <Button
+                                  variant="outline"
                                   onClick={() => {
                                     setIsEditModalOpen(false);
                                     setEditingRecord(null);
-                                  }} 
+                                  }}
                                   className="flex-1"
                                 >
                                   Cancel
@@ -730,7 +752,7 @@ const MaintenancePage: React.FC = () => {
                           )}
                         </DialogContent>
                       </Dialog>
-                      
+
                       <Button
                         size="sm"
                         variant="outline"

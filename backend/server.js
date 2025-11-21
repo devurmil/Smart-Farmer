@@ -58,6 +58,7 @@ const allowedOrigins = [
     'http://localhost:8080', // Local frontend (legacy port)
     'http://localhost:5173', // Vite dev server
     'http://127.0.0.1:5173', // Explicit loopback for some browsers
+    'http://127.0.0.1:8080', // Explicit loopback for legacy port
     'https://smart-farmer-three.vercel.app', // Vercel deployed frontend
     'https://www.smart-farmer-three.vercel.app', // Alternate Vercel domain
     'https://smart-farmer-cyyz.onrender.com', // Render backend (for direct access/tests)
@@ -65,9 +66,22 @@ const allowedOrigins = [
 
 const corsOptions = {
     origin: (origin, callback) => {
-        if (!origin || allowedOrigins.includes(origin)) {
+        // Allow requests with no origin (like mobile apps or Postman)
+        if (!origin) {
             return callback(null, true);
         }
+
+        // Check exact match
+        if (allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+
+        // Allow Vercel preview deployments (e.g., smart-farmer-three-git-branch-username.vercel.app)
+        if (origin.match(/^https:\/\/smart-farmer-three.*\.vercel\.app$/)) {
+            return callback(null, true);
+        }
+
+        console.warn(`CORS: Blocked origin: ${origin}`);
         callback(new Error(`Not allowed by CORS: ${origin}`));
     },
     credentials: true,
@@ -164,7 +178,7 @@ const startServer = async () => {
         // Connect to MongoDB
         await connectDatabase();
         console.log('✅ Database connection established');
-        
+
         // Start the server
         app.listen(PORT, () => {
             console.log(`🚀 Server is running on port ${PORT}`);

@@ -51,10 +51,12 @@ router.post('/register', validate(registerSchema), async (req, res) => {
     const token = generateToken(user.id);
 
     // Set token as HTTP-only cookie for security
+    // Set token as HTTP-only cookie for security
+    const isProduction = process.env.NODE_ENV === 'production';
     res.cookie('token', token, {
       httpOnly: true,
-      secure: true,
-      sameSite: 'none',
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       path: '/',
     });
@@ -109,10 +111,12 @@ router.post('/login', validate(loginSchema), async (req, res) => {
     const token = generateToken(user.id);
 
     // Always set secure cookie so cross-origin requests include auth
+    // Always set secure cookie so cross-origin requests include auth
+    const isProduction = process.env.NODE_ENV === 'production';
     res.cookie('token', token, {
       httpOnly: true,
-      secure: true,
-      sameSite: 'none',
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'lax',
       maxAge: (rememberMe ? 30 : 7) * 24 * 60 * 60 * 1000,
       path: '/',
     });
@@ -154,7 +158,7 @@ router.post('/facebook', async (req, res) => {
     console.log('Facebook login attempt:', { name, email, facebookId, profilePicture });
 
     // Check if user exists by email or facebook_id
-    let user = await User.findOne({ 
+    let user = await User.findOne({
       $or: [
         { email },
         { facebook_id: facebookId }
@@ -239,7 +243,7 @@ router.post('/google', async (req, res) => {
     console.log('Google login attempt:', { name, email, googleId, profilePicture });
 
     // Check if user exists by email or google_id
-    let user = await User.findOne({ 
+    let user = await User.findOne({
       $or: [
         { email },
         { google_id: googleId }
@@ -347,7 +351,7 @@ router.post('/logout', auth, async (req, res) => {
       sameSite: 'none',
       path: '/',
     });
-    
+
     res.json({
       success: true,
       message: 'Logout successful'
@@ -373,7 +377,7 @@ router.post('/force-logout', async (req, res) => {
       sameSite: 'none',
       path: '/',
     });
-    
+
     // Also try clearing with different paths
     res.clearCookie('token', {
       httpOnly: true,
@@ -381,9 +385,9 @@ router.post('/force-logout', async (req, res) => {
       sameSite: 'none',
       path: '/',
     });
-    
+
     console.log('Force logout - cookies cleared');
-    
+
     res.json({
       success: true,
       message: 'Force logout successful - all authentication cleared'
@@ -485,16 +489,18 @@ router.post('/verify-otp', async (req, res) => {
       is_verified: true
     });
     const token = generateToken(user.id);
-    
+
     // Set token as HTTP-only cookie for security
+    // Set token as HTTP-only cookie for security
+    const isProduction = process.env.NODE_ENV === 'production';
     res.cookie('token', token, {
       httpOnly: true,
-      secure: true,
-      sameSite: 'none',
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       path: '/',
     });
-    
+
     res.status(201).json({ success: true, message: 'User created and verified', data: { user: user.toJSON() } });
   } catch (error) {
     console.error('Verify OTP error:', error);
@@ -559,7 +565,7 @@ router.delete('/user/profile', authMiddleware, async (req, res) => {
 router.post('/select-role', authMiddleware, async (req, res) => {
   try {
     const { role } = req.body;
-    
+
     if (!role || !['farmer', 'owner', 'supplier'].includes(role)) {
       return res.status(400).json({
         success: false,
@@ -587,7 +593,7 @@ router.post('/select-role', authMiddleware, async (req, res) => {
       role,
       role_selection_pending: false
     }, { new: true });
-    
+
     const updatedUser = await User.findById(user._id);
 
     console.log('Role selected for user:', user.id, 'Role:', role);
