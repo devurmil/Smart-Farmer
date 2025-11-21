@@ -281,9 +281,13 @@ const AdminPage: React.FC = () => {
       if (!data.success) {
         throw new Error(data.message || 'Failed to fetch equipment');
       }
-      
-      // The equipment data already includes owner information from the backend
-      setAllEquipment(data.data || []);
+
+      // Normalize IDs so edit/delete logic can rely on equipment.id
+      const normalizedEquipment: Equipment[] = (data.data || []).map((eq: any) => ({
+        ...eq,
+        id: eq.id || eq._id,
+      }));
+      setAllEquipment(normalizedEquipment);
     } catch (err: any) {
       setEquipmentError(err.message || 'Error fetching equipment');
     } finally {
@@ -304,9 +308,14 @@ const AdminPage: React.FC = () => {
       
       // Handle the new structured response
       if (data.success) {
-        // Fetch supplier details for each supply
+        // Normalize supplies and attach supplier details
+        const baseSupplies: Supply[] = (data.data || []).map((s: any) => ({
+          ...s,
+          id: s.id || s._id,
+        }));
+
         const suppliesWithSuppliers = await Promise.all(
-          (data.data || []).map(async (supply: Supply) => {
+          baseSupplies.map(async (supply: Supply) => {
             const supplierId = resolveId(supply.supplierId || supply.supplier);
             if (!supplierId) {
               return { ...supply, supplier: null };
