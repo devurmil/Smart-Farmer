@@ -117,38 +117,7 @@ router.get('/:id/availability', authMiddleware, async (req, res) => {
 // Protected: Update equipment by ID
 router.put('/:id', authMiddleware, equipmentController.updateEquipment);
 
-// Protected: Delete equipment by ID
-router.delete('/:id', authMiddleware, async (req, res) => {
-  try {
-    console.log('Delete request - Equipment ID:', req.params.id);
-    console.log('Delete request - User ID:', req.user.id);
-    console.log('Delete request - User Email:', req.user.email);
-    
-    const { Equipment } = require('../models');
-    const equipment = await Equipment.findByPk(req.params.id);
-    console.log('Found equipment:', equipment ? equipment.toJSON() : 'Not found');
-    
-    if (!equipment) {
-      console.log('Equipment not found in database');
-      return res.status(404).json({ error: 'Equipment not found' });
-    }
-    
-    // Check if the equipment belongs to the current user OR if user is admin
-    const isOwner = equipment.ownerId === req.user.id;
-    const isAdmin = req.user.role === 'admin';
-    
-    if (!isOwner && !isAdmin) {
-      console.log('Unauthorized delete attempt');
-      return res.status(403).json({ error: 'Unauthorized to delete this equipment' });
-    }
-    
-    await equipment.destroy();
-    console.log('Equipment deleted successfully');
-    res.json({ success: true, message: 'Equipment deleted successfully' });
-  } catch (err) {
-    console.error('Delete equipment error:', err);
-    res.status(500).json({ success: false, error: 'Failed to delete equipment.' });
-  }
-});
+// Protected: Delete equipment by ID (use controller with Mongoose)
+router.delete('/:id', authMiddleware, equipmentController.deleteEquipment);
 
 module.exports = router;
