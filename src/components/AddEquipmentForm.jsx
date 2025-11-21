@@ -29,7 +29,13 @@ const AddEquipmentForm = ({ onEquipmentAdded, isAdmin = false, owners = [], onCl
     setLoading(true);
     setSuccess('');
     setError('');
-    
+
+    if (!user) {
+      setError('You must be logged in to add equipment.');
+      setLoading(false);
+      return;
+    }
+
     try {
       const formData = new FormData();
       Object.entries(form).forEach(([key, value]) => {
@@ -37,11 +43,16 @@ const AddEquipmentForm = ({ onEquipmentAdded, isAdmin = false, owners = [], onCl
         if (value) formData.append(key, value);
       });
       if (image) formData.append('image', image);
-      
+
+      const headers = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       const response = await fetch(`${getBackendUrl()}/api/equipment`, {
         method: 'POST',
         credentials: 'include',
-        headers: {},
+        headers,
         body: formData,
       });
       
