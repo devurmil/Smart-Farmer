@@ -117,7 +117,7 @@ router.get('/:id/availability', authMiddleware, async (req, res) => {
 // Protected: Update equipment by ID
 router.put('/:id', authMiddleware, equipmentController.updateEquipment);
 
-// Protected: Delete equipment by ID (use controller with Mongoose)
+  // Protected: Delete equipment by ID (use controller with Mongoose)
 router.delete('/:id', authMiddleware, equipmentController.deleteEquipment);
 
 module.exports = router;
