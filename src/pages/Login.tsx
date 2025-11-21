@@ -4,11 +4,13 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Eye, EyeOff, Mail, Lock, Leaf, ArrowRight, Facebook, Twitter } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, Leaf, ArrowRight, Facebook } from 'lucide-react';
 import { useFacebookLogin } from '@/hooks/useFacebookLogin';
+import { useGoogleLogin } from '@/hooks/useGoogleLogin';
 import { useUser } from '@/contexts/UserContext';
 import { getBackendUrl } from '@/lib/utils';
 import RoleSelectionModal from '@/components/RoleSelectionModal';
+import GoogleIcon from '@/components/icons/GoogleIcon';
 
 // Import the image
 import hero3 from '/design-assets/hero_3.jpg';
@@ -22,7 +24,8 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showRoleSelection, setShowRoleSelection] = useState(false);
   
-  const { isFacebookLoading, facebookLogin, isSDKLoaded } = useFacebookLogin();
+  const { isFacebookLoading, facebookLogin, isSDKLoaded: isFacebookSDKLoaded } = useFacebookLogin();
+  const { isGoogleLoading, googleLogin, isSDKLoaded: isGoogleSDKLoaded } = useGoogleLogin();
 
   // Check if user needs role selection
   React.useEffect(() => {
@@ -232,7 +235,7 @@ const Login = () => {
                     variant="outline"
                     className="h-11 border-gray-300 hover:bg-gray-50"
                     onClick={facebookLogin}
-                    disabled={!isSDKLoaded || isFacebookLoading}
+                    disabled={!isFacebookSDKLoaded || isFacebookLoading}
                   >
                     {isFacebookLoading ? (
                       <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin"></div>
@@ -245,8 +248,14 @@ const Login = () => {
                     type="button"
                     variant="outline"
                     className="h-11 border-gray-300 hover:bg-gray-50"
+                    onClick={googleLogin}
+                    disabled={!isGoogleSDKLoaded || isGoogleLoading}
                   >
-                    <Twitter className="w-4 h-4 text-blue-400" />
+                    {isGoogleLoading ? (
+                      <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                      <GoogleIcon className="w-4 h-4" />
+                    )}
                     <span className="ml-2">Google</span>
                   </Button>
                 </div>
