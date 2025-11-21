@@ -81,7 +81,7 @@ const FarmCalculator = () => {
   const [farmDescription, setFarmDescription] = useState('');
   const [savedFarms, setSavedFarms] = useState([]);
   // Remove isDrawing state
-  
+
   // AI Features
   const [cropType, setCropType] = useState('');
   const [soilType, setSoilType] = useState('');
@@ -186,7 +186,7 @@ const FarmCalculator = () => {
     }
 
     setIsAnalyzing(true);
-    
+
     try {
       const farmData = {
         area: area.toFixed(2),
@@ -215,7 +215,7 @@ const FarmCalculator = () => {
           yieldPrediction: yieldPrediction.data,
           farmData
         });
-        
+
         toast({
           title: "AI Analysis Complete!",
           description: "Your farm has been analyzed successfully.",
@@ -268,7 +268,7 @@ const FarmCalculator = () => {
     }
 
     // Validate coordinates
-    const validCoordinates = coordinates.every(coord => 
+    const validCoordinates = coordinates.every(coord =>
       typeof coord.lat === 'number' && typeof coord.lng === 'number' &&
       !isNaN(coord.lat) && !isNaN(coord.lng)
     );
@@ -281,17 +281,17 @@ const FarmCalculator = () => {
       });
       return;
     }
-    
+
     // Calculate centroid for location
     const centroid = getCentroid(coordinates);
-    
+
     // Compose location object (address is required by validation)
     const location = {
       lat: parseFloat(centroid.lat),
       lng: parseFloat(centroid.lng),
       address: farmDescription || `${farmName} Farm Location`
     };
-    
+
     // Validate location
     if (isNaN(location.lat) || isNaN(location.lng) || !location.address) {
       toast({
@@ -301,12 +301,12 @@ const FarmCalculator = () => {
       });
       return;
     }
-    
+
     // Calculate area in square meters and convert to hectares/acres
     const areaInSqMeters = calculatePolygonArea(coordinates);
     const areaHectares = parseFloat((areaInSqMeters / 10000).toFixed(2));
     const areaAcres = parseFloat((areaInSqMeters / 4047).toFixed(2));
-    
+
     // Validate area values
     if (areaInSqMeters <= 0 || areaHectares <= 0 || areaAcres <= 0) {
       toast({
@@ -316,7 +316,7 @@ const FarmCalculator = () => {
       });
       return;
     }
-    
+
     console.log('Saving farm with data:', {
       name: farmName,
       areaInSqMeters,
@@ -329,7 +329,7 @@ const FarmCalculator = () => {
         address: farmDescription || `${farmName} Farm Location`
       }
     });
-    
+
     // Ensure coordinates are properly formatted
     const formattedCoordinates = coordinates.map(coord => ({
       lat: parseFloat(coord.lat),
@@ -349,7 +349,7 @@ const FarmCalculator = () => {
 
     // Log the exact payload being sent
     console.log('Farm payload to be sent:', JSON.stringify(farmPayload, null, 2));
-    
+
     try {
       setIsSaving(true);
       const response = await fetch(`${getBackendUrl()}/api/farms`, {
@@ -360,15 +360,15 @@ const FarmCalculator = () => {
         credentials: 'include',
         body: JSON.stringify(farmPayload),
       });
-      
+
       const result = await response.json();
       console.log('Backend response:', result);
-      
+
       if (!response.ok) {
         // Show more detailed error information
         const errorMessage = result.message || result.error || "Failed to save farm";
         console.error('Validation error details:', result);
-        
+
         // Log specific validation errors if available
         if (result.errors && Array.isArray(result.errors)) {
           console.error('Specific validation errors:');
@@ -376,22 +376,23 @@ const FarmCalculator = () => {
             console.error(`Error ${index + 1}:`, error);
           });
         }
-        
+
         throw new Error(errorMessage);
       }
-      
+
       // Add the new farm to the saved farms list
       const newFarm = {
         ...result.data.farm,
+        id: result.data.farm.id || result.data.farm._id,
         area: unit === 'hectares' ? areaHectares : areaAcres,
         unit: unit
       };
-      
+
       setSavedFarms(prev => [...prev, newFarm]);
       setFarmName('');
       setFarmDescription('');
       clearDrawing();
-      
+
       toast({
         title: "Farm Saved!",
         description: `${farmName} (${Number(area).toFixed(2)} ${unit}) has been saved successfully.`,
@@ -424,10 +425,10 @@ const FarmCalculator = () => {
   // Geocoder Control Component
   const GeocoderControl = ({ position = 'topleft' }) => {
     const map = useMap();
-    
+
     useEffect(() => {
       if (!map) return;
-      
+
       // Create geocoder control
       const geocoder = L.Control.geocoder({
         defaultMarkGeocode: false,
@@ -439,29 +440,29 @@ const FarmCalculator = () => {
           }
         })
       }).addTo(map);
-      
+
       // Handle geocoding results
       geocoder.on('markgeocode', (e) => {
         const { center, bbox } = e.geocode;
-        
+
         // Fly to the location
         map.flyTo(center, 16);
-        
+
         // Show a temporary marker
         const marker = L.marker(center).addTo(map);
-        
+
         // Remove marker after 3 seconds
         setTimeout(() => {
           map.removeLayer(marker);
         }, 3000);
-        
+
         // Show toast notification
         toast({
           title: "Location Found!",
           description: `Navigated to ${e.geocode.name || 'the selected location'}`,
         });
       });
-      
+
       // Cleanup function
       return () => {
         if (map && geocoder) {
@@ -469,7 +470,7 @@ const FarmCalculator = () => {
         }
       };
     }, [map]);
-    
+
     return null;
   };
 
@@ -481,7 +482,7 @@ const FarmCalculator = () => {
     setCoordinates(farm.coordinates);
     const areaInSqMeters = calculatePolygonArea(farm.coordinates);
     setArea(convertArea(areaInSqMeters, unit));
-    
+
     if (featureGroupRef.current) {
       const polygon = L.polygon(farm.coordinates.map(c => [c.lat, c.lng]));
       featureGroupRef.current.addLayer(polygon);
@@ -491,16 +492,16 @@ const FarmCalculator = () => {
   // Load farm on the dedicated view map
   const loadFarmOnViewMap = (farm) => {
     console.log('Loading farm on view map:', farm);
-    
+
     if (viewFeatureGroupRef.current && farm.coordinates && farm.coordinates.length > 0) {
       viewFeatureGroupRef.current.clearLayers();
-      
+
       // Ensure coordinates are in the correct format
-      const validCoordinates = farm.coordinates.filter(coord => 
+      const validCoordinates = farm.coordinates.filter(coord =>
         coord && typeof coord.lat === 'number' && typeof coord.lng === 'number' &&
         !isNaN(coord.lat) && !isNaN(coord.lng)
       );
-      
+
       if (validCoordinates.length >= 3) {
         const polygon = L.polygon(validCoordinates.map(c => [c.lat, c.lng]), {
           color: 'green',
@@ -508,18 +509,18 @@ const FarmCalculator = () => {
           fillColor: '#22c55e',
           fillOpacity: 0.3
         });
-        
+
         viewFeatureGroupRef.current.addLayer(polygon);
-        
+
         // Fit map to the polygon bounds
         const bounds = L.latLngBounds(validCoordinates.map(c => [c.lat, c.lng]));
         if (viewMapRef.current) {
           viewMapRef.current.fitBounds(bounds, { padding: [20, 20] });
         }
-        
+
         // Set the loaded farm state
         setLoadedFarmInViewer(farm);
-        
+
         toast({
           title: "Farm Loaded!",
           description: `${farm.name} has been loaded on the map.`,
@@ -544,16 +545,25 @@ const FarmCalculator = () => {
 
   // Delete a saved farm
   const deleteFarm = async (farmId) => {
+    if (!farmId) {
+      toast({
+        title: "Error",
+        description: "Invalid farm ID. Cannot delete.",
+        variant: "destructive",
+      });
+      return;
+    }
     try {
       const response = await fetch(`${getBackendUrl()}/api/farms/${farmId}`, {
         method: "DELETE",
-        credentials: 'include',
+        credentials: "include",
       });
       if (!response.ok) {
         const result = await response.json();
         throw new Error(result.message || "Failed to delete farm from backend.");
       }
-      setSavedFarms(savedFarms.filter(farm => farm.id !== farmId));
+      // Update local state to remove the deleted farm
+      setSavedFarms(prev => prev.filter(farm => farm.id !== farmId));
       toast({
         title: "Farm deleted",
         description: "Farm profile has been removed.",
@@ -581,14 +591,14 @@ const FarmCalculator = () => {
       aiAnalysis,
       exportDate: new Date().toISOString()
     };
-    
+
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = `${farmName || 'farm-data'}.json`;
     a.click();
-    
+
     toast({
       title: "Data exported!",
       description: "Farm data has been downloaded.",
@@ -603,16 +613,20 @@ const FarmCalculator = () => {
         });
         const result = await response.json();
         if (response.ok && result.data && result.data.farms) {
-          // Filter out soft-deleted farms (is_active === false)
-          const activeFarms = result.data.farms.filter(farm => farm.is_active !== false);
+          const activeFarms = result.data.farms
+            .filter(farm => farm.is_active !== false)
+            .map(farm => ({
+              ...farm,
+              id: farm.id || farm._id,
+            }));
           setSavedFarms(activeFarms);
         }
       } catch (error) {
-        console.error("Error fetching farms:", error);
+        console.error('Error fetching farms:', error);
         toast({
-          title: "Connection Error",
-          description: "Could not fetch saved farms. Is the backend server running?",
-          variant: "destructive",
+          title: 'Connection Error',
+          description: 'Could not fetch saved farms. Is the backend server running?',
+          variant: 'destructive',
         });
       }
     };
@@ -625,7 +639,7 @@ const FarmCalculator = () => {
     if (typeof document !== 'undefined' && !document.getElementById('no-scroll-style')) {
       const style = document.createElement('style');
       style.id = 'no-scroll-style';
-      style.innerHTML = `.no-scroll { overflow: hidden !important; }`;
+      style.innerHTML = `.no - scroll { overflow: hidden!important; } `;
       document.head.appendChild(style);
     }
   }, []);
@@ -642,18 +656,18 @@ const FarmCalculator = () => {
     }
 
     setIsSearching(true);
-    
+
     try {
       const response = await fetch(
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchLocation)}&countrycodes=in&limit=1`
       );
       const data = await response.json();
-      
+
       if (data && data.length > 0) {
         const location = data[0];
         const lat = parseFloat(location.lat);
         const lon = parseFloat(location.lon);
-        
+
         // Fly to the location on both maps
         if (mapRef.current) {
           mapRef.current.flyTo([lat, lon], 16);
@@ -661,19 +675,19 @@ const FarmCalculator = () => {
         if (viewMapRef.current) {
           viewMapRef.current.flyTo([lat, lon], 16);
         }
-        
+
         // Show temporary marker
         const marker = L.marker([lat, lon]).addTo(mapRef.current || viewMapRef.current);
         setTimeout(() => {
           if (mapRef.current) mapRef.current.removeLayer(marker);
           if (viewMapRef.current) viewMapRef.current.removeLayer(marker);
         }, 5000);
-        
+
         toast({
           title: "Location Found!",
           description: `Navigated to ${location.display_name}`,
         });
-        
+
         setSearchLocation('');
       } else {
         toast({
@@ -993,8 +1007,8 @@ const FarmCalculator = () => {
                 />
               </div>
 
-              <Button 
-                onClick={saveFarm} 
+              <Button
+                onClick={saveFarm}
                 className="w-full"
                 disabled={!farmName || coordinates.length < 3 || isSaving}
               >
@@ -1148,7 +1162,7 @@ const FarmCalculator = () => {
                   )}
                 </div>
               </div>
-              
+
               {loadedFarmInViewer && (
                 <div className="mb-4 p-3 bg-green-50 rounded-lg">
                   <h5 className="font-semibold text-green-800">Currently Loaded:</h5>
@@ -1168,7 +1182,7 @@ const FarmCalculator = () => {
                   </Button>
                 </div>
               )}
-              
+
               {savedFarms.length === 0 ? (
                 <p className="text-gray-500">No saved farms available. Create farms in the Calculator tab first.</p>
               ) : (
@@ -1265,8 +1279,8 @@ const FarmCalculator = () => {
                 />
               </div>
 
-              <Button 
-                onClick={analyzeWithAI} 
+              <Button
+                onClick={analyzeWithAI}
                 className="w-full"
                 disabled={!area || isAnalyzing}
               >
@@ -1288,7 +1302,7 @@ const FarmCalculator = () => {
                   <p className="mt-2 text-gray-600">Analyzing your farm data...</p>
                 </div>
               )}
-              
+
               {aiAnalysis && !isAnalyzing && (
                 <div className="space-y-4">
                   <div className="p-4 bg-blue-50 rounded-lg">
@@ -1297,7 +1311,7 @@ const FarmCalculator = () => {
                       {aiAnalysis.soilAnalysis}
                     </p>
                   </div>
-                  
+
                   <div className="p-4 bg-amber-50 rounded-lg">
                     <h4 className="font-semibold text-amber-800 mb-2">Yield Prediction</h4>
                     <p className="text-sm text-amber-700 whitespace-pre-wrap">
@@ -1306,7 +1320,7 @@ const FarmCalculator = () => {
                   </div>
                 </div>
               )}
-              
+
               {!aiAnalysis && !isAnalyzing && (
                 <div className="text-center py-8 text-gray-500">
                   <Brain className="h-12 w-12 mx-auto mb-4 text-gray-300" />
@@ -1331,7 +1345,7 @@ const FarmCalculator = () => {
               <p>• Saved Farms Count: {savedFarms.length}</p>
               <p>• Backend URL: https://smart-farmer-cyyz.onrender.com/api/farms</p>
             </div>
-            
+
             {savedFarms.length === 0 ? (
               <div className="text-center py-8">
                 <p className="text-gray-500 mb-4">

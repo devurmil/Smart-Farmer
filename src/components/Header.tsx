@@ -67,12 +67,11 @@ const Header = () => {
   const navigationItems = getNavigationItems();
 
   return (
-    <header 
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled 
-          ? 'bg-[#d4ffe]/95 backdrop-blur-md shadow-lg border-b border-gray-200' 
+    <header
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled
+          ? 'bg-[#d4ffe]/95 backdrop-blur-md shadow-lg border-b border-gray-200'
           : 'bg-[#d4ffe]'
-      }`}
+        }`}
     >
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16 lg:h-20">
@@ -80,7 +79,7 @@ const Header = () => {
           <Link to="/" className="flex items-center space-x-3">
             <div className="w-10 h-10 lg:w-12 lg:h-12 bg-green-600 rounded-full flex items-center justify-center">
               <svg className="w-6 h-6 lg:w-7 lg:h-7 text-white" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
               </svg>
             </div>
             <div className="hidden sm:block">
@@ -93,14 +92,13 @@ const Header = () => {
           <nav className="hidden lg:flex items-center space-x-6">
             {/* Main Navigation Items */}
             {navigationItems.slice(0, 4).map((item) => (
-              <Link 
+              <Link
                 key={item.name}
-                to={item.href} 
-                className={`text-sm font-medium transition-colors ${
-                  location.pathname === item.href 
-                    ? 'text-green-600' 
+                to={item.href}
+                className={`text-sm font-medium transition-colors ${location.pathname === item.href
+                    ? 'text-green-600'
                     : 'text-gray-700 hover:text-green-600'
-                }`}
+                  }`}
               >
                 {item.name}
               </Link>
@@ -244,55 +242,51 @@ const Header = () => {
           <div className="lg:hidden border-t border-gray-200 bg-white">
             <nav className="py-4 space-y-2">
               {navigationItems.map((item) => (
-                <Link 
+                <Link
                   key={item.name}
-                  to={item.href} 
-                  className={`flex items-center px-4 py-2 text-sm font-medium transition-colors ${
-                    location.pathname === item.href 
-                      ? 'text-green-600 bg-green-50' 
+                  to={item.href}
+                  className={`flex items-center px-4 py-2 text-sm font-medium transition-colors ${location.pathname === item.href
+                      ? 'text-green-600 bg-green-50'
                       : 'text-gray-700 hover:text-green-600 hover:bg-gray-50'
-                  }`}
+                    }`}
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   <item.icon className="w-4 h-4 mr-3" />
                   {item.name}
                 </Link>
               ))}
-              
+
               {/* Settings in mobile menu */}
               <div className="border-t border-gray-200 pt-2 mt-2">
-                <Link 
-                  to="/settings" 
-                  className={`flex items-center px-4 py-2 text-sm font-medium transition-colors ${
-                    location.pathname === '/settings' 
-                      ? 'text-green-600 bg-green-50' 
+                <Link
+                  to="/settings"
+                  className={`flex items-center px-4 py-2 text-sm font-medium transition-colors ${location.pathname === '/settings'
+                      ? 'text-green-600 bg-green-50'
                       : 'text-gray-700 hover:text-green-600 hover:bg-gray-50'
-                  }`}
+                    }`}
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   <Settings className="w-4 h-4 mr-3" />
                   Settings
                 </Link>
-                <Link 
-                  to="/profile-settings" 
-                  className={`flex items-center px-4 py-2 text-sm font-medium transition-colors ${
-                    location.pathname === '/profile-settings' 
-                      ? 'text-green-600 bg-green-50' 
+                <Link
+                  to="/profile-settings"
+                  className={`flex items-center px-4 py-2 text-sm font-medium transition-colors ${location.pathname === '/profile-settings'
+                      ? 'text-green-600 bg-green-50'
                       : 'text-gray-700 hover:text-green-600 hover:bg-gray-50'
-                  }`}
+                    }`}
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   <User className="w-4 h-4 mr-3" />
                   Profile Settings
                 </Link>
                 {user?.role === 'admin' && (
-                  <Link 
-                    to="/admin" 
-                    className={`flex items-center px-4 py-2 text-sm font-medium transition-colors ${
-                      location.pathname === '/admin' 
-                        ? 'text-green-600 bg-green-50' 
+                  <Link
+                    to="/admin"
+                    className={`flex items-center px-4 py-2 text-sm font-medium transition-colors ${location.pathname === '/admin'
+                        ? 'text-green-600 bg-green-50'
                         : 'text-gray-700 hover:text-green-600 hover:bg-gray-50'
-                    }`}
+                      }`}
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     <User className="w-4 h-4 mr-3" />

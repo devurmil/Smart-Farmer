@@ -72,7 +72,7 @@ const EquipmentList = () => {
         setLoading(false);
       }
     };
-    
+
     if (user) {
       fetchEquipment();
     }
@@ -90,7 +90,7 @@ const EquipmentList = () => {
 
   const filteredEquipment = (equipment || []).filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         item.type.toLowerCase().includes(searchTerm.toLowerCase());
+      item.type.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = filterType === 'all' || item.type.toLowerCase().includes(filterType.toLowerCase());
     return matchesSearch && matchesType;
   });
@@ -146,7 +146,7 @@ const EquipmentList = () => {
           <Filter className="w-6 h-6 text-blue-600" />
           Search & Filter Equipment
         </h3>
-        
+
         <div className="grid md:grid-cols-2 gap-6">
           {/* Search */}
           <div className="relative">
@@ -158,7 +158,7 @@ const EquipmentList = () => {
               className="pl-10 h-12 text-lg border-2 border-gray-200 focus:border-blue-500 rounded-lg"
             />
           </div>
-          
+
           {/* Type Filter */}
           <select
             value={filterType}
@@ -213,7 +213,7 @@ const EquipmentList = () => {
             </Button>
           </div>
         </div>
-        
+
         {/* Date Range Status */}
         {dateRange.startDate && dateRange.endDate && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
@@ -241,7 +241,7 @@ const EquipmentList = () => {
       {/* Equipment Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {filteredEquipment.map((item) => (
-          <Card key={item.id} className="group overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border-emerald-200 bg-emerald-50/80 backdrop-blur-sm">
+          <Card key={item.id} className="group overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border-emerald-200 bg-white">
             {/* Equipment Image */}
             <div className="relative">
               {item.imageUrl ? (
@@ -274,14 +274,13 @@ const EquipmentList = () => {
                   </div>
                 </div>
               )}
-              
+
               {/* Availability Badge */}
               <div className="absolute top-4 right-4">
-                <div className={`px-3 py-1 rounded-full text-sm font-medium ${
-                  item.available
-                    ? 'bg-green-100 text-green-800 border border-green-200'
-                    : 'bg-red-100 text-red-800 border border-red-200'
-                }`}>
+                <div className={`px-3 py-1 rounded-full text-sm font-medium ${item.available
+                  ? 'bg-green-100 text-green-800 border border-green-200'
+                  : 'bg-red-100 text-red-800 border border-red-200'
+                  }`}>
                   {item.available ? (
                     <><CheckCircle2 className="w-3 h-3 inline mr-1" />
                       {dateRange.startDate && dateRange.endDate ? 'Available' : 'Available'}
@@ -322,7 +321,7 @@ const EquipmentList = () => {
                 <div className="flex items-center justify-between p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
                   <div className="flex items-center gap-2">
                     <IndianRupee className="w-5 h-5 text-green-700" />
-                    <span className="text-2xl font-bold text-green-800">₹{item.price}</span>
+                    <span className="text-2xl font-bold text-green-800">{item.price}</span>
                     <span className="text-sm text-green-700">/ day</span>
                   </div>
                 </div>
@@ -353,16 +352,15 @@ const EquipmentList = () => {
                     {expandedId === item.id ? 'Hide Details' : 'Details'}
                   </Button>
                   <Button
-                    className={`flex-1 ${
-                      item.available
-                        ? 'bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white'
-                        : 'bg-gray-400 cursor-not-allowed text-gray-200'
-                    }`}
+                    className={`flex-1 ${item.available
+                      ? 'bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white'
+                      : 'bg-gray-400 cursor-not-allowed text-gray-200'
+                      }`}
                     onClick={() => item.available && setOpenBookingEquipment(item)}
                     disabled={!item.available}
                   >
                     <Calendar className="w-4 h-4 mr-2" />
-                    {item.available 
+                    {item.available
                       ? (dateRange.startDate && dateRange.endDate ? 'Book Selected Dates' : 'Book Now')
                       : (dateRange.startDate && dateRange.endDate ? 'Dates Unavailable' : 'Unavailable')
                     }

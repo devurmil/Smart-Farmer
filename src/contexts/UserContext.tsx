@@ -174,17 +174,25 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   };
 
   const logout = () => {
+    // Preserve current token and user info before clearing
+    const currentToken = token;
+    const currentUser = user;
     setUser(null);
     setToken(null);
     safeRemoveLocalStorage('user_data');
     safeRemoveLocalStorage('auth_token');
     const backendUrl = getBackendUrl() || 'https://smart-farmer-cyyz.onrender.com';
     fetch(`${backendUrl}/api/auth/logout`, { method: 'POST', credentials: 'include' });
-    if (typeof window !== 'undefined' && (window as any).FB) {
+    // Only call FB.logout if the user logged in via Facebook and we have a token
+    if (
+      typeof window !== 'undefined' &&
+      (window as any).FB &&
+      currentToken &&
+      currentUser?.loginMethod === 'facebook'
+    ) {
       (window as any).FB.logout();
     }
   };
-
   const updateUser = (updates: Partial<User>) => {
     if (user) {
       const mappedUpdates = {
