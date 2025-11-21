@@ -235,7 +235,7 @@ const Login = () => {
                     variant="outline"
                     className="h-11 border-gray-300 hover:bg-gray-50"
                     onClick={facebookLogin}
-                    disabled={!isFacebookSDKLoaded || isFacebookLoading}
+                    disabled={isFacebookLoading}
                   >
                     {isFacebookLoading ? (
                       <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin"></div>
@@ -249,7 +249,7 @@ const Login = () => {
                     variant="outline"
                     className="h-11 border-gray-300 hover:bg-gray-50"
                     onClick={googleLogin}
-                    disabled={!isGoogleSDKLoaded || isGoogleLoading}
+                    disabled={isGoogleLoading}
                   >
                     {isGoogleLoading ? (
                       <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin"></div>
